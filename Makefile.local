@@ -1,0 +1,35 @@
+DATADIR = /scratch/sylju
+HOMEDIR = $(HOME)
+#INCDIR = -I$(DATADIR)/include -I$(HOMEDIR)/include -I/usr/include -I$(DATADIR)/eigen-3.3.7 -I$(DATADIR)/lapack-3.5.0/lapacke/include
+#INCDIR = -I$(DATADIR)/eigen-3.3.7 -I$(DATADIR)/boost_1_73_0 -I$(DATADIR)/fftw-3.3.8/include -I$(DATADIR)/include -I$(HOMEDIR)/include -I/usr/include 
+INCDIR = -I$(DATADIR)/eigen-3.3.7 -I$(DATADIR)/boost_1_73_0 -I$(DATADIR)/fftw-3.3.8/include
+#LIBDIR = -L$(DATADIR)/fftw-3.3.8/lib -L$(DATADIR)/lib   -L$(HOMEDIR)/lib     -L/usr/lib
+LIBDIR = -L$(DATADIR)/fftw-3.3.8/lib -L$(LD_LIBRARY_PATH) -L/usr/lib 
+#LIBS   = -llapacke -lopenblas -lpthread -lqd  -lfftw3 -lm -lstdc++  
+LIBS   = -lfftw3 -lm -lstdc++  
+BINDIR = $(DATADIR)/bin
+EXTENSION = _x64.x
+
+# C++ compiler
+CCC= g++ 
+
+# options:
+STDOPTS= -std=c++11 -O3
+# use fftw3l with this:
+#CCOPTS=  $(STDOPTS) -DNDEBUG -DLONGDOUBLE 
+
+CCOPTS=  $(STDOPTS) -DNDEBUG 
+
+
+
+# link option:
+LINKOPTS =  -O3 
+
+
+CCFLAGS = $(CCOPTS) $(INCDIR) 
+
+
+
+
+
+
