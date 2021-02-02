@@ -9,7 +9,7 @@
 
 using namespace std;
 
-// first define a small matrix class
+// first define a small matrix class. It should just be a pointer class unless defined specially to keep contents.
 
 template <class T>
 class SMatrix
@@ -23,36 +23,37 @@ class SMatrix
       }
     return os;
   }
+
  public:
- SMatrix(const int ncols,const int nrows):A(ncols*nrows),Ncols(ncols),Nrows(nrows),Nmat(ncols*nrows){}
- SMatrix(const SMatrix& c):Ncols(c.Ncols),Nrows(c.Nrows),Nmat(Ncols*Nrows),A(c.size())
-  {
-    copy(c.A.begin(), c.A.end(), A.begin());
-  }
-  int size() const {return A.size();}
+ SMatrix(const int nrows,const int ncols,T* in_ptr):Nrows(nrows),Ncols(ncols),ptr(in_ptr),A(0){}
+ SMatrix(const int nrows,const int ncols):Nrows(nrows),Ncols(ncols),A(nrows*ncols),ptr(&A[0]){} 
+  T& operator()(const int i1,const int i2=0){return *(ptr+smindx(i1,i2));}  
+  T& operator[](const int i){return *(ptr+i);}  
 
-  T* start(){return &A[0];} // probably not needed, but just in case
-
-  void SetToZero(){ for(int i=0; i<A.size(); i++){ A[i]=0;}}
-
-  T& operator()(const int i1,const int i2=0){ return A[smindx(i1,i2)];}  
-  T& operator[](const int i){ return A[i];}  
+  const int Nrows;
+  const int Ncols;
 
   SMatrix& operator=(SMatrix<T>& rhs)
     {
-      copy(rhs.A.begin(), rhs.A.end(), A.begin());
+      for(int i=0; i<Nrows*Ncols; i++) (*this)[i]=rhs[i];
+      return *this;
+    }
+
+  SMatrix& operator=(T* rhs_ptr)
+    {
+      for(int i=0; i<Nrows*Ncols; i++) (*this)[i]=*(rhs_ptr+i);
       return *this;
     }
 
   SMatrix& operator+=(SMatrix<T>& rhs) 
     {
-      for(int i=0; i<A.size(); i++){A[i]+=rhs[i];}
+      for(int i=0; i<Nrows*Ncols; i++) (*this)[i]+=rhs[i];
       return *this;
     }
 
   SMatrix& operator-=(SMatrix<T>& rhs) 
     {
-      for(int i=0; i<A.size(); i++){A[i]-=rhs[i];}
+      for(int i=0; i<Nrows*Ncols; i++) (*this)[i]-=rhs[i];
       return *this;
     }
 
@@ -73,31 +74,41 @@ class SMatrix
     }
 
 
+  SMatrix<T>& operator*=(T* start_ptr) 
+    {
+      vector<T> temprow(Ncols); // vector for storing temporary result
+      for(int i=0; i<Nrows; i++) // assuming Ncols==Nrows
+	{
+	  for(int j=0; j<Ncols; j++)
+	    {
+	      T sum(0);
+	      for(int k=0; k<Ncols; k++){ sum += (*this)(i,k)*(*(start_ptr+smindx(k,j)));}
+	      temprow[j]=sum;
+	    }
+	  for(int l=0; l<Ncols; l++){ (*this)(i,l)=temprow[l];} // fill in matrix
+	}
+      return *this;
+    }
+
+
   SMatrix& operator*=(const complex<realtype>& c)
     {
-      for(int i=0; i<A.size(); i++){ A[i]*=c;} 
+      for(int i=0; i<Nrows*Ncols; i++) (*this)[i]*=c;
       return *this;
     }
 
-  
   SMatrix& operator*=(const realtype& c)
     {
-      for(int i=0; i<A.size(); i++){ A[i]*=c;} 
+      for(int i=0; i<Nrows*Ncols; i++) (*this)[i]*=c;
       return *this;
     }
-  
-  
-  const int Ncols; // number of columns;
-  const int Nrows; // number of rows;
-  const int Nmat; // number of matrix elements = Ncols*Nrows;
-  
-  vector<T> A; // the actual storage area
 
  private:
-  
-  int smindx(const int m1,const int m2){return m1*Ncols+m2;} // row-first
-  
+  vector<T> A;
+  T* ptr;
+  inline int smindx(const int i1,const int i2){return i1*Ncols+i2;}
 };
+  
 
 // matrix product
 template<class T>
@@ -182,6 +193,7 @@ SMatrix<T> conj(SMatrix<T>& M)
 template <class T> 
 class VecMat
 {
+  /*
   friend ostream& operator<<(ostream& os,VecMat& c)
   { 
     bool printdots=false;
@@ -193,55 +205,100 @@ class VecMat
     if(printdots) os << " ... " << start[end-1];
     return os;
   }
+  */
+  friend ostream& operator<<(ostream& os,VecMat& m)
+  { 
+    for(int q=0; q<m.Nvecs; q++)
+      {
+	os << q << ":" << endl;
+	for(int i=0; i<m.Nrows; i++)
+	  {
+	    for(int j=0; j<m.Ncols; j++){ os << setprecision(16) << m(q,i,j) << " ";}
+	    os << endl;
+	  }
+      }
+    m.ContainsNaN("");
+
+    return os;
+  }
+
  public:
- VecMat(const int nvec,const int ncols,const int nrows=1):Nvec(nvec),Ncols(ncols),Nrows(nrows),A(nvec,SMatrix<T>(ncols,nrows)){}
- VecMat(VecMat& c):Nvec(c.Nvec),Ncols(c.Ncols),Nrows(c.Nrows),A(c.size(),SMatrix<T>(c.Ncols,c.Nrows))
+ VecMat(const int nvecs,const int nrows,const int ncols=1):Nvecs(nvecs),Nrows(nrows),Ncols(ncols),A(Nvecs*Nrows*Ncols){}
+ VecMat(VecMat& c):Nvecs(c.Nvecs),Nrows(c.Nrows),Ncols(c.Ncols),A(Nvecs*Nrows*Ncols)
     {
-      for(int i=0; i<A.size(); i++){ A[i]=c[i];}
-      //
-      //      copy(c.A.begin(), c.A.end(), A.begin());
+      T* ptr=c.start();
+      for(int i=0; i<A.size(); i++){ A[i]=*(ptr+i);}
     }
   
-  const int size() const {return Nvec;}
-  //  int size() {return Nvec;}
+  const int size() const {return A.size();}
   
-  T* start(){return &A[0][0];} // probably not needed, but just in case
+  T* start(){return &A[0];} // needed to access start of data-array
   
-  T& operator()(const int v,const int i1,const int i2=0){ return A[v](i1,i2);}  
-
-  void SetToZero(){for(int i=0; i<A.size(); i++){A[i].SetToZero();}}
+  T& operator()(const int v,const int i1,const int i2=0){ return A[indx(v,i1,i2)];}  
   
-  SMatrix<T>& operator[](const int i){ return A[i];}  
+  void SetToZero(){for(int i=0; i<A.size(); i++){A[i]=0;}}
+  
+  T* operator[](const int i){ return &A[indx(i,0,0)];}  
   //const SMatrix<T>& constant(const int i) const { return A[i];}  
   
-  int Nvec; // size of vector
-  int Ncols; // number of columns;
-  int Nrows; // number of rows;
-  vector<SMatrix<T> > A; // the actual storage area
+  const int Nvecs; // size of vector
+  const int Nrows; // number of rows;
+  const int Ncols; // number of columns;
+  vector<T> A; // the actual storage area
+
+  bool ContainsNaN(string message="")
+  {
+    for(int i=0; i<A.size(); i++)
+      { 
+	if( A[i] != A[i] )	
+	  {
+	    cout << "Nan encountered in " << message << endl;
+	    exit(1);
+	  }
+      }
+    return false;
+  }
+
 
   VecMat& operator=(VecMat<T>& rhs)
     {
+      T* ptr=rhs.start();
       if(this == &rhs) return *this; // self-assignment
-      for(int i=0; i<A.size(); i++){A[i]=rhs[i];}
+      for(int i=0; i<A.size(); i++){A[i]= *(ptr+i);}
       return *this;
     }
 
   VecMat& operator+=(VecMat<T>& rhs) 
     {
-      for(int i=0; i<A.size(); i++){A[i]+=rhs[i];}
+      T* ptr=rhs.start();
+      for(int i=0; i<A.size(); i++){A[i]+= *(ptr+i);}
       return *this;
     }
 
   VecMat& operator-=(VecMat<T>& rhs) 
     {
-      for(int i=0; i<A.size(); i++){A[i]-=rhs[i];}
+      T* ptr=rhs.start();
+      for(int i=0; i<A.size(); i++){A[i]-= *(ptr+i);}
       return *this;
     }
 
   // sublattice matrix product for each q
   VecMat& operator*=(VecMat<T>& rhs) 
     {
-      for(int i=0; i<A.size(); i++){A[i]*=rhs[i];}
+      vector<T> temprow(Ncols); // vector for storing temporary result
+      for(int q=0; q<Nvecs; q++)
+	{
+	  for(int i=0; i<Nrows; i++)
+	    {
+	      for(int j=0; j<rhs.Ncols; j++)
+		{
+		  T sum(0);
+		  for(int k=0; k<Ncols; k++){ sum += (*this)(q,i,k)*rhs(q,k,j);}
+		  temprow[j]=sum;
+		}
+	      for(int l=0; l<Ncols; l++){ (*this)(q,i,l)=temprow[l];} // fill in matrix
+	    }
+	}
       return *this;
     }
 
@@ -261,19 +318,25 @@ class VecMat
 
   SMatrix<T> Sumq()
     {
-      SMatrix<T> res(A[0]);
-      for(int i=1; i<A.size(); i++){ res += A[i];} 
+      SMatrix<T> res(Nrows,Ncols);
+      for(int q=0; q<Nvecs; q++)
+	{
+	  T* ptr=A[q];
+	  for(int j=0; j<Nrows*Ncols; j++){ res[j] += *(ptr+j);}
+	} 
       return res;
     }
 
   T Sumq(const int m1,const int m2)
     {
-      T res(A[0](m1,m2));
-      for(int i=1; i<A.size(); i++){ res += A[i](m1,m2);} 
+      T res(0);
+      for(int q=0; q<Nvecs; q++){ res += A[indx(q,m1,m2)];} 
       return res;
     }
- 
+
 private:
+inline int indx(const int j,const int m1,const int m2){return (j*Nrows+m1)*Ncols+m2;}
+inline int smindx(const int m1,const int m2){return m1*Ncols+m2;}
 };
 
 
@@ -322,7 +385,10 @@ template<class T>
 T Tr(VecMat<T>& K)
 {
   T sum(0);
-  for(int i=0; i<K.size(); i++){ sum+= tr(K[i]);}
+  for(int q=0; q<K.Nvecs; q++)
+    for(int i=0; i<K.Nrows; i++)
+      sum += K(q,i,i);
+
   return sum;
 }
 
@@ -339,6 +405,247 @@ T Sumq(VecMat<T>& K,const int m1,const int m2)
 {
   return K.Sumq(m1,m2);
 }
+
+
+const realtype epsilon=1.e-15;
+
+template<class T>
+void Chomp(VecMat<T>& K)
+{
+  T* ptr=K.start();
+  for(int i=0; i<K.size(); i++)
+    {
+      T& t(*(ptr+i));
+      if(abs(real(t))<epsilon){ t.real(0.);} 
+      if(abs(imag(t))<epsilon){ t.imag(0.);} 
+    }
+}
+
+template<class T>
+T FindMax(VecMat<T>& K)
+{
+  T maxentry;
+  realtype maxval=0;
+
+  T* ptr=K.start();
+  for(int i=0; i<K.size(); i++)
+    {
+      T& thisentry(*(ptr+i));
+      if(abs(thisentry)>maxval){maxval=abs(thisentry); maxentry=thisentry;}
+    }
+  return maxentry;
+}
+
+template<class T>
+T FindMaxImag(VecMat<T>& K)
+{
+  T maxentry;
+  realtype maxval=0;
+
+  T* ptr=K.start();
+  for(int i=0; i<K.size(); i++)
+    {
+      T& thisentry(*(ptr+i));
+      if(abs(thisentry.imag()) > maxval){maxval=abs(thisentry.imag()); maxentry=thisentry;}
+    }
+  return maxentry;
+}
+
+template<class T>
+void MakeReal(VecMat<T>& K)
+{
+  T* ptr=K.start();
+  for(int i=0; i<K.size(); i++){ (*(ptr+i)).imag(0.);}
+}
+
+template<class T>
+void ComplexConjugate(VecMat<T>& K)
+{
+  T* ptr=K.start();
+  for(int i=0; i<K.size(); i++){ conj(*(ptr+i));}
+}
+
+template<class T>
+void MakeRealSymmetric(VecMat<T>& M)
+{
+  const int Nrows=M.Nrows;
+  const int Ncols=M.Ncols;
+  
+  for(int q=0; q<M.Nvecs; q++)
+    {
+      for(int s=0; s<Nrows; s++)
+	{
+	  M(q,s,s).imag(0.); // real diagonal
+	}
+      
+      for(int s1=0; s1<Nrows; s1++)
+	for(int s2=s1+1; s2<Ncols; s2++)
+	  {
+	    M(q,s1,s2).imag(0.);
+	    M(q,s2,s1)=M(q,s1,s2);
+	  }
+    }
+}
+
+template<class T>
+void MakeRealOnDiagonal(VecMat<T>& M)
+{
+  const int Nrows=M.Nrows;
+  const int Ncols=M.Ncols;
+  
+  for(int q=0; q<M.Nvecs; q++)
+    for(int s=0; s<Nrows; s++)
+      M(q,s,s).imag(0.); // real diagonal
+}      
+
+
+template<class T>
+void MakeAntiSymmetric(VecMat<T>& M)
+{
+  const int Nrows=M.Nrows;
+  const int Ncols=M.Ncols;
+  
+  for(int q=0; q<M.Nvecs; q++)
+    {
+      for(int s=0; s<Nrows; s++)
+	{
+	  M(q,s,s)=0.;
+	}
+      
+      for(int s1=0; s1<Nrows; s1++)
+	for(int s2=s1+1; s2<Ncols; s2++)
+	  {
+	    M(q,s2,s1)=-M(q,s1,s2);
+	  }
+    }
+}
+
+
+template<class T>
+void MakeHermitian(VecMat<T>& M)
+{
+  const int Nrows=M.Nrows;
+  const int Ncols=M.Ncols;
+  
+  for(int q=0; q<M.Nvecs; q++)
+    {
+      for(int s=0; s<Nrows; s++)
+	{
+	  M(q,s,s).imag(0.); // real diagonal
+	}
+      
+      for(int s1=0; s1<Nrows; s1++)
+	for(int s2=s1+1; s2<Ncols; s2++)
+	  {
+	    M(q,s2,s1) = conj(M(q,s1,s2)); // off-diagonals are cc of each other.
+	  }
+    }
+}
+
+template<class T>
+void MakeInversionTransposedSymmetric(BravaisLattice& la,VecMat<T>& M)
+{
+  const int Nrows=M.Nrows;
+  const int Ncols=M.Ncols;
+  
+  for(int q=0; q<M.Nvecs; q++)
+    {
+      const int invq=la.GetInversionIndx(q); // the negative q
+      
+      for(int s1=0; s1<Nrows; s1++)
+	for(int s2=0; s2<Ncols; s2++)
+	  {
+	    if( q==invq ){ M(q,s1,s2).imag(0.);}
+	    M(invq,s2,s1) = M(q,s1,s2);
+	  }
+    }
+}
+
+
+
+
+bool IsHermitian(VecMat<complex<realtype>>& M)
+{
+  if(TRACE) cout << "Checking if Hermitian: ";
+  //  bool retval=true;
+  const int Nrows=M.Nrows;
+  const int Ncols=M.Ncols;
+
+  for(int q=0; q<M.Nvecs; q++)
+    {
+      
+      for(int s=0; s<Nrows; s++)
+	if(imag(M(q,s,s)) != 0.){return false;}
+  
+      for(int s1=0; s1<Nrows; s1++)
+	for(int s2=s1+1; s2<Ncols; s2++)
+	  {
+	    if( M(q,s2,s1) != conj(M(q,s1,s2))){ return false;}
+	  }
+    }
+  return true;
+
+}
+
+bool IsInversionTransposedSymmetric(BravaisLattice& la,VecMat<complex<realtype>>& M)
+{
+  if(TRACE) cout << "Checking if InversionTransposedSymmetric: ";
+
+  const int Nrows=M.Nrows;
+  const int Ncols=M.Ncols;
+  
+  for(int q=0; q<M.Nvecs; q++)
+    {
+      const int invq=la.GetInversionIndx(q); // the negative q
+      
+      for(int m1=0; m1<Nrows; m1++)
+	for(int m2=m1; m2<Ncols; m2++)
+	  {
+	    if( q==invq && M(q,m1,m2).imag() != 0.){ return false;}
+	    if( M(invq,m2,m1) != M(q,m1,m2)){ return false;}
+	  }
+    }
+  return true;
+}
+
+template<class T>
+void AddToDiagonal(VecMat<T>& M,T& value)
+{
+  for(int q=0; q<M.Nvecs; q++)
+    for(int s=0; s<M.Nrows; s++)
+      M(q,s,s)+=value;
+}
+
+
+template<class T>
+void SubtractFromDiagonal(VecMat<T>& A,T value)
+{
+  T mvalue=-value;
+  AddToDiagonal(A,mvalue);
+}
+
+
+template<class T>
+void AddToDiagonal(VecMat<T>& M,vector<T>& value)
+{
+  for(int q=0; q<M.Nvecs; q++)
+    for(int s=0; s<M.Nrows; s++)
+      M(q,s,s)+=value[s];
+}
+
+
+
+template<class T>
+void SubtractFromDiagonal(VecMat<T>& A,vector<T> value)
+{
+  for(int s=0; s<value.size(); s++){value[s]=-value[s];}
+  AddToDiagonal(A,value);
+}
+
+
+
+
+
 
 
 #endif // vecmat_h

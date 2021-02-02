@@ -122,7 +122,7 @@ Rule::Rule(realtype* in_par,BravaisLattice& in_la,Couplings& realspacecouplings)
   {
   InitializeObservables();
   if(TRACE) cout << "Initializing Rule " << endl; 
-  InitializeJq();
+
 #ifdef PHONONS
 
   //  Initializeg();
@@ -132,11 +132,26 @@ Rule::Rule(realtype* in_par,BravaisLattice& in_la,Couplings& realspacecouplings)
     {
       VecMat<complex<realtype>>* gel_ptr=new VecMat<complex<realtype>>(Vq,NMAT,NMAT);
       InitializeElasticMode(i,*gel_ptr);
-      gelptrs.push_back(gel_ptr);
+      gelptrs[i]=gel_ptr;
       
       elasticeigenvalues.push_back(phonons.GetElasticeigenvalue(i));
     }
 #endif
+
+  if(TRACE)
+    {
+      cout << "Jr:" << Jr << endl;
+    }
+
+
+  InitializeJq();
+
+
+
+  if(TRACE)
+    {
+      cout << "After initializing Jq:" << Jq << endl;
+    }
         
 }
  
@@ -144,19 +159,15 @@ Rule::Rule(realtype* in_par,BravaisLattice& in_la,Couplings& realspacecouplings)
 
 void Rule::InitializeJq()
 {
-  
-  for(int ci=0; ci<NC; ci++)
-    {      
+  for(int ci=0; ci<NC; ci++)   
       for(int qj=0; qj<Vq; qj++)
-	{
-	  for(int i1=0; i1<NMAT; i1++)
-	    for(int i2=0; i2<NMAT; i2++)
-	      {
-		Jq(qj,i1,i2) += 0.5*Jr(ci,i1,i2)*expi(la.qr(qj,clist[ci]));
-	      }
-	}
-    }
+	for(int i1=0; i1<NMAT; i1++)
+	  for(int i2=0; i2<NMAT; i2++)
+	    {
+	      Jq(qj,i1,i2) += 0.5*Jr(ci,i1,i2)*expi(la.qr(qj,clist[ci]));
+	    }
 }
+
 
 
 

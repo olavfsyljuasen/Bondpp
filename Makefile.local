@@ -18,7 +18,8 @@ STDOPTS= -std=c++11 -O3
 # use fftw3l with this:
 #CCOPTS=  $(STDOPTS) -DNDEBUG -DLONGDOUBLE 
 
-CCOPTS=  $(STDOPTS) -DNDEBUG 
+#CCOPTS=  $(STDOPTS) -DNDEBUG 
+CCOPTS=  $(STDOPTS) -g
 
 
 

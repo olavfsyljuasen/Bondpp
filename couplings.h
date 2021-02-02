@@ -25,18 +25,24 @@ Couplings::Couplings(double* in_par,const int in_nc,const int in_nmat):par(in_pa
 ,g(in_nc,in_nmat,in_nmat)
 #endif
 {
-  logfile << "Initializing J" << endl;
+  if(TRACE){cout << "Initializing J" << endl;}
   InitializeJ();
-  logfile << "Done initializing J" << endl;
-  for(int i=0; i<nc; i++)
-    logfile << "i=" << i << " " << J[i] << endl;
+  if(TRACE)
+    {
+      cout << "Done initializing J" << endl;
+      for(int i=0; i<nc; i++)
+	cout << "i=" << i << "\n" << J[i] << endl;
+    }
 
 #ifdef PHONONS
-  logfile << "Initializing g" << endl;
+  if(TRACE){cout << "Initializing g" << endl;}
   Initializeg();
-  logfile << "Done initializing g" << endl;
-  for(int i=0; i<nc; i++)
-    logfile << "i=" << i << " " << g[i] << endl;
+  if(TRACE)
+    {
+      cout << "Done initializing g" << endl;
+      for(int i=0; i<nc; i++)
+	cout << "i=" << i << "\n" << g[i] << endl;
+    }
 #endif
 }
 

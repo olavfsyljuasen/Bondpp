@@ -36,7 +36,7 @@ const int NMODE=NSUBL*NDISP; // the number of normal modes
 const int NELASTIC=3; // the number of elastic constants.
 
 
-typedef O3vector<complex<realtype> > cmplxcoord;
+typedef std::array<complex<realtype>,3> cmplxcoord;
 
 typedef std::array<realtype,6> voigtstring;
 
@@ -55,10 +55,11 @@ class Phonons
 
   VecMat<complex<realtype>>& Getf(){return flist;}
 
+ private:  
   double* par;
   BravaisLattice& la;
 
- private:  
+
   const int Vq;
   
   VecMat<realtype> omega;
@@ -77,8 +78,7 @@ class Phonons
 
 Phonons::Phonons(double* inpar,BravaisLattice& in_la): par(inpar),la(in_la),Vq(la.SiteqVol()),omega(Vq,NMODE),normalmode(NSUBL),flist(Vq,NC,NMODE)
 {
-  cout << "Starting Phonons" << endl;
-
+  if(TRACE) cout << "Initializing Phonons" << endl;
   // We start with the elastic constants
   // specifying the spings
   int Nsprings=4;
@@ -96,6 +96,7 @@ Phonons::Phonons(double* inpar,BravaisLattice& in_la): par(inpar),la(in_la),Vq(l
   
   
   Matrix<eigen_real_type,Dynamic,Dynamic> El(6,6); // the elastic matrix      
+  El.setZero(6,6);
   
   for(int s=0; s<Nsprings; s++)
     {
@@ -150,13 +151,16 @@ Phonons::Phonons(double* inpar,BravaisLattice& in_la): par(inpar),la(in_la),Vq(l
       El(5,5) += c * spx*spy * spx*spy / n2;
     }
 
-  cout << "The elastic matrix" << endl;
-  cout << El << endl;
-  
+  if(TRACE)
+    {
+      cout << "The elastic matrix" << endl;
+      cout << El << endl;
+    }
+
   // diagonalize it, and store the results
   SelfAdjointEigenSolver<Matrix<eigen_real_type,Dynamic,Dynamic> > elsolve(El);
   
-  cout << "Elastic modes:" << endl;
+  if(TRACE) cout << "Elastic modes:" << endl;
 
   ofstream ofile("elasticmodes.dat");  
   for(int n=0; n<6; n++)
@@ -169,12 +173,15 @@ Phonons::Phonons(double* inpar,BravaisLattice& in_la): par(inpar),la(in_la),Vq(l
       realtype eigenvalue=eval;
 #endif
 
-      cout << "eigenvalue[" << n << "]=" << eigenvalue << endl;
+      if(TRACE) cout << "eigenvalue[" << n << "]=" << eigenvalue << endl;
 
       VectorXd evec=elsolve.eigenvectors().col(n);
 
-      cout << "eigenvector:" << endl;
-      cout << evec << endl;
+      if(TRACE)
+	{
+	  cout << "eigenvector:" << endl;
+	  cout << evec << endl;
+	}
 
       if(eigenvalue >0.)
 	{
@@ -192,7 +199,7 @@ Phonons::Phonons(double* inpar,BravaisLattice& in_la): par(inpar),la(in_la),Vq(l
     
   for(int i=0; i<NSUBL; i++)
     { 
-      normalmode[i]=new VecMat<cmplxcoord>(Vq,NMODE);
+      normalmode[i]=new VecMat<cmplxcoord>(Vq,NMODE,1);
     }
   
   
@@ -200,16 +207,15 @@ Phonons::Phonons(double* inpar,BravaisLattice& in_la): par(inpar),la(in_la),Vq(l
     {
       Coord q=la.qPos(j);
       
-      cout << "q=" << q << endl;
       
       // set up the dynamical matrix
       Matrix<eigen_complex_type,Dynamic,Dynamic> D(NMODE,NMODE);      
+      D.setZero(NMODE,NMODE);
 
       // square lattice with horizontal and vertical bonds (alpha1), and diagonal bonds (alpha2). x and y displacements
       // Nsublattice=1, Ndimutslag=2.     
       double alpha1=par[ALPHA1];
       double alpha2=par[ALPHA2];
-      cout << "alpha1=" << alpha1 << " alpha2=" << alpha2 << endl;
 
       D(0,0)=2*alpha1*(1-cos(q.x))+2*alpha2*(1-cos(q.x)*cos(q.y));
       D(0,1)=2*alpha2*sin(q.x)*sin(q.y);
@@ -219,23 +225,28 @@ Phonons::Phonons(double* inpar,BravaisLattice& in_la): par(inpar),la(in_la),Vq(l
 
       // diagonalize it, and store the results
       SelfAdjointEigenSolver<Matrix<eigen_complex_type,Dynamic,Dynamic> > es(D);
-      
+
       
       for(int n=0; n<NMODE; n++)
 	{
 	  eigen_real_type val= es.eigenvalues()[n]; //eigen sorts eigenvalues,least first 
 
-#ifdef EIGENBOOST                                                                         
+	 
+	  /*
+#ifdef EIGENBOOST                                 
 	  omega(j,n)=val.convert_to<realtype>();
 #else
 	  omega(j,n)=val;
 #endif
-	  cout << "eigenvalue[" << n << "]=" << omega(j,n) << endl;
+	  */
+
+	  omega(j,n)=val;
+	  if(TRACE) cout << "eigenvalue[" << n << "]=" << omega(j,n) << endl;
 	}
       
       for(int n=0; n<NMODE; n++)
 	{
-	  cout << es.eigenvectors().col(n) << endl;
+	  if(TRACE) cout << es.eigenvectors().col(n) << endl;
 	 
 	  for(int i=0; i<NSUBL; i++)
 	    {
@@ -281,14 +292,12 @@ Phonons::Phonons(double* inpar,BravaisLattice& in_la): par(inpar),la(in_la),Vq(l
 		}
 #endif
 
-
-	      cmplxcoord thisutslag(u_x,u_y,u_z);
-	      (*normalmode[i])(j,n)=thisutslag;
-	    }
-	 
+	      cmplxcoord thisutslag={u_x,u_y,u_z};
+	      (*normalmode[i])(j,n,0)=thisutslag;
+	    } 
 	}
     }
-
+  if(TRACE) cout << "before f" << endl;
 
   Initializef();
 
@@ -317,7 +326,7 @@ Phonons::Phonons(double* inpar,BravaisLattice& in_la): par(inpar),la(in_la),Vq(l
 	  for(int i=0; i<NSUBL; i++)
 	    {
 	      cmplxcoord thismode=GetNormalMode(j,n,i);
-	      outfile2 << thismode << "  ";
+	      for(int k=0; k<3; k++) outfile2 << thismode[k] << "  ";
 	    }
 	}
       outfile2 << endl;  
@@ -326,7 +335,7 @@ Phonons::Phonons(double* inpar,BravaisLattice& in_la): par(inpar),la(in_la),Vq(l
 
 
 
-
+  if(TRACE) cout << "Done Initializing Phonons" << endl;
 
 
 }
@@ -335,6 +344,7 @@ Phonons::Phonons(double* inpar,BravaisLattice& in_la): par(inpar),la(in_la),Vq(l
 
 void Phonons::Initializef()
 {
+  if(TRACE) cout << "Initializing f" << endl;
   if(NSUBL != 1){ cout << "ftensor is not implemented for NSUBL != 1, exiting." << endl; exit(1);}
 
   for(int qi=0; qi<Vq; qi++)
@@ -350,20 +360,22 @@ void Phonons::Initializef()
 	  for(int ci=0; ci<NC; ci++)
 	    {      
 	      Coord c=la.rPos(clist[ci]);
-	      cmplxcoord crr(c);	      
+	      cmplxcoord crr={c.x,c.y,c.z};	      
 
 	      realtype qc=scalarproduct(q,c);
 
 
-	      complex<realtype> tempf = scalarproduct(crr,w);
+	      complex<realtype> tempf = 0;
 
+	      for(int k=0; k<3; k++){tempf += crr[k]*w[k];}
 	      tempf *= complex<realtype>(0,-0.5)*(expi(qc)-1.);
 	      tempf *= invsqrtmasses[0]*(1./omega);
 
-	      flist[qi](ci,n)= tempf;
+	      flist(qi,ci,n)=(qi==0 ? 0: tempf);
 	    }
 	}
     }
+  if(TRACE) cout << "Done Initializing f" << endl;
 }
 
 

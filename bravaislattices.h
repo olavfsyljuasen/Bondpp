@@ -91,6 +91,11 @@ class BravaisLattice
   const int N1;
   const int N2;
   const int N3;
+
+  const double invN1;
+  const double invN2;
+  const double invN3;
+
   
  private:
   const int d;
@@ -146,7 +151,9 @@ class BravaisLattice
   Triplet GetTriplet(const int k);
   int GetIndx(const Triplet v);
 
+
  public:
+
   int nindx_r;
   int nindx_q;
 
@@ -154,7 +161,7 @@ class BravaisLattice
   realtype qr(const int&    , const int&     );
   realtype qr(const int&    , const Triplet& );
   realtype qr(const Triplet&, const int&     );
-
+  int GetInversionIndx(const int s);
 
 #ifdef REDUCEDOUTPUT
   vector<int> indx_site_r;
@@ -175,7 +182,9 @@ BravaisLattice::BravaisLattice(realtype* par):
 N1(static_cast<int>(par[NX])),
   N2(static_cast<int>(par[NY])),
   N3(static_cast<int>(par[NZ])),
-  
+  invN1(1./N1),
+  invN2(1./N2),
+  invN3(1./N3),
   d( (N1>1)+(N2>1)+(N3>1) ),
   
 #if defined QSPACEDIRECTLATTICE
@@ -337,15 +346,15 @@ N1(static_cast<int>(par[NX])),
   if(d==1)
     { 
       for(int q1=0; q1< N1q; q1++) 
-	site_q[i++]=b1*static_cast<realtype>(q1*1./N1);
+	site_q[i++]=b1*static_cast<realtype>(q1*invN1);
     }
   if(d==2)
     {
       for(int q2=0; q2< N2q; q2++)
 	for(int q1=0; q1< N1q; q1++) 
 	  site_q[i++]=
-	    b1*static_cast<realtype>(q1*1./N1)+
-	    b2*static_cast<realtype>(q2*1./N2);
+	    b1*static_cast<realtype>(q1*invN1)+
+	    b2*static_cast<realtype>(q2*invN2);
     }
   if(d==3)
     {
@@ -353,9 +362,9 @@ N1(static_cast<int>(par[NX])),
 	for(int q2=0; q2< N2q; q2++)
 	  for(int q1=0; q1< N1q; q1++) 
 	    site_q[i++]=
-	    b1*static_cast<realtype>(q1*1./N1)+
-	    b2*static_cast<realtype>(q2*1./N2)+
-	    b3*static_cast<realtype>(q3*1./N3);
+	    b1*static_cast<realtype>(q1*invN1)+
+	    b2*static_cast<realtype>(q2*invN2)+
+	    b3*static_cast<realtype>(q3*invN3);
     }
   
 
@@ -509,12 +518,26 @@ N1(static_cast<int>(par[NX])),
 #endif // HEXAGONALBRAVAISLATTICE  
 
 #endif //PRESERVESYMMETRY
+
+
+  for(int i=0; i<vq; i++)
+    {
+      Coord ic=qPos(i);
+      int ni=GetInversionIndx(i);
+      Coord nic=qPos(ni);
+      cout << "site: " << i 
+	   << " pos=" << ic
+	   << " inversion indx: " << ni 
+	 << " pos=" << nic << endl;
+    }
   
 }
 
 inline realtype BravaisLattice::qr(const Triplet& qivec,const Triplet& rivec)
 {
-  return TWOPI*scalarproduct(qivec,rivec);
+  return TWOPI*(   qivec[0]*rivec[0]*invN1 
+		 + qivec[1]*rivec[1]*invN2
+		 + qivec[2]*rivec[2]*invN3);
 }
 
 inline realtype BravaisLattice::qr(const int& qi,const int& ri)
@@ -532,6 +555,19 @@ inline realtype BravaisLattice::qr(const Triplet& qtri,const int& ri)
   return qr(qtri,GetTriplet(ri));
 }
 
+
+// this needs to be tested. Perhaps a bit dangerous...
+inline int BravaisLattice::GetInversionIndx(const int s)
+{
+  Triplet my(3);
+  my = GetTriplet(s);
+
+  my[0]= -my[0];
+  my[1]= -my[1];
+  my[2]= -my[2];
+
+  return GetIndx(UsePBC(my));
+}
 
 
 inline Triplet BravaisLattice::UsePBC(const Triplet v)
@@ -560,9 +596,10 @@ inline int BravaisLattice::GetIndx(const Triplet v)
 
 
 
+
 inline Triplet BravaisLattice::GetTriplet(const int s)
 {
-  Triplet myval(d);
+  Triplet myval(3);
 
   if(d==1){ myval[0]=s;}
 

@@ -10,8 +10,11 @@ using namespace std;
 
 #ifdef SQUAREPHONONS
 
+
 const int NSPIN= 3;
 const int NSUBL= 1;
+const int NFAKETRACE=1; // a compensating factor for treating Heisenberg models with a single spin comp.
+
 
 const int NC=12;
 

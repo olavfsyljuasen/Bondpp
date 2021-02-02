@@ -129,7 +129,7 @@ class Driver
   int dim;              // the number of dimensions
   vector<int> dims;     // the size of each dimension
   
-  int Vq; // number of q-space sites.
+  const int Vq; // number of q-space sites.
   const realtype invVq;
   
   vector<realtype> Delta; 
@@ -301,7 +301,9 @@ realtype Driver::CalculateMus()
 	{
 	  for(int qi=0; qi<Vq; qi++)
 	    {
-	      SMatrix<complex<realtype>> tmp=Kinvq[qi]*(*rule.gelptrs[mui])[qi];
+	      SMatrix<complex<realtype>> tmp(NMAT,NMAT);
+	      tmp=Kinvq[qi];
+	      tmp *= (*rule.gelptrs[mui])[qi];
 	      sum += real(tr(tmp));
 	    }
 	  sum *= currT/(2.*Vq*lambda);
@@ -459,8 +461,8 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
  
   if(TRACE) 
     {
-      cout << "Hallo3, Kinvq=0" << endl;
-      cout << Kinvq[0] << endl;
+      cout << "Hallo2, Kinvq=0" << endl;
+      cout << Kinvq << endl;
    }
   
 
@@ -472,19 +474,21 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 
   if(TRACE) 
     {
-      cout << "Hallo2, Kinv(r=0)=" << endl;
-      cout << Kinvr[0] << endl;
+      cout << "Hallo3, Kinv(r=0)=" << endl;
+      cout << Kinvr << endl;
     }
   
 #ifdef FORCEINVERSIONSYMMETRY
   MakeReal(Kinvr);  // is this needed here?
+  MakeInversionTransposedSymmetric(la,Kinvr); 
 #endif
   
   
   
   if(TRACE)
     { 
-      cout << "Kinv_r /Vq " << Kinvr[0] << endl;
+      cout << "after enforcing symmetry properties" << endl;
+      cout << "Kinv_r /Vq " << Kinvr << endl;
     }
   
   
@@ -496,7 +500,7 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
   
   
   // first compute the constraint block
-  
+
   complex<realtype> tmp(0);
   
   for(int l1=0; l1<NSUBL; l1++)
@@ -511,129 +515,170 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 		  int m1=mindx(s1,l2); // lprime = l2
 		  int m2=mindx(s2,l1); // l=l1
 		  
-		  tmp=Kinvr[i](m1,m2);
+		  tmp=Kinvr(i,m1,m2);
 		  tt += tmp*tmp;   
 		}
 	    F1r[i]=0.5*tt;
 	    F1r[i].imag(0.); // make sure the imaginary part is zero
 	  }
 
-	FFTWEXECUTE(F1r_to_F1q); // F1r->F1rq 
+	FFTWEXECUTE(F1r_to_F1q); // F1r->F1q 
+
 	for(int i=0; i<Vq; i++)
 	  {
-	    Dinvq[i](l1,l2)=F1q[i];
-	    Dinvq[i](l2,l1)=F1q[i]; 
+	    Dinvq(i,l1,l2)=F1q[i];
+	    Dinvq(i,l2,l1)=F1q[i]; 
 	  }
       }
   
   
+  if(TRACE) cout << "after constraint part Dinvq=" << endl;
+  if(TRACE) cout << Dinvq << endl;
+
 #ifdef PHONONS
   // the offdiagonal phonon-constraint part
   for(int l1=0; l1<NSUBL; l1++) // l1 must be 0 here because phonons NSUBL=1
     for(int l2=NSUBL; l2<NDMAT; l2++)
       {
 	int n2=l2-NSUBL; 
-	
-	Dinvq.SetToZero();
 
 	for(int c4=0; c4<NC; c4++)
 	  {
 	    for(int i=0; i<Vq; i++)
 	      {
-		SMatrix<complex<realtype>> my(g[c4]);
-
+		SMatrix<complex<realtype>> my(NMAT,NMAT);
+		my  = g[c4];
 		my *= Kinvr[i];
+		
+		//		cout << "ph-co: i=" << i << " my=" << my << endl;
+		
 		F1r[i]=0;
 		for(int s1=0; s1<NSPIN; s1++)
 		  for(int s2=0; s2<NSPIN; s2++)
 		    F1r[i] += 0.5*my(s1,s2)*my(s1,s2);  
 	      }
-
+	    
 	    // do fourier-transform of theta
-	    FFTWEXECUTE(F1r_to_F1q); // can perhaps make this and the following lines into a single plan. Thr_to_Thq[indx(l1,l2)]
+	    FFTWEXECUTE(F1r_to_F1q); 
 	    
 	    for(int qi=0; qi<Vq; qi++)
 	      {
-		Dinvq[qi](l1,l2)+= F1q[qi]*f(qi,c4,n2)*conj(expi(la.qr(qi,c4)));
-		Dinvq[qi](l2,l1) =-Dinvq[qi](l1,l2);
-	      }		    
-	  }
+		if(qi==0)
+		  {
+		    // avoid using the zero mode of the phonons *\\/ *\/ */
+		    Dinvq(0,l1,l2)=0.; 
+		    Dinvq(0,l2,l1)=0.; 
+		    continue; 
+		  } 
+		if(c4==0)
+		  {	  
+		    Dinvq(qi,l1,l2) = F1q[qi]*f(qi,c4,n2)*conj(expi(la.qr(qi,c4)));
+		  } 
+		else 
+		  { 
+		    Dinvq(qi,l1,l2)+= F1q[qi]*f(qi,c4,n2)*conj(expi(la.qr(qi,c4)));
+		  }
+		
+		Dinvq(qi,l2,l1) =-Dinvq(qi,l1,l2);
+	      }		   
+ 	  }
       }
   
   // finally the phonon-phonon part
-  for(int l1=NSUBL; l1<NDMAT; l1++)
-    for(int l2=l1; l2<NDMAT; l2++)
+  for(int l1=NSUBL; l1<NDMAT; l1++) 
+    for(int l2=l1; l2<NDMAT; l2++) 
       {
 	
 	int n1=l1-NSUBL; 
 	int n2=l2-NSUBL; 
 	
 	// should only choose positive c2 and c4 to sum over
-	for(int c2=0; c2<NC; c2++)
+ 	for(int c2=0; c2<NC; c2++)
 	  for(int c4=0; c4<NC; c4++)
-	    {	      
+	    {	    
 	      Triplet myivec=clist[c2]+clist[c4];
-
-	      for(int i=0; i<Vq; i++)
-		{
-		  SMatrix<complex<realtype>> my(g[c4]);
-		  my *= Kinvr[i];
+	      
+ 	      for(int i=0; i<Vq; i++)
+ 		{
+ 		  SMatrix<complex<realtype>> my(NMAT,NMAT);
+		  
+ 		  my  = g[c4];
+ 		  my *= Kinvr[i];
 		  my *= g[c2];
-
+		  
 		  int newindx=la.rAdd(i,myivec);
 		  
 		  F1r[i]=0;
-		  for(int sd=0; sd < NSPIN; sd++)
-		    for(int sg=0; sg < NSPIN; sg++)
-		      {
-			F1r[i] += 0.5*my(sd,sg)*Kinvr(newindx,sd,sg);
-		      }
-		}
-	      FFTWEXECUTE(F1r_to_F1q); // F1r->F1q;
+ 		  for(int sd=0; sd < NSPIN; sd++) 
+ 		    for(int sg=0; sg < NSPIN; sg++)
+ 		      { 
+ 			F1r[i] += 0.5*my(sd,sg)*Kinvr(newindx,sd,sg);
+ 		      } 
+ 		} 
+ 	      FFTWEXECUTE(F1r_to_F1q); // F1r->F1q;
 	      
-	      for(int qi=0; qi<Vq; qi++)
-		{
-		  Dinvq(qi,l1,l2)=-F1q[qi]*conj(f(qi,c2,n1))*f(qi,c4,n2)*conj(expi(la.qr(qi,c4)));
-		  Dinvq(qi,l2,l1)=Dinvq(qi,l1,l2);		  
+ 	      for(int qi=0; qi<Vq; qi++)
+ 		{
+ 		  if(qi==0) 
+ 		    {
+ 		      // avoid using the zero mode of the phonons
+ 		      Dinvq(0,l1,l2)=0.; 
+ 		      Dinvq(0,l2,l1)=0.; 
+		      continue; 
+		    }
+		  
+		  if(c2==0 && c4==0)
+		    {
+		      Dinvq(qi,l1,l2)=-F1q[qi]*conj(f(qi,c2,n1))*f(qi,c4,n2)*conj(expi(la.qr(qi,c4)));
+		    }
+		  else
+		    {
+		      Dinvq(qi,l1,l2)+=-F1q[qi]*conj(f(qi,c2,n1))*f(qi,c4,n2)*conj(expi(la.qr(qi,c4)));
+		    }
+		  Dinvq(qi,l2,l1)=Dinvq(qi,l1,l2);
 		}
 	    }
       }
   // add the bare phonon part
+
   realtype barepart=0.5/currT; 
   for(int qi=0; qi<Vq; qi++)
     {
       for(int n=0; n<NMODE; n++)
 	{
 	  int l=n+NSUBL;
-	  Dinvq(qi,l,l)+= barepart;
+	  Dinvq(qi,l,l) += barepart;
 	}
     }
 #endif
+  
+  if(TRACE) cout << "Dinvq=" << endl;
+  if(TRACE) cout << Dinvq << endl;
 
   
-  if(TRACE) cout << "Dinvr: r=1" << endl;
-  if(TRACE) cout << Br[1] << endl;
-
-  if(TRACE) cout << "Dinvr SumLogDet: " << SumLogDet(Br) << endl;
-
   MakeHermitian(Dinvq);
 
-  //  FFTWEXECUTE(Br_to_Bq); // Nsover2*Kinvr*Kinvr-> Dinvq, stored in B, after transform: B=Dinvq/Vq
+
+
 
   if(TRACE) cout << "Dinvq max imag value= " << FindMaxImag(Dinvq) << endl;
 
   Dinvq *= Vq;
   //  for(int i=0; i<Dinvq.size(); i++) Dinvq[i] *= Vq; // B = Dinv_q
 
+  /*
 #ifdef SOFTCONSTRAINT
   complex<realtype> softconstraintmodifier=complex<realtype>(0.5*Vq/g,0.);
   if(TRACE) cout << "Softconstraint: adding " <<  softconstraintmodifier << endl;
   AddToDiagonal(Dinvq,softconstraintmodifier);
 #endif
-
+  */
   //
   //  if(TRACE) cout << "SumLogDet(Dinvq)=" << SumLogDet(Dinvq) << endl; 
   //
+
+  if(TRACE) cout << "Dinvq=" << endl;
+  if(TRACE) cout << Dinvq << endl;
 
   MatrixInverse(Dinvq); // B = Dq
 
@@ -652,8 +697,8 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
   if(TRACE) cout << "Dq max imag value= " << FindMaxImag(Dq) << endl;
 
   //
-  if(TRACE) cout << "Dq (q=1)" << endl;
-  if(TRACE) cout << Dq[1] << endl;
+  if(TRACE) cout << "Dq" << endl;
+  if(TRACE) cout << Dq << endl;
   //
 
   if(preserveinput)
@@ -718,6 +763,7 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 
   Sigmaq.SetToZero();
 
+
   for(int m1=0; m1<NMAT; m1++)
     for(int m2=m1; m2<NMAT; m2++)
       {
@@ -734,7 +780,6 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 	FFTWEXECUTE(F2r_to_F2q);
 
 	for(int k=0; k<Vq; k++){Sigmaq(k,m1,m2)=F2q[k];}
-
 
 #ifdef PHONONS
 	if(NSUBL != 1){cout << "Error: PHONONS are not implemented for NSUBL!=1, exiting" << endl; exit(1);}
@@ -762,7 +807,7 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 	for(int c1=0; c1<NC; c1++)
 	  for(int c2=0; c2<NC; c2++)
 	  {
-	    	for(int q=0; q<Vq; q++)
+	    for(int q=0; q<Vq; q++)
 		  {
 		    F1q[q]=0;
 		    
@@ -796,7 +841,6 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
     { 
       cout << "Sigmaq etter hermitian" << Sigmaq << endl;
       cout << "Sigmaq(q=0) etter hermitian" << endl;
-      cout << Sigmaq[0] << endl;
     }
 
 
@@ -822,13 +866,18 @@ void Driver::ConstructKinvq()
 {
   if(TRACE) cout << "Starting ConstructKinvq" << endl;
   
-  if(TRACE) cout << "SumLogDet(Sigmaq)=" << SumLogDet(Sigmaq) << endl;
+  //  if(TRACE) cout << "SumLogDet(Sigmaq)=" << SumLogDet(Sigmaq) << endl;
 
   Kq =  Jq;
+
+  if(TRACE) cout << "Initializing Kq=Jq = " << Kq << endl;
+
   Kq += Sigmaq;
 
+  if(TRACE) cout << "Added Sigmaq, Kq = " << Kq << endl;
+
 #ifdef PHONONS
-  for(int j=0; j<rule.Nelastic; j++)
+  for(int j=0; j<NELASTIC; j++)
     {
       VecMat<complex<realtype>> temp(*rule.gelptrs[j]);
       temp *= mu[j];
@@ -911,40 +960,44 @@ void Driver::MakeRandomSigma()
 
 void Driver::MakeRandomSigma()
 {
+  if(TRACE) cout << "Starting MakeRandomSigma()" << endl;
   logfile << "Making a random initialization of the self-energy" << endl;
 
   realtype da = par[DA];
 
-  for(int s1=0; s1<NMAT; s1++)
+  for(int m=0; m<NMAT; m++)
     {
       for(int i=0; i<Vq; i++)
 	{
 	  complex<realtype> c=da*complex<realtype>(RAN(),0.); // real positive value 
-	  Sigmaq(i,s1,s1)=c;
+	  Sigmaq(i,m,m)=c;
 	}
     }
 
   if(NMAT>1)
     {
-      for(int s1=0; s1<NMAT; s1++)
-	for(int s2=s1+1; s2<NMAT; s2++)
+      for(int m1=0; m1<NMAT; m1++)
+	for(int m2=m1+1; m2<NMAT; m2++)
 	  {
 	    for(int i=0; i<Vq; i++)
 	      {
 		complex<realtype> c=da*complex<realtype>(RAN(),RAN());
-		Sigmaq(i,s1,s2)=c;
+		Sigmaq(i,m1,m2)=c;
 	      }
 	  }
     }
 
+
   MakeHermitian(Sigmaq);
 
 #ifdef FORCEINVERSIONSYMMETRY
+  MakeInversionTransposedSymmetric(la,Sigmaq);
+  /*
   FFTWEXECUTE(A2q_to_A2r);
   MakeReal(Sigmar);
   FFTWEXECUTE(A2r_to_A2q);
-
-  for(int i=0; i<Vq; i++){Sigmaq[i]*=invVq;}  // do not change magnitude
+  Sigmaq*=invVq;  // do not change magnitude
+  */
 #endif
 
 #ifdef PRESERVESYMMETRY
@@ -952,6 +1005,8 @@ void Driver::MakeRandomSigma()
 #endif
 
   MakeHermitian(Sigmaq);
+
+  if(TRACE) cout << "Finished MakeRandomSigma()" << endl;
 }
 
 
@@ -989,6 +1044,7 @@ void Driver::SolveSelfConsistentEquation(vector<realtype> Delta)
 
 #ifdef RANDOMINITIALIZATION
   MakeRandomSigma();
+  if(TRACE) cout << "Sigmaq: " << Sigmaq << endl;
 #else
   rule.InitializeSigma(Sigmaq); // Get initial values of Sigmaq
 #endif
@@ -1006,35 +1062,29 @@ void Driver::SolveSelfConsistentEquation(vector<realtype> Delta)
   if(TRACE) cout << "Sigma: " << Sigmaq << endl;
 
        
-  if(TRACE) cout << Jq[1] << endl;
+  if(TRACE)
+    {
+      cout << "Jq:" << Jq << endl;
+      for(int i=0; i<Jq.Nvecs; i++)
+	{
+	  SMatrix<complex<realtype> > tmp(NMAT,NMAT,Jq[i]);
+	  
+	  cout << "Jq(q=" << i << ")=" << endl;
+	  cout << tmp << endl;
+	}
+    }
+
+
+  Chomp(Jq); // set very small entries to 0
   
-  if(TRACE) cout << "Jq:" << Jq << endl;
-
-  Chomp(Jq); // set small entries to 0
-
-  if(TRACE) cout << "After chomp Jq(q=1)=" << endl;
-  if(TRACE) cout << Jq[1] << endl;
-
-  
-  if(TRACE) cout << "Jq:" << Jq << endl;
-
   if(TRACE) cout << "Min eigenvalue: " << FindMinimumEigenvalue(Jq) << endl;
 
   SubtractMinimumEigenvalue(Jq);
 
-
-  if(TRACE) cout << "Jq after subrtracting min eigenvalue:" << Jq << endl;
-  if(TRACE) cout << "Jq(q=0)=" << endl;
-  if(TRACE) cout << Jq[0] << endl;
-  if(TRACE) cout << "Jq(q=1)=" << endl;
-  if(TRACE) cout << Jq[1] << endl;
-
-
-
-  /*
-  if(TRACE) cout << "Delta: " << Delta[0] << endl;
-  if(TRACE) cout << "K: " << Kq << endl;
-  */
+  Chomp(Jq); // set very small entries to 0
+ 
+  if(TRACE) cout << "Jq after chomp: " << Jq << endl;
+	      
 
 
   /*
@@ -1068,6 +1118,8 @@ void Driver::SolveSelfConsistentEquation(vector<realtype> Delta)
   ConstructKinvq();
 
   realtype oldT=CalculateT(0); 
+
+  currT=oldT; // set the current operating temperature
 
   vector<realtype> Ts(NSUBL); // A list of Ts
   
@@ -1545,14 +1597,14 @@ Simulation::Simulation(realtype* pars,int i): param(pars),ic(i),lattice(pars),co
 	  realtype newval;
 	  if(!(iss >> newval)){ break;}
 	  
-	  NumberList newDelta(newval); // initialize with one value for all
+	  NumberList newDelta(NSUBL,newval); // initialize with one value for all
 	  
 	  for(int i=1; i<NSUBL; i++)
 	    {
 	      if(!(iss >> newval)){ break;}
 	      newDelta.v[i]=newval;
 	    }
-	  Deltalist.push_back(newval);
+	  Deltalist.push_back(newDelta);
 	  Printinfolist.push_back(false);
 	}    
     }
@@ -1568,7 +1620,7 @@ Simulation::Simulation(realtype* pars,int i): param(pars),ic(i),lattice(pars),co
       logfile << "No file " << DELTASTOSHOWFILENAME << " found." 
 	      << " Using Delta=" << param[DELTA] << endl;
       
-      NumberList myval(param[DELTA]);
+      NumberList myval(NSUBL,param[DELTA]);
       Deltastoshowlist.push_back(myval); 
     }
   else
@@ -1583,7 +1635,7 @@ Simulation::Simulation(realtype* pars,int i): param(pars),ic(i),lattice(pars),co
 	  realtype newval;
 	  if(!(iss >> newval)){ break;}
 	  
-	  NumberList newDelta(newval); // initialize with one value for all
+	  NumberList newDelta(NSUBL,newval); // initialize with one value for all
 	  
 	  for(int i=1; i<NSUBL; i++)
 	    {

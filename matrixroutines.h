@@ -71,7 +71,7 @@ realtype SumLogDet(VecMat<complex<realtype>>& A)
   realtype sum=0.;
   const int Nrows= A.Nrows;
   const int Ncols= A.Ncols;
-  const int n    = A.Nvec; // the number of q values
+  const int n    = A.Nvecs; // the number of q values
   const int N    = A.size(); // the total array size
 
   
@@ -131,7 +131,7 @@ vector<realtype> SubtractMinimum(VecMat<complex<realtype>>& K)
 {
   if(TRACE) cout << "Start SubtractMinimum" << endl;
 
-  const int nq=K.Nvec; // the number of q components.
+  const int nq=K.Nvecs; // the number of q components.
   const int Nrows=K.Nrows;
 
   vector<realtype> min(Nrows);
@@ -159,7 +159,7 @@ vector<realtype> SubtractMinimum(VecMat<complex<realtype>>& K)
 vector<realtype> SubtractMinimum(VecMat<complex<realtype>>& K,vector<int>& element)
 {
   if(TRACE) cout << "Start SubtractMinimum" << endl;
-  const int nq=K.Nvec; // the number of q components.
+  const int nq=K.Nvecs; // the number of q components.
   const int Nrows=K.Nrows;
 
   vector<realtype> min(Nrows);
@@ -185,31 +185,16 @@ vector<realtype> SubtractMinimum(VecMat<complex<realtype>>& K,vector<int>& eleme
 
 
 // clean matrix, set entries less than epsilon to 0
-const realtype epsilon=1e-15;
 
-void Chomp(SMatrix<complex<realtype>>& M)
-{
-  for(int i=0; i<M.size(); i++)
-    {
-      if(abs(real(M[i]))<epsilon){ M[i].real(0.);} 
-      if(abs(imag(M[i]))<epsilon){ M[i].imag(0.);} 
-    }
-}
-
-
-void Chomp(VecMat<complex<realtype>>& K)
-{
-  for(int i=0; i<K.size(); i++){Chomp(K[i]);}
-}
 
 
 
 void AddDelta(VecMat<complex<realtype>>& K,const vector<realtype>& delta)
 {
-  for(int i=0; i<K.size(); i++)
+  for(int q=0; q<K.Nvecs; q++)
     {
       for(int m=0; m<K.Nrows; m++)
-	K[i](m,m) += delta[subl(m)];
+	K(q,m,m) += delta[subl(m)];
     }
 }
 
@@ -226,196 +211,12 @@ complex<realtype> SumoverQ(VecMat<complex<realtype>>& A,const int indx1,const in
 */
 
 
-void AddToDiagonal(VecMat<complex<realtype>>& A,vector<complex<realtype> > value)
-{
-  const int N=A.size(); // the total array size
-  const int n=A.Nvec; // the number of q values
-  const int Nrows=A.Nrows;
-
-  for(int s=0; s<Nrows; s++)
-    {
-      for(int i=0; i<n; i++){ A(i,s,s)+=value[s];}
-    }
-}
 
 
 
 
-void AddToDiagonal(VecMat<complex<realtype>>& A,complex<realtype> value)
-{
-  const int N=A.size(); // the total array size
-  const int n=A.Nvec; // the number of q values
-  const int Nrows=A.Nrows;
-  
-  for(int s=0; s<Nrows; s++)
-    {
-      for(int i=0; i<n; i++)
-	{
-	  A(i,s,s)+=value;
-	}
-    }
-}
 
 
-void SubtractFromDiagonal(VecMat<complex<realtype>>& A,complex<realtype> value)
-{
-  AddToDiagonal(A,-value);
-}
-
-void SubtractFromDiagonal(VecMat<complex<realtype>>& A,vector<complex<realtype> > value)
-{
-  for(int s=0; s<value.size(); s++){value[s]=-value[s];}
-  AddToDiagonal(A,value);
-}
-
-
-complex<realtype> FindMax(SMatrix<complex<realtype>>& M)
-{
-  complex<realtype> maxentry;
-  realtype maxval=0;
-  for(int i=0; i<M.size(); i++)
-    {
-      if( abs(M[i]) > maxval ){maxval = abs(M[i]); maxentry=M[i];}
-    }
-  return maxentry;
-}
-
-
-complex<realtype> FindMax(VecMat<complex<realtype>>& A)
-{
-  complex<realtype> maxentry;
-  realtype maxval=0;
-  for(int i=0; i<A.size(); i++)
-    {
-      complex<realtype> thisentry=FindMax(A[i]);
-      if(abs(thisentry)>maxval){maxval=abs(thisentry); maxentry=thisentry;}
-    }
-  return maxentry;
-}
-
-
-complex<realtype> FindMaxImag(SMatrix<complex<realtype>>& M)
-{
-  complex<realtype> maxentry;
-  realtype maxval=0.;
-  for(int i=0; i<M.size(); i++)
-    {
-      if( abs(M[i].imag()) > maxval ){maxval = abs(M[i].imag()); maxentry=M[i];}
-    }
-  return maxentry;
-}
-
-complex<realtype> FindMaxImag(VecMat<complex<realtype>>& A)
-{
-  complex<realtype> maxentry;
-  realtype maxval=0;
-  for(int i=0; i<A.size(); i++)
-    {
-      complex<realtype> thisentry=FindMaxImag(A[i]);
-      if(abs(thisentry.imag()) > maxval){maxval=abs(thisentry.imag()); maxentry=thisentry;}
-    }
-  return maxentry;
-}
-
-
-void MakeReal(SMatrix<complex<realtype>>& M)
-{
-  for(int i=0; i<M.size(); i++){M[i].imag(0.);}
-}
-
-void MakeReal(VecMat<complex<realtype>>& A)
-{
-  for(int i=0; i<A.size(); i++){MakeReal(A[i]);}
-}
-
-
-void ComplexConjugate(SMatrix<complex<realtype>>& M)
-{
-  for(int i=0; i<M.size(); i++)
-    {
-      M[i]=conj(M[i]);
-    }
-}
-
-void ComplexConjugate(VecMat<complex<realtype>>& A)
-{
-  for(int i=0; i<A.size(); i++){ ComplexConjugate(A[i]);}
-}
-
-
-void MakeRealSymmetric(SMatrix<complex<realtype>>& M)
-{
-  const int Nrows=M.Nrows;
-  const int Ncols=M.Ncols;
-  
-  for(int s=0; s<Nrows; s++)
-    {
-      M(s,s).imag(0.); // real diagonal
-    }
-  
-  for(int s1=0; s1<Nrows; s1++)
-    for(int s2=s1+1; s2<Ncols; s2++)
-      {
-	    M(s1,s2).imag(0.);
-	    M(s2,s1)=M(s1,s2);
-      }
-}
-
-void MakeRealSymmetric(VecMat<complex<realtype>>& A)
-{
-  for(int i=0; i<A.size(); i++){ MakeRealSymmetric(A[i]);}
-}
-
-void MakeHermitian(SMatrix<complex<realtype>>& M)
-{
-  const int Nrows=M.Nrows;
-  const int Ncols=M.Ncols;
-  
-  for(int s=0; s<Nrows; s++)
-    {
-      M(s,s).imag(0.);
-    }
-  
-  for(int s1=0; s1<Nrows; s1++)
-    for(int s2=s1+1; s2<Ncols; s2++)
-      {
-	M(s2,s1) = conj(M(s1,s2)); // off-diagonals are cc of each other.
-      }
-}
-
-void MakeHermitian(VecMat<complex<realtype>>& A)
-{
-  for(int i=0; i<A.size(); i++){ MakeHermitian(A[i]);}
-}
-
-
-bool IsHermitian(SMatrix<complex<realtype>>& M)
-{
-  if(TRACE) cout << "Checking if Hermitian: ";
-  //  bool retval=true;
-  const int Nrows=M.Nrows;
-  const int Ncols=M.Ncols;
-  
-  for(int s=0; s<Nrows; s++)
-      if(imag(M(s,s)) != 0.){return false;}
-  
-  for(int s1=0; s1<Nrows; s1++)
-    for(int s2=s1+1; s2<Ncols; s2++)
-      {
-	if( M(s2,s1) != conj(M(s1,s2))){ return false;}
-      }
-  return true;
-}
-
-
-bool IsHermitian(VecMat<complex<realtype>>& A)
-{
- for(int i=0; i<A.size(); i++)
-   { 
-     if(!IsHermitian(A[i])) return false;
-   }
- return true;
-}
 
 
 
@@ -423,9 +224,9 @@ realtype FindMinimumEigenvalue(VecMat<complex<realtype>>& A)
 {
   if(TRACE) cout << "Starting FindMinimumEigenvalue " << endl;
 
-  const int n=A.size();   // the number of q values
-  const int Nrows=A[0].Nrows;
-  const int Ncols=A[0].Ncols;  
+  const int n=A.Nvecs;   // the number of q values
+  const int Nrows=A.Nrows;
+  const int Ncols=A.Ncols;  
   
   realtype lambda_min; // the min eigenvalue of a sublattice-matrix
   realtype global_min=numeric_limits<realtype>::max();
@@ -444,12 +245,12 @@ realtype FindMinimumEigenvalue(VecMat<complex<realtype>>& A)
 	{
 	  for(int i=0; i<Nrows; i++)
 	    for(int j=0; j<Ncols; j++)
-	      M(i,j)=static_cast<eigen_complex_type>(A[k](i,j)); // row-major order
+	      M(i,j)=static_cast<eigen_complex_type>(A(k,i,j)); // row-major order
 	  
 	  SelfAdjointEigenSolver<Matrix<eigen_complex_type,Dynamic,Dynamic> > es(M,EigenvaluesOnly);
 	  
 	  eigen_real_type val= es.eigenvalues()[0]; //eigen sorts eigenvalues,least first 
-
+	  
 #ifdef EIGENBOOST	  
 	  lambda_min = val.convert_to<realtype>();
 #else
@@ -468,17 +269,14 @@ realtype SubtractMinimumEigenvalue(VecMat<complex<realtype>>& A)
 {
   if(TRACE) cout << "SubtractMinimumEigenvalue" << endl;
   if(TRACE) cout << "Starting SubtractMinimumEigenvalue: " << endl;
-  if(TRACE) cout << A[0] << endl;
   
   realtype emin=FindMinimumEigenvalue(A);
   if(TRACE) cout << "having found MinimumEigenvalue: " << emin << endl;
-  if(TRACE) cout << A[0] << endl;
-  SubtractFromDiagonal(A,emin);
 
-  if(TRACE) cout << "mininum eigenvalue: " << setprecision(17) << emin << endl;
+  SubtractFromDiagonal(A,complex<realtype>(emin,0.));
 
   if(TRACE) cout << "After subtracting from diagonal: " << endl;
-  if(TRACE) cout << A[0] << endl;
+  if(TRACE) cout << A << endl;
   
 
   return emin;
@@ -489,9 +287,12 @@ realtype SubtractMinimumEigenvalue(VecMat<complex<realtype>>& A)
 // A routine to perform the matrix inversion, replacing the input data with output values.
 void MatrixInverse(VecMat<complex<realtype>>& A)
 {
-  const int n=A.Nvec;   // the number of q values
-  const int Nrows=A[0].Nrows;
-  const int Ncols=A[0].Ncols;  
+  if(TRACE) cout << "Starting MatrixInverse" << endl;
+  const int n=A.Nvecs;   // the number of q values
+  const int Nrows=A.Nrows;
+  const int Ncols=A.Ncols;  
+
+  if(TRACE) cout << "Nrows= " << Nrows << " Ncols="<< Ncols << " n=" << n << endl;
 
   if(Nrows==1 && Ncols==1) // just take the inverse of each element
     {
@@ -499,16 +300,24 @@ void MatrixInverse(VecMat<complex<realtype>>& A)
     }
   else 
     {
-      //#ifdef EIGENBOOST
       Matrix<eigen_complex_type,Dynamic,Dynamic> M(Nrows,Ncols);
       Matrix<eigen_complex_type,Dynamic,Dynamic> Minv(Nrows,Ncols);
 
+      if(TRACE) cout << "Initialized M and Minv " << endl;
+
+
       for(int k=0; k<n; k++)
 	{
-
 	  for(int i=0; i<Nrows; i++)
 	    for(int j=0; j<Ncols; j++)
-	      M(i,j)=static_cast<eigen_complex_type>(A[k](i,j)); // row-major order
+	      {
+		M(i,j)=static_cast<eigen_complex_type>(A(k,i,j)); // row-major order
+	      }
+
+	  if(TRACE) cout << "M for k=" << k << endl;
+	  if(TRACE) cout << M << endl;
+
+	  if(TRACE) cout << "determinant:" << M.determinant() << endl;
 	  	  
 	  Minv=M.inverse();
 	  
@@ -521,20 +330,22 @@ void MatrixInverse(VecMat<complex<realtype>>& A)
 	  
 	  for(int i=0; i<Nrows; i++)
 	    for(int j=0; j<Ncols; j++)
+	      {
 #ifdef EIGENBOOST
-	      A[k](i,j) = Minv(i,j).convert_to<complex<realtype> >(); 	  
+		A(k,i,j) = Minv(i,j).convert_to<complex<realtype> >(); 	  
 #else
-	      A[k](i,j) = Minv(i,j); 	  
+		A(k,i,j) = Minv(i,j); 	  
 #endif
-	} 
-      //#endif     
+	      }
+	}
     }
+  if(TRACE) cout << "Finished  MatrixInverse" << endl;
 }
 
 
 void MatrixPseudoInverse(VecMat<complex<realtype>>& A)
 {
-  const int n=A.Nvec;   // the number of q values
+  const int n=A.Nvecs;   // the number of q values
   const int Nrows=A.Nrows;
   const int Ncols=A.Ncols;  
   
@@ -558,7 +369,7 @@ void MatrixPseudoInverse(VecMat<complex<realtype>>& A)
 	  
 	  for(int i=0; i<Nrows; i++)
 	    for(int j=0; j<Ncols; j++)
-	      M(i,j)=static_cast<eigen_complex_type>(A[k](i,j)); // row-major order
+	      M(i,j)=static_cast<eigen_complex_type>(A(k,i,j)); // row-major order
 	  
 	  auto svd = M.jacobiSvd(Eigen::ComputeFullU | Eigen::ComputeFullV);
 	  const auto &singularValues = svd.singularValues();
@@ -592,7 +403,7 @@ void MatrixPseudoInverse(VecMat<complex<realtype>>& A)
 #else
 	  for(int i=0; i<Nrows; i++)
 	    for(int j=0; j<Ncols; j++)
-	      A[k](i,j) = Minv(i,j);
+	      A(k,i,j) = Minv(i,j);
 #endif	  
 	} 
       //#endif     
@@ -607,9 +418,9 @@ realtype SumTr(VecMat<complex<realtype>>& A,VecMat<complex<realtype>>& B)
   if(TRACE) cout << "Starting SumTr" << endl;
   realtype sum=0.;
 
-  for(int k=0; k<A.size(); k++)
+  for(int k=0; k<A.Nvecs; k++)
     {
-      SMatrix<complex<realtype>> temp(A[k]);
+      SMatrix<complex<realtype> > temp(A.Nrows,A.Ncols,A[k]);
       temp *= B[k];
       sum += real( tr(temp) );
     }

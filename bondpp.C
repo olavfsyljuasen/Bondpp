@@ -2,8 +2,8 @@
 #include<iostream>
 #include<complex>
 
-#define _USE_MATH_DEFINES
-#include<cmath>
+//#define _USE_MATH_DEFINES
+//#include<cmath>
 
 #include<stdio.h>
 #include<stdlib.h>
@@ -49,6 +49,7 @@ const realtype SQRTTHREEOVERTWO= 0.866025403784438646763723170753;
 const bool TRACE= false; 
 #else
 const bool TRACE= true; // debugging option
+//const bool TRACE= false; // debugging option
 #endif
 
 

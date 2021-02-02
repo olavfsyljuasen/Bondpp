@@ -56,10 +56,10 @@
   A2r_to_A2q = fftw_plan_many_dft(dim,&dims[0],NMAT2 ,A2r_ptr,0,NMAT2 ,1,A2_ptr ,0,NMAT2 ,1,+1,flags);
   Bq_to_Br   = fftw_plan_many_dft(dim,&dims[0],NDMAT2,B_ptr  ,0,NDMAT2,1,Br_ptr ,0,NDMAT2,1,-1,flags);  
   Br_to_Bq   = fftw_plan_many_dft(dim,&dims[0],NDMAT2,Br_ptr ,0,NDMAT2,1,B_ptr  ,0,NDMAT2,1,+1,flags);
-  F1q_to_F1r = fftw_plan_many_dft(dim,&dims[0],1,F1q_ptr,0,1,1,F1r_ptr,0,1,1,-1,flags);
-  F1r_to_F1q = fftw_plan_many_dft(dim,&dims[0],1,F1r_ptr,0,1,1,F1q_ptr,0,1,1,+1,flags);  
-  F2q_to_F2r = fftw_plan_many_dft(dim,&dims[0],1,F2q_ptr,0,1,1,F2r_ptr,0,1,1,-1,flags);
-  F2r_to_F2q = fftw_plan_many_dft(dim,&dims[0],1,F2r_ptr,0,1,1,F2q_ptr,0,1,1,+1,flags);  
+  F1q_to_F1r = fftw_plan_many_dft(dim,&dims[0],1,F1q_ptr,0,1,0,F1r_ptr,0,1,0,-1,flags);
+  F1r_to_F1q = fftw_plan_many_dft(dim,&dims[0],1,F1r_ptr,0,1,0,F1q_ptr,0,1,0,+1,flags);  
+  F2q_to_F2r = fftw_plan_many_dft(dim,&dims[0],1,F2q_ptr,0,1,0,F2r_ptr,0,1,0,-1,flags);
+  F2r_to_F2q = fftw_plan_many_dft(dim,&dims[0],1,F2r_ptr,0,1,0,F2q_ptr,0,1,0,+1,flags);  
 #endif
 
 
