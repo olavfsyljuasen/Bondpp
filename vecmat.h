@@ -1,6 +1,7 @@
 #ifndef vecmat_h
 #define vecmat_h
 
+#include<string>
 #include<iostream>
 #include<iomanip>
 #include<complex>
@@ -9,7 +10,12 @@
 
 using namespace std;
 
+const realtype epsilon=1.e-15;   // used to repair matrices, chomp.
+const double sensitivity=1.e-14; // used in SanityCheck
+
 // first define a small matrix class. It should just be a pointer class unless defined specially to keep contents.
+
+
 
 template <class T>
 class SMatrix
@@ -25,7 +31,7 @@ class SMatrix
   }
 
  public:
- SMatrix(const int nrows,const int ncols,T* in_ptr):Nrows(nrows),Ncols(ncols),ptr(in_ptr),A(0){}
+ SMatrix(const int nrows,const int ncols,T* in_ptr):Nrows(nrows),Ncols(ncols),A(0),ptr(in_ptr){}
  SMatrix(const int nrows,const int ncols):Nrows(nrows),Ncols(ncols),A(nrows*ncols),ptr(&A[0]){} 
   T& operator()(const int i1,const int i2=0){return *(ptr+smindx(i1,i2));}  
   T& operator[](const int i){return *(ptr+i);}  
@@ -103,6 +109,21 @@ class SMatrix
       return *this;
     }
 
+  SMatrix& Transpose()
+    {
+      for(int i=0; i<Nrows; i++)
+	for(int j=i+1; j<Ncols; j++)
+	  {
+	    const int ij=smindx(i,j);
+	    const int ji=smindx(j,i);
+	    
+	    T temp=A[ij];
+	    A[ij]=A[ji];
+	    A[ji]=temp;
+	  }
+      return *this;
+    }
+  
  private:
   vector<T> A;
   T* ptr;
@@ -227,16 +248,16 @@ class VecMat
  VecMat(VecMat& c):Nvecs(c.Nvecs),Nrows(c.Nrows),Ncols(c.Ncols),A(Nvecs*Nrows*Ncols)
     {
       T* ptr=c.start();
-      for(int i=0; i<A.size(); i++){ A[i]=*(ptr+i);}
+      for(unsigned int i=0; i<A.size(); i++){ A[i]=*(ptr+i);}
     }
   
-  const int size() const {return A.size();}
+  const unsigned int size() const {return A.size();}
   
   T* start(){return &A[0];} // needed to access start of data-array
   
   T& operator()(const int v,const int i1,const int i2=0){ return A[indx(v,i1,i2)];}  
   
-  void SetToZero(){for(int i=0; i<A.size(); i++){A[i]=0;}}
+  void SetToZero(){for(unsigned int i=0; i<A.size(); i++){A[i]=0;}}
   
   T* operator[](const int i){ return &A[indx(i,0,0)];}  
   //const SMatrix<T>& constant(const int i) const { return A[i];}  
@@ -248,12 +269,12 @@ class VecMat
 
   bool ContainsNaN(string message="")
   {
-    for(int i=0; i<A.size(); i++)
+    for(unsigned int i=0; i<A.size(); i++)
       { 
 	if( A[i] != A[i] )	
 	  {
 	    cout << "Nan encountered in " << message << endl;
-	    exit(1);
+	    return true;
 	  }
       }
     return false;
@@ -264,21 +285,21 @@ class VecMat
     {
       T* ptr=rhs.start();
       if(this == &rhs) return *this; // self-assignment
-      for(int i=0; i<A.size(); i++){A[i]= *(ptr+i);}
+      for(unsigned int i=0; i<A.size(); i++){A[i]= *(ptr+i);}
       return *this;
     }
 
   VecMat& operator+=(VecMat<T>& rhs) 
     {
       T* ptr=rhs.start();
-      for(int i=0; i<A.size(); i++){A[i]+= *(ptr+i);}
+      for(unsigned int i=0; i<A.size(); i++){A[i]+= *(ptr+i);}
       return *this;
     }
 
   VecMat& operator-=(VecMat<T>& rhs) 
     {
       T* ptr=rhs.start();
-      for(int i=0; i<A.size(); i++){A[i]-= *(ptr+i);}
+      for(unsigned int i=0; i<A.size(); i++){A[i]-= *(ptr+i);}
       return *this;
     }
 
@@ -288,15 +309,15 @@ class VecMat
       vector<T> temprow(Ncols); // vector for storing temporary result
       for(int q=0; q<Nvecs; q++)
 	{
-	  for(int i=0; i<Nrows; i++)
+	  for(unsigned int i=0; i<Nrows; i++)
 	    {
-	      for(int j=0; j<rhs.Ncols; j++)
+	      for(unsigned int j=0; j<rhs.Ncols; j++)
 		{
 		  T sum(0);
 		  for(int k=0; k<Ncols; k++){ sum += (*this)(q,i,k)*rhs(q,k,j);}
 		  temprow[j]=sum;
 		}
-	      for(int l=0; l<Ncols; l++){ (*this)(q,i,l)=temprow[l];} // fill in matrix
+	      for(unsigned int l=0; l<Ncols; l++){ (*this)(q,i,l)=temprow[l];} // fill in matrix
 	    }
 	}
       return *this;
@@ -304,14 +325,14 @@ class VecMat
 
   VecMat& operator*=(const complex<realtype>& c)
     {
-      for(int i=0; i<A.size(); i++){ A[i]*=c;} 
+      for(unsigned int i=0; i<A.size(); i++){ A[i]*=c;} 
       return *this;
     }
 
   
   VecMat& operator*=(const realtype& c)
     {
-      for(int i=0; i<A.size(); i++){ A[i]*=c;} 
+      for(unsigned int i=0; i<A.size(); i++){ A[i]*=c;} 
       return *this;
     }
  
@@ -322,7 +343,7 @@ class VecMat
       for(int q=0; q<Nvecs; q++)
 	{
 	  T* ptr=A[q];
-	  for(int j=0; j<Nrows*Ncols; j++){ res[j] += *(ptr+j);}
+	  for(unsigned int j=0; j<Nrows*Ncols; j++){ res[j] += *(ptr+j);}
 	} 
       return res;
     }
@@ -385,8 +406,8 @@ template<class T>
 T Tr(VecMat<T>& K)
 {
   T sum(0);
-  for(int q=0; q<K.Nvecs; q++)
-    for(int i=0; i<K.Nrows; i++)
+  for(unsigned int q=0; q<K.Nvecs; q++)
+    for(unsigned int i=0; i<K.Nrows; i++)
       sum += K(q,i,i);
 
   return sum;
@@ -407,13 +428,13 @@ T Sumq(VecMat<T>& K,const int m1,const int m2)
 }
 
 
-const realtype epsilon=1.e-15;
+
 
 template<class T>
 void Chomp(VecMat<T>& K)
 {
   T* ptr=K.start();
-  for(int i=0; i<K.size(); i++)
+  for(unsigned int i=0; i<K.size(); i++)
     {
       T& t(*(ptr+i));
       if(abs(real(t))<epsilon){ t.real(0.);} 
@@ -428,7 +449,7 @@ T FindMax(VecMat<T>& K)
   realtype maxval=0;
 
   T* ptr=K.start();
-  for(int i=0; i<K.size(); i++)
+  for(unsigned int i=0; i<K.size(); i++)
     {
       T& thisentry(*(ptr+i));
       if(abs(thisentry)>maxval){maxval=abs(thisentry); maxentry=thisentry;}
@@ -443,7 +464,7 @@ T FindMaxImag(VecMat<T>& K)
   realtype maxval=0;
 
   T* ptr=K.start();
-  for(int i=0; i<K.size(); i++)
+  for(unsigned int i=0; i<K.size(); i++)
     {
       T& thisentry(*(ptr+i));
       if(abs(thisentry.imag()) > maxval){maxval=abs(thisentry.imag()); maxentry=thisentry;}
@@ -455,14 +476,25 @@ template<class T>
 void MakeReal(VecMat<T>& K)
 {
   T* ptr=K.start();
-  for(int i=0; i<K.size(); i++){ (*(ptr+i)).imag(0.);}
+  for(unsigned int i=0; i<K.size(); i++)
+    {
+      if(TRACE)
+	{
+	  realtype ipart=imag(*(ptr+i));
+	  if( fabs(ipart) > sensitivity)
+	    {
+	      cout << "Warning, MakeReal sets entry " << ipart << " to 0" << endl;
+	    }
+	}
+      (*(ptr+i)).imag(0.);
+    } 
 }
 
 template<class T>
 void ComplexConjugate(VecMat<T>& K)
 {
   T* ptr=K.start();
-  for(int i=0; i<K.size(); i++){ conj(*(ptr+i));}
+  for(unsigned int i=0; i<K.size(); i++){ conj(*(ptr+i));}
 }
 
 template<class T>
@@ -471,9 +503,9 @@ void MakeRealSymmetric(VecMat<T>& M)
   const int Nrows=M.Nrows;
   const int Ncols=M.Ncols;
   
-  for(int q=0; q<M.Nvecs; q++)
+  for(unsigned int q=0; q<M.Nvecs; q++)
     {
-      for(int s=0; s<Nrows; s++)
+      for(unsigned int s=0; s<Nrows; s++)
 	{
 	  M(q,s,s).imag(0.); // real diagonal
 	}
@@ -521,92 +553,6 @@ void MakeAntiSymmetric(VecMat<T>& M)
 }
 
 
-template<class T>
-void MakeHermitian(VecMat<T>& M)
-{
-  const int Nrows=M.Nrows;
-  const int Ncols=M.Ncols;
-  
-  for(int q=0; q<M.Nvecs; q++)
-    {
-      for(int s=0; s<Nrows; s++)
-	{
-	  M(q,s,s).imag(0.); // real diagonal
-	}
-      
-      for(int s1=0; s1<Nrows; s1++)
-	for(int s2=s1+1; s2<Ncols; s2++)
-	  {
-	    M(q,s2,s1) = conj(M(q,s1,s2)); // off-diagonals are cc of each other.
-	  }
-    }
-}
-
-template<class T>
-void MakeInversionTransposedSymmetric(BravaisLattice& la,VecMat<T>& M)
-{
-  const int Nrows=M.Nrows;
-  const int Ncols=M.Ncols;
-  
-  for(int q=0; q<M.Nvecs; q++)
-    {
-      const int invq=la.GetInversionIndx(q); // the negative q
-      
-      for(int s1=0; s1<Nrows; s1++)
-	for(int s2=0; s2<Ncols; s2++)
-	  {
-	    if( q==invq ){ M(q,s1,s2).imag(0.);}
-	    M(invq,s2,s1) = M(q,s1,s2);
-	  }
-    }
-}
-
-
-
-
-bool IsHermitian(VecMat<complex<realtype>>& M)
-{
-  if(TRACE) cout << "Checking if Hermitian: ";
-  //  bool retval=true;
-  const int Nrows=M.Nrows;
-  const int Ncols=M.Ncols;
-
-  for(int q=0; q<M.Nvecs; q++)
-    {
-      
-      for(int s=0; s<Nrows; s++)
-	if(imag(M(q,s,s)) != 0.){return false;}
-  
-      for(int s1=0; s1<Nrows; s1++)
-	for(int s2=s1+1; s2<Ncols; s2++)
-	  {
-	    if( M(q,s2,s1) != conj(M(q,s1,s2))){ return false;}
-	  }
-    }
-  return true;
-
-}
-
-bool IsInversionTransposedSymmetric(BravaisLattice& la,VecMat<complex<realtype>>& M)
-{
-  if(TRACE) cout << "Checking if InversionTransposedSymmetric: ";
-
-  const int Nrows=M.Nrows;
-  const int Ncols=M.Ncols;
-  
-  for(int q=0; q<M.Nvecs; q++)
-    {
-      const int invq=la.GetInversionIndx(q); // the negative q
-      
-      for(int m1=0; m1<Nrows; m1++)
-	for(int m2=m1; m2<Ncols; m2++)
-	  {
-	    if( q==invq && M(q,m1,m2).imag() != 0.){ return false;}
-	    if( M(invq,m2,m1) != M(q,m1,m2)){ return false;}
-	  }
-    }
-  return true;
-}
 
 template<class T>
 void AddToDiagonal(VecMat<T>& M,T& value)
@@ -638,7 +584,7 @@ void AddToDiagonal(VecMat<T>& M,vector<T>& value)
 template<class T>
 void SubtractFromDiagonal(VecMat<T>& A,vector<T> value)
 {
-  for(int s=0; s<value.size(); s++){value[s]=-value[s];}
+  for(unsigned int s=0; s<value.size(); s++){value[s]=-value[s];}
   AddToDiagonal(A,value);
 }
 

@@ -14,17 +14,18 @@ EXTENSION = _x64.x
 CCC= g++ 
 
 # options:
-STDOPTS= -std=c++11 -O3
+STDOPTS= -std=c++11 -O3 -Wall
 # use fftw3l with this:
 #CCOPTS=  $(STDOPTS) -DNDEBUG -DLONGDOUBLE 
 
-#CCOPTS=  $(STDOPTS) -DNDEBUG 
-CCOPTS=  $(STDOPTS) -g
+#CCOPTS=  $(STDOPTS) -DNDEBUG -pg
+CCOPTS=  $(STDOPTS) -DNDEBUG 
+#CCOPTS=  $(STDOPTS) -g
 
 
 
 # link option:
-LINKOPTS =  -O3 
+LINKOPTS =  -O3 -Wall
 
 
 CCFLAGS = $(CCOPTS) $(INCDIR) 

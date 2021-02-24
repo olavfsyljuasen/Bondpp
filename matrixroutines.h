@@ -189,7 +189,7 @@ vector<realtype> SubtractMinimum(VecMat<complex<realtype>>& K,vector<int>& eleme
 
 
 
-void AddDelta(VecMat<complex<realtype>>& K,const vector<realtype>& delta)
+void AddDelta(VecMat<complex<realtype>>& K,NumberList& delta)
 {
   for(int q=0; q<K.Nvecs; q++)
     {
@@ -197,25 +197,6 @@ void AddDelta(VecMat<complex<realtype>>& K,const vector<realtype>& delta)
 	K(q,m,m) += delta[subl(m)];
     }
 }
-
-/*
-// Sum over all q values for the matrix block indx1,indx2
-complex<realtype> SumoverQ(VecMat<complex<realtype>>& A,const int indx1,const int indx2)
-{
-  const int nq=A.Nvec; // the number of q components.
-  
-  complex<realtype> sum=0.;
-  for(int i=0; i<nq; i++){sum+=A(i,indx1,indx2);}
-  return sum;
-}
-*/
-
-
-
-
-
-
-
 
 
 
@@ -267,17 +248,10 @@ realtype FindMinimumEigenvalue(VecMat<complex<realtype>>& A)
 
 realtype SubtractMinimumEigenvalue(VecMat<complex<realtype>>& A)
 {
-  if(TRACE) cout << "SubtractMinimumEigenvalue" << endl;
-  if(TRACE) cout << "Starting SubtractMinimumEigenvalue: " << endl;
-  
   realtype emin=FindMinimumEigenvalue(A);
   if(TRACE) cout << "having found MinimumEigenvalue: " << emin << endl;
 
   SubtractFromDiagonal(A,complex<realtype>(emin,0.));
-
-  if(TRACE) cout << "After subtracting from diagonal: " << endl;
-  if(TRACE) cout << A << endl;
-  
 
   return emin;
 }
@@ -314,19 +288,23 @@ void MatrixInverse(VecMat<complex<realtype>>& A)
 		M(i,j)=static_cast<eigen_complex_type>(A(k,i,j)); // row-major order
 	      }
 
+	  /*
 	  if(TRACE) cout << "M for k=" << k << endl;
 	  if(TRACE) cout << M << endl;
-
 	  if(TRACE) cout << "determinant:" << M.determinant() << endl;
-	  	  
-	  Minv=M.inverse();
+	  */
 	  
+	  Minv=M.inverse();
+
+	  /*
 	  for(int i=0; i<Nrows; i++)
 	    for(int j=i+1; j<Ncols; j++)
 	      {
 		Minv(i,i).imag(0); // Hermitian: set diagonal real
 		Minv(j,i) = conj(Minv(i,j)) ; // Hermitian: offd are c.c.
 	      }
+	  */
+
 	  
 	  for(int i=0; i<Nrows; i++)
 	    for(int j=0; j<Ncols; j++)
@@ -430,18 +408,5 @@ realtype SumTr(VecMat<complex<realtype>>& A,VecMat<complex<realtype>>& B)
 }
 
 
-/*
-// A routine to sum over all q values of diagonal matrix elements s
-realtype Sumq(VecMat<complex<realtype>>& A,const int s)
-{
-  realtype sum=0.;
-
-  for(int i=0; i<A.size(); i++)
-    {
-      sum += real(A[i](s,s));
-    }
-  return sum;
-}
-*/
 
 #endif // MATRIXROUTINES_H

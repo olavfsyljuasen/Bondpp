@@ -10,6 +10,7 @@
 using namespace std;
 
 
+
 #ifdef LONGDOUBLE
 typedef long double realtype;
 #elif defined FLOAT
@@ -22,6 +23,7 @@ typedef double realtype;
 
 
 #define watch(x) cout << (#x) << " is " << (x) << endl
+
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846264338328
@@ -63,8 +65,12 @@ const int Nlargestqvalues=6; // keep track of the locations of the ... susc peak
 
 const bool SHOWSUBTRACTED = true; // true to write subtractions to logfile when printino=true
 
+const bool PRINTPROGRESS        = true; // true to write T and epsilons to logfile
+const int  PRINTPROGRESSTICKLER = 10;   // print every TICKLER steps
+
 const bool BINARYOUTFILES=false;
 
+const bool USEPREVIOUSEPSILONS = false; // use previous epsilon values whenever last run converged.
 
 const string RCORRSFILENAME="rcorrs.dat";
 const string QCORRSFILENAME="qcorrs";
@@ -82,6 +88,8 @@ const string SELECTEDQPTSFILENAME="selectedqpts.in";
 
 const string DELTASTOSHOWFILENAME="Deltastoshow.in";
 
+const string EPSILONFILENAME="epsilons.in";
+
 #ifdef SHOWCORRELATIONFUNCTIONS
 const bool PRINTRCORRS=true;
 const bool PRINTQCORRS=true;
@@ -96,7 +104,6 @@ const bool PRINTRPTS=true;
 const bool PRINTQPTS=true;
 #endif
   
-
 const string RESULTSNAME= "res.dat";
 const string RES1NAME= "res1.dat";
 const string RES2NAME= "res2.dat";
@@ -109,7 +116,6 @@ const string RESULTS5NAME= "chiq.dat";
 const string MAXQNAME="maxq.dat";
 
 const string PARAMETERFILENAME = "Deltas.in";
-
 
 const string READIN   = "read.in";
 
@@ -125,7 +131,12 @@ ofstream logfile("log.txt",ios::app);
 
 #include "RunParameter.h"
 
+RunParameters rp; // declare parameters globally
+realtype* par = rp.GetPars(1); // only the first line is read
+
 #include "bravaislattices.h"
+
+BravaisLattice la(par); // declare lattice globally 
 
 #include "vecmat.h"
 
@@ -137,7 +148,12 @@ ofstream logfile("log.txt",ios::app);
 #include "phonons.h" // must set the springs, modify for different phonons
 #endif
 
+#include "symmetryroutines.h" // for enforcing and checking symmetries
+
+#include "observables.h" // observables, modify it for new models
+
 #include "rules.h" // generic rules
+
 
 #include "bondpp.h"
 
@@ -150,23 +166,18 @@ int main()
   logfile << "\nStarting at: " << mytimer << endl;
   mytimer.Start();
   
-  RunParameters rp;
+  //  RunParameters rp;
   logfile << "parameters: " << rp;
 
 #ifdef PRESERVESYMMETRY
   logfile << " PRESERVESYMMETRY option is on " << endl;
 #endif
   
-  int nc = rp.GetNR();
+  logfile << "Starting calculation " << endl;
 
-  for(int ic=1; ic <= nc; ic++)
-    {
-      realtype* par = rp.GetPars(ic);
-      Simulation sim(par,ic);
+  Simulation sim;
+  sim.Run();
 
-      logfile << "Starting calculation " << ic << endl;
-      sim.Run();
-    }
             
   mytimer.Stop();
   double time_spent = mytimer.GetTimeElapsed();

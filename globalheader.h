@@ -164,4 +164,25 @@ ostream& operator<<(ostream& os,vector<realtype >& M)
 
 
 
+struct NumberList
+{
+NumberList(int n=0,realtype a=0.):v(n,a){}
+  friend ostream& operator<<(ostream& os,NumberList& d){for(unsigned int i=0; i<d.size(); i++){ os << d[i] << " ";} return os;}
+  unsigned int size(){return v.size();}
+  realtype& operator[](const int i){return v[i];}
+
+  NumberList& operator=(NumberList& r){ for(unsigned int i=0; i<r.size(); i++){v[i]=r[i];} return *this;}
+private:
+  vector<realtype> v;
+}; 
+
+bool operator==(NumberList& l,NumberList& r)
+{
+  bool isequal=true;
+  for(unsigned int i=0; i<l.size(); i++){isequal &= (l[i]==r[i]); if(!isequal){break;}}
+  return isequal;
+}
+
+
+
 #endif

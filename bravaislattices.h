@@ -6,42 +6,43 @@
 #include<iomanip>
 #include<iostream>
 
-typedef vector<realtype> Triplet; // vector of numbers (usually integers) that specify positions on lattice in units of lattice vectors
+//typedef std::array<realtype,3> Triplet; // vector of numbers (usually integers) that specify positions on lattice in units of lattice vectors
+typedef std::array<int,3> Triplet; // vector of numbers (usually integers) that specify positions on lattice in units of lattice vectors
 
 Triplet operator+(const Triplet& lhs,const Triplet& rhs)
 {
   Triplet res(lhs);
-  for(int i=0; i<lhs.size(); i++){res[i]=lhs[i]+rhs[i];}
+  for(unsigned int i=0; i<lhs.size(); i++){res[i]=lhs[i]+rhs[i];}
   return res;
 }
 
 Triplet operator-(const Triplet& lhs,const Triplet& rhs)
 {
   Triplet res(lhs);
-  for(int i=0; i<lhs.size(); i++){res[i]=lhs[i]-rhs[i];}
+  for(unsigned int i=0; i<lhs.size(); i++){res[i]=lhs[i]-rhs[i];}
   return res;
 }
 
 Triplet& operator*=(Triplet& lhs,const int it)
 {
-  for(int i=0; i<lhs.size(); i++){lhs[i]*=it;}
+  for(unsigned int i=0; i<lhs.size(); i++){lhs[i]*=it;}
   return lhs;
 }
 
 Triplet& operator+=(Triplet& lhs,const Triplet& rhs)
 {
-  for(int i=0; i<lhs.size(); i++){lhs[i]*=rhs[i];}
+  for(unsigned int i=0; i<lhs.size(); i++){lhs[i]*=rhs[i];}
   return lhs;
 }
 
 realtype scalarproduct(const Triplet& a,const Triplet& b)
 {
   realtype sum=0.;
-  for(int i=0; i<a.size(); i++){sum += a[i]*b[i];}
+  for(unsigned int i=0; i<a.size(); i++){sum += a[i]*b[i];}
   return sum;
 }
 
-
+ostream& operator<<(ostream& os,const Triplet& t){os << "(" << t[0] << "," << t[1] << "," << t[2] << ")"; return os;}
 
 
 
@@ -121,6 +122,7 @@ class BravaisLattice
   int qSub(const int k1,const int k2);  // return matrix entry for k1-k2
 
   int rAdd(const int i,const Triplet ivec){return GetIndx(UsePBC(GetTriplet(i)+ivec));}
+  int rSub(const int i,const Triplet ivec){return GetIndx(UsePBC(GetTriplet(i)-ivec));}
 
 #ifdef PRESERVESYMMETRY
   int TransformationPeriod;
@@ -516,21 +518,23 @@ N1(static_cast<int>(par[NX])),
 #endif
 
 #endif // HEXAGONALBRAVAISLATTICE  
-
-#endif //PRESERVESYMMETRY
-
-
-  for(int i=0; i<vq; i++)
-    {
-      Coord ic=qPos(i);
-      int ni=GetInversionIndx(i);
-      Coord nic=qPos(ni);
-      cout << "site: " << i 
-	   << " pos=" << ic
-	   << " inversion indx: " << ni 
-	 << " pos=" << nic << endl;
-    }
   
+#endif //PRESERVESYMMETRY
+  
+  
+  if(TRACE)
+    {
+      for(int i=0; i<vq; i++)
+	{
+	  Coord ic=qPos(i);
+	  int ni=GetInversionIndx(i);
+	  Coord nic=qPos(ni);
+	  cout << "site: " << i 
+	       << " pos=" << ic
+	       << " inversion indx: " << ni 
+	       << " pos=" << nic << endl;
+	}
+    }
 }
 
 inline realtype BravaisLattice::qr(const Triplet& qivec,const Triplet& rivec)
@@ -559,19 +563,18 @@ inline realtype BravaisLattice::qr(const Triplet& qtri,const int& ri)
 // this needs to be tested. Perhaps a bit dangerous...
 inline int BravaisLattice::GetInversionIndx(const int s)
 {
-  Triplet my(3);
-  my = GetTriplet(s);
+  const int xc = s%N1;
+  const int r  = s/N1;
+  const int yc = r%N2;
+  const int zc = r/N2;
 
-  my[0]= -my[0];
-  my[1]= -my[1];
-  my[2]= -my[2];
-
-  return GetIndx(UsePBC(my));
+  return (-xc+N1)%N1 + N1*( (-yc+N2)%N2 + N2*( (-zc+N3)%N3));
 }
 
 
 inline Triplet BravaisLattice::UsePBC(const Triplet v)
 {
+  /*
   Triplet w(v);
 
   int w0int=int(w[0]);
@@ -584,14 +587,18 @@ inline Triplet BravaisLattice::UsePBC(const Triplet v)
   w[2] = (w2int+N3)%N3+(w[2]-w2int); // adding offset if not integer.
  
   return w;
+  */
+
+  
+  Triplet w={(v[0]+N1)%N1,(v[1]+N2)%N2,(v[2]+N3)%N3};
+  //  cout << "UsePBC: " << v << "->" << w << endl;
+  return w;
 }
 
 
 inline int BravaisLattice::GetIndx(const Triplet v)
 {
-  if(d==1) return int(v[0]);
-  if(d==2) return int(v[0])+N1*int(v[1]);
-  if(d==3) return int(v[0])+N1*(int(v[1])+N2*int(v[2]));
+  return v[0]+N1*(v[1]+N2*v[2]);
 }
 
 
@@ -599,21 +606,12 @@ inline int BravaisLattice::GetIndx(const Triplet v)
 
 inline Triplet BravaisLattice::GetTriplet(const int s)
 {
-  Triplet myval(3);
+  const int xc = s%N1;
+  const int r  = s/N1;
+  const int yc = r%N2;
+  const int zc = r/N2;
 
-  if(d==1){ myval[0]=s;}
-
-  if(d==2){ myval[1]=s/N1; myval[0]=s%N1;}
-
-  if(d==3){
-    const int V2=N1*N2;
-    int s2=s/V2; int r2=s%V2;
-
-    myval[2]=s2;
-    myval[1]=r2/N1;
-    myval[0]=r2%N1;
-  }
-  
+  Triplet myval={xc,yc,zc};
   return myval;
 }
 
