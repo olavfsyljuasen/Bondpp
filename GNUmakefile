@@ -34,18 +34,8 @@ OSXDIR = $(HOME)
 
 force : ;
 
-square_x64 : square.x64 squareforced.x64 squaresymmrot.x64 squaresymminv.x64 squaresymmaxis.x64 squaresymmdiag.x64
+phonons_x64 : squareHeisenbergcpos.x64 cubicHeisenbergcpos.x64
 
-square_abel : square.abel squareforced.abel squaresymmrot.abel squaresymminv.abel squaresymmaxis.abel squaresymmdiag.abel
-
-square_saga : square.saga squareforced.saga squaresymmrot.saga squaresymminv.saga squaresymmaxis.saga squaresymmdiag.saga
-
-
-triangular_x64 : triangular.x64 triangularforced.x64 triangularsymmrot.x64 triangularsymminv.x64 triangularsymmaxis.x64 triangularsymmdiag.x64
-
-triangular_abel : triangular.abel triangularforced.abel triangularsymmrot.abel triangularsymminv.abel triangularsymmaxis.abel triangularsymmdiag.abel
-
-triangular_saga : triangular.saga triangularforced.saga triangularsymmrot.saga triangularsymminv.saga triangularsymmaxis.saga triangularsymmdiag.saga
 
 
 
