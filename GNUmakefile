@@ -34,7 +34,7 @@ OSXDIR = $(HOME)
 
 force : ;
 
-phonons_x64 : squareHeisenbergcpos.x64 cubicHeisenbergcpos.x64
+phonons_x64 : squareHeisenberg.x64 cubicHeisenberg.x64 triangularHeisenberg.x64 
 
 
 

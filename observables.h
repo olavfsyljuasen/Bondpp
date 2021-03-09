@@ -74,6 +74,23 @@ FixedIndxObs sdobs(0,0,0,0,cosdiag);
 KernelFunction* spinobservables[NSPINOBSERVABLES]={&saobs,&sdobs};
 
 
+#elif defined HEXAGONALLATTICE
+const int NOBSERVABLES=2;
+//enum observables{SA,SD};
+string NAMESOFOBSERVABLES[NOBSERVABLES]={"sa","sd"};
+
+
+const int NSPINOBSERVABLES=2;
+enum spinobservables{SA,SD};
+string NAMESOFSPINOBSERVABLES[NSPINOBSERVABLES]={"sa","sd"};
+
+
+FixedIndxObs saobs(0,0,0,0,cosaxes);
+FixedIndxObs sdobs(0,0,0,0,cosdiag);
+
+KernelFunction* spinobservables[NSPINOBSERVABLES]={&saobs,&sdobs};
+
+
 
 #elif defined CUBICLATTICE
 const int NOBSERVABLES=2;

@@ -117,6 +117,116 @@ void Couplings::Initializeg()
 #endif
 
 
+#elif defined TRIANGULARPHONONS
+
+#ifdef FAKEHEISENBERG
+const int NSPIN= 1;
+const int NFAKESPINTRACE=3; // a compensating factor for treating Heisenberg models with a single spin comp.
+#else
+const int NSPIN= 3;
+const int NFAKESPINTRACE=1; 
+#endif
+const int NSUBL= 1;
+
+
+#ifdef CPOSITIVE
+const int NC=9;
+const int NN=3;
+const int NNN=6;
+vector<Triplet> clist{{ 1,  0,  0 }, { 0,  1,  0 }, {-1, 1,  0 }, { 1,  1,  0 }, { -1, 2, 0}, { -2, 1, 0}, { 2, 0, 0}, { 0, 2, 0}, { -2, 2, 0}};
+#else
+const int NC=18;
+const int NN=6;
+const int NNN=12;
+vector<Triplet> clist{
+{ 1,  0,  0 }, {-1,  0, 0 }, { 0, 1, 0 }, { 0, -1, 0 }, { -1, 1, 0 }, { 1, -1, 0 }, 
+{ 1,  1,  0 }, {-1, -1, 0 }, {-1, 2, 0 }, { 1, -2, 0 }, { -2, 1, 0 }, { 2, -1, 0 }, 
+{ 2,  0,  0 }, {-2,  0, 0 }, { 0, 2, 0 }, { 0, -2, 0 }, { -2, 2, 0 }, { 2, -2, 0 }};
+#endif
+vector<Coord> roffset={Coord(0,0,0)};
+vector<double> invsqrtmasses={1.};
+
+// global routines to extract sublattice and spin indices.
+
+int mindx(const int spin,const int subl=0){ return spin*NSUBL+subl;}
+int spin(const int m){return m/NSUBL;}
+int subl(const int m){return m%NSUBL;}
+
+// specific coupling rules for squarephonons
+void Couplings::InitializeJ()
+{
+#ifdef FAKEHEISENBERG
+  for(int c=0; c<NN; c++)
+    {
+      J(c,mindx(SX,0),mindx(SX,0)) = par[J1X];
+    } 
+
+  for(int c=NN; c<NNN; c++)
+    {
+      J(c,mindx(SX,0),mindx(SX,0)) = par[J2X];
+    } 
+
+  for(int c=NNN; c<NC; c++)
+    {
+      J(c,mindx(SX,0),mindx(SX,0)) = par[J3X];
+    } 
+#else
+  
+  for(int c=0; c<NN; c++)
+    {
+      J(c,mindx(SX,0),mindx(SX,0)) = par[J1X];
+      J(c,mindx(SY,0),mindx(SY,0)) = par[J1Y];
+      J(c,mindx(SZ,0),mindx(SZ,0)) = par[J1Z]; 
+    } 
+
+  for(int c=NN; c<NNN; c++)
+    {
+      J(c,mindx(SX,0),mindx(SX,0)) = par[J2X];
+      J(c,mindx(SY,0),mindx(SY,0)) = par[J2Y];
+      J(c,mindx(SZ,0),mindx(SZ,0)) = par[J2Z];
+    } 
+
+  for(int c=NNN; c<NC; c++)
+    {
+      J(c,mindx(SX,0),mindx(SX,0)) = par[J3X];
+      J(c,mindx(SY,0),mindx(SY,0)) = par[J3Y];
+      J(c,mindx(SZ,0),mindx(SZ,0)) = par[J3Z];
+    }
+#endif  
+}
+
+#ifdef PHONONS
+void Couplings::Initializeg()
+{
+#ifdef FAKEHEISENBERG
+  for(int c=0; c<NN; c++)
+    {
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X];
+    } 
+
+  for(int c=NN; c<NNN; c++)
+    {
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X];
+    } 
+#else  
+  for(int c=0; c<NN; c++)
+    {
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X];
+      g(c,mindx(SY,0),mindx(SY,0)) = par[g1Y];
+      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g1Z];
+    } 
+
+  for(int c=NN; c<NNN; c++)
+    {
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X];
+      g(c,mindx(SY,0),mindx(SY,0)) = par[g2Y];
+      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g2Z];
+    }
+#endif  
+}
+#endif
+
+
 #elif defined CUBICPHONONS
 
 #ifdef FAKEHEISENBERG
