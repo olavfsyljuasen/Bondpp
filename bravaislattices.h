@@ -5,9 +5,11 @@
 #include<complex>
 #include<iomanip>
 #include<iostream>
+#include<array>
 
-//typedef std::array<realtype,3> Triplet; // vector of numbers (usually integers) that specify positions on lattice in units of lattice vectors
-typedef std::array<int,3> Triplet; // vector of numbers (usually integers) that specify positions on lattice in units of lattice vectors
+using namespace std;
+
+typedef std::array<int,3> Triplet; // vector of integers that specify positions on lattice in units of lattice vectors
 
 Triplet operator+(const Triplet& lhs,const Triplet& rhs)
 {
@@ -129,6 +131,7 @@ class BravaisLattice
   vector<int> TransformationTable;
 #endif
 
+  Coord GetLatticeVector(int i){return ( i==1 ? a1 : i==2 ? a2: a3);}
   
  private:
   const Coord a1;

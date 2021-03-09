@@ -126,6 +126,24 @@ Phonons::Phonons(): Vq(la.SiteqVol()),omega(Vq,NMODE),normalmode(NSUBL),sumlogom
   couplings[1]=par[ALPHA1];
   couplings[2]=par[ALPHA2];
   couplings[3]=par[ALPHA2];
+
+#elif defined TRIANGULARPHONONS
+  int Nsprings=6;
+  vector<Triplet> springs(Nsprings);
+  springs[0]=Triplet{ 1, 0, 0};
+  springs[1]=Triplet{ 0, 1, 0};
+  springs[2]=Triplet{-1, 1, 0};
+  springs[3]=Triplet{ 1, 1, 0};
+  springs[4]=Triplet{-1, 2, 0};
+  springs[5]=Triplet{-2, 1, 0};
+ 
+  vector<double> couplings(Nsprings);
+  couplings[0]=par[ALPHA1];
+  couplings[1]=par[ALPHA1];
+  couplings[2]=par[ALPHA1];
+  couplings[3]=par[ALPHA2];
+  couplings[4]=par[ALPHA2];
+  couplings[5]=par[ALPHA2];
   
 #elif defined CUBICPHONONS
   int Nsprings=9;
@@ -139,9 +157,7 @@ Phonons::Phonons(): Vq(la.SiteqVol()),omega(Vq,NMODE),normalmode(NSUBL),sumlogom
   springs[6]=Triplet{ 1, 0,-1};
   springs[7]=Triplet{ 1, 1, 0};
   springs[8]=Triplet{ 1,-1, 0};
-
-
-  
+ 
   vector<double> couplings(Nsprings);
   couplings[0]=par[ALPHA1];
   couplings[1]=par[ALPHA1];
@@ -296,10 +312,33 @@ Phonons::Phonons(): Vq(la.SiteqVol()),omega(Vq,NMODE),normalmode(NSUBL),sumlogom
       double alpha2=par[ALPHA2];
 
 #if defined SQUAREPHONONS
+      /*
       D(0,0)=2*alpha1*(1-cos(q.x))+2*alpha2*(1-cos(q.x)*cos(q.y));
       D(1,1)=2*alpha1*(1-cos(q.y))+2*alpha2*(1-cos(q.x)*cos(q.y));
       D(0,1)=2*alpha2*sin(q.x)*sin(q.y);
       D(1,0)=D(0,1);
+      */
+      for(int p=0; p<Nsprings; p++)
+	{
+	  Coord R=la.rPos(springs[p]);
+	  realtype R2=scalarproduct(R,R);
+
+	  for(int i=0; i<NDISP; i++)
+	    for(int j=0; j<NDISP; j++)
+	      D(i,j)+= (R[i]*R[j]/R2)*2*couplings[p]*(1.-cos(q*R));
+	}
+
+
+#elif defined TRIANGULARPHONONS
+      for(int p=0; p<Nsprings; p++)
+	{
+	  Coord R=la.rPos(springs[p]);
+	  realtype R2=scalarproduct(R,R);
+
+	  for(int i=0; i<NDISP; i++)
+	    for(int j=0; j<NDISP; j++)
+	      D(i,j)+= (R[i]*R[j]/R2)*2*couplings[p]*(1.-cos(q*R));
+	}
 #elif defined CUBICPHONONS
       D(0,0)=2*alpha1*(1-cos(q.x))+2*alpha2*(2-cos(q.x)*cos(q.y)-cos(q.x)*cos(q.z));
       D(1,1)=2*alpha1*(1-cos(q.y))+2*alpha2*(2-cos(q.y)*cos(q.z)-cos(q.y)*cos(q.x));
