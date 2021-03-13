@@ -240,26 +240,27 @@ const int NSUBL= 1;
 
 
 #ifdef CPOSITIVE
-/*
-const int NC=9;
-const int NN=3;
-vector<Triplet> clist{{ 1, 0, 0},{ 0, 1, 0},{ 0, 0, 1},{ 1, 1, 0},{ 1,-1, 0},{ 1, 0, 1},{ 1, 0,-1},{ 0, 1, 1},{ 0, 1,-1}};
-#else
-const int NC=18;
-const int NN=6;
-vector<Triplet> clist{{ 1, 0, 0},{-1, 0, 0},{ 0, 1, 0},{ 0,-1, 0},{ 0, 0, 1},{ 0, 0,-1},{ 1, 1, 0},{-1,-1, 0},{ 1,-1, 0},{-1, 1, 0},{ 1, 0, 1}, {-1, 0,-1},{ 1, 0,-1}, {-1, 0, 1},{ 0, 1, 1},{ 0,-1,-1},{ 0, 1,-1},{ 0,-1, 1}};
-*/
-/* nearest neighbor only */
+/* g's for nearest neighbors only, note that it is still necessary to couple springs also to next-nearest neighbors as nearest neighbor spring only are unstable */
 const int NC=3;
 const int NN=3;
-vector<Triplet> clist{{ 1, 0, 0},{ 0, 1, 0},{ 0, 0, 1}};
+vector<Triplet> clist{{ 1, 0, 0}, { 0, 1, 0}, { 0, 0, 1}};
 #else
 const int NC=6;
 const int NN=6;
-vector<Triplet> clist{{ 1, 0, 0},{-1, 0, 0},{ 0, 1, 0},{ 0,-1, 0},{ 0, 0, 1},{ 0, 0,-1}};
-
+vector<Triplet> clist{{ 1, 0, 0}, { 0, 1, 0}, { 0, 0, 1},{-1, 0, 0}, { 0,-1, 0}, { 0, 0,-1}};
 #endif
-//vector<int> minusc{1,0,3,2,5,4,7,6,9,8,11,10,13,12,15,14,17,15}; // refers to indx in clist
+/* use this for g's also between next nearest neighbors*/
+/*
+const int NC=9;
+const int NN=3;
+vector<Triplet> clist{{ 1, 0, 0}, { 0, 1, 0}, { 0, 0, 1}, { 0, 1, 1}, { 0, 1,-1}, { 1, 0, 1}, { 1, 0, -1}, { 1, 1, 0}, { 1,-1, 0}};
+#else
+const int NC=18;
+const int NN=6;
+vector<Triplet> clist{{ 1, 0, 0}, { 0, 1, 0}, { 0, 0, 1}, { 0, 1, 1}, { 0, 1,-1}, { 1, 0, 1}, { 1, 0, -1}, { 1, 1, 0}, { 1,-1, 0},{-1, 0, 0}, { 0,-1, 0}, { 0, 0,-1}, { 0,-1,-1}, { 0,-1, 1}, {-1, 0,-1}, {-1, 0,  1}, {-1,-1, 0}, {-1, 1, 0}}
+#endif
+*/
+
 vector<Coord> roffset={Coord(0,0,0)};
 vector<double> invsqrtmasses={1.};
 

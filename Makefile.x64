@@ -20,7 +20,7 @@ STDOPTS= -std=c++11 -O3 -Wall
 
 #CCOPTS=  $(STDOPTS) -DNDEBUG -pg
 CCOPTS=  $(STDOPTS) -DNDEBUG 
-#CCOPTS=  $(STDOPTS) -g
+#CCOPTS=  $(STDOPTS) 
 
 
 

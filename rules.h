@@ -58,7 +58,7 @@ class Rule
 
   VecMat<complex<realtype>>& Jr; // defined in couplings.h 
   
-  int Vq;
+  int Nq;
   
   vector<vector<obstype> > irrep;
 
@@ -86,7 +86,7 @@ class Rule
  
 
 
-Rule::Rule(Couplings& realspacecouplings):Jr(realspacecouplings.J),Vq(la.SiteqVol()),irrep(NOBSERVABLES,vector<obstype>(Vq)), Jq(Vq,NMAT,NMAT)
+Rule::Rule(Couplings& realspacecouplings):Jr(realspacecouplings.J),Nq(la.NqSites()),irrep(NOBSERVABLES,vector<obstype>(Nq)), Jq(Nq,NMAT,NMAT)
 #ifdef PHONONS
   ,phonons()
   ,g(realspacecouplings.g)
@@ -100,7 +100,7 @@ Rule::Rule(Couplings& realspacecouplings):Jr(realspacecouplings.J),Vq(la.SiteqVo
 
   for(int i=0; i<NELASTIC; i++)
     {
-      VecMat<complex<realtype>>* gel_ptr=new VecMat<complex<realtype>>(Vq,NMAT,NMAT);
+      VecMat<complex<realtype>>* gel_ptr=new VecMat<complex<realtype>>(Nq,NMAT,NMAT);
       gel_ptr->SetToZero();
       InitializeElasticMode(i,*gel_ptr);
       gelptrs[i]=gel_ptr;
@@ -124,7 +124,7 @@ Rule::Rule(Couplings& realspacecouplings):Jr(realspacecouplings.J),Vq(la.SiteqVo
 void Rule::InitializeJq()
 {
   for(int ci=0; ci<NC; ci++)   
-      for(int qj=0; qj<Vq; qj++)
+      for(int qj=0; qj<Nq; qj++)
 	for(int i1=0; i1<NMAT; i1++)
 	  for(int i2=0; i2<NMAT; i2++)
 	    {
@@ -137,7 +137,7 @@ void Rule::InitializeJq()
 void Rule::InitializeJq()
 {
   for(int ci=0; ci<NC; ci++)   
-      for(int qj=0; qj<Vq; qj++)
+      for(int qj=0; qj<Nq; qj++)
 	for(int i1=0; i1<NMAT; i1++)
 	  for(int i2=0; i2<NMAT; i2++)
 	    {
@@ -157,7 +157,7 @@ void Rule::InitializeJq()
 void Rule::InitializeElasticMode(int i,VecMat<complex<realtype>>& gel)
 {
   if(TRACE) cout << "Starting InitializeElasticMode " << i << endl;
-  const int Vq=la.SiteqVol();
+  const int Nq=la.NqSites();
   
   voigtstring u=phonons.GetElasticMode(i);
   
@@ -165,7 +165,7 @@ void Rule::InitializeElasticMode(int i,VecMat<complex<realtype>>& gel)
     {      
       Coord c=la.rPos(clist[ci]);
       
-      for(int qj=0; qj<Vq; qj++)
+      for(int qj=0; qj<Nq; qj++)
 	{
 	  for(int vi=0; vi<NELASTIC; vi++) // run thru all Voigt indices, same as NELASTIC
 	    {
@@ -210,7 +210,7 @@ void Rule::InitializeElasticMode(int i,VecMat<complex<realtype>>& gel)
 void Rule::InitializeElasticMode(int i,VecMat<complex<realtype>>& gel)
 {
   if(TRACE) cout << "Starting InitializeElasticMode " << i << endl;
-  const int Vq=la.SiteqVol();
+  const int Nq=la.NqSites();
   
   voigtstring u=phonons.GetElasticMode(i);
   
@@ -218,7 +218,7 @@ void Rule::InitializeElasticMode(int i,VecMat<complex<realtype>>& gel)
     {      
       Coord c=la.rPos(clist[ci]);
       
-      for(int qj=0; qj<Vq; qj++)
+      for(int qj=0; qj<Nq; qj++)
 	{
 	  for(int vi=0; vi<NELASTIC; vi++) // run thru all Voigt indices, same as NELASTIC
 	    {

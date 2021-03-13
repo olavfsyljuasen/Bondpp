@@ -123,9 +123,9 @@ class Driver
   int dim;              // the number of dimensions
   vector<int> dims;     // the size of each dimension
   
-  const int Vq; // number of q-space sites.
-  const realtype invVq;
-  const realtype invSqrtVq;
+  const int Nq; // number of q-space sites.
+  const realtype invNq;
+  const realtype invSqrtNq;
 
   bool converged; //  
   
@@ -204,12 +204,12 @@ class Driver
 };
 
 
-Driver::Driver(Rule& r):rule(r),dim(la.D()),dims(la.SiteqDims()),Vq(la.SiteqVol()),invVq(static_cast<realtype>(1.)/Vq),invSqrtVq(1./sqrt(Vq)),converged(false),Delta(NSUBL),Printinfo(false),lineid(0),Jq(r.Jq),  
-  A1(Vq,NMAT,NMAT),A2(Vq,NMAT,NMAT),B(Vq,NDMAT,NDMAT),F1(Vq),F2(Vq),
+Driver::Driver(Rule& r):rule(r),dim(la.D()),dims(la.SiteqDims()),Nq(la.NqSites()),invNq(static_cast<realtype>(1.)/Nq),invSqrtNq(1./sqrt(Nq)),converged(false),Delta(NSUBL),Printinfo(false),lineid(0),Jq(r.Jq),  
+  A1(Nq,NMAT,NMAT),A2(Nq,NMAT,NMAT),B(Nq,NDMAT,NDMAT),F1(Nq),F2(Nq),
 #ifdef FFTS_INPLACE
   A1r(A1),A2r(A2),Br(B),
 #else
-  A1r(Vq,NMAT,NMAT),A2r(Vq,NMAT,NMAT),Br(Vq,NDMAT,NDMAT),
+  A1r(Nq,NMAT,NMAT),A2r(Nq,NMAT,NMAT),Br(Nq,NDMAT,NDMAT),
 #endif
   Kq(A1),
   Kinvq(A1),Kinvr(A1r),Sigmar(A2r),Sigmaq(A2),
@@ -233,7 +233,7 @@ Driver::Driver(Rule& r):rule(r),dim(la.D()),dims(la.SiteqDims()),Vq(la.SiteqVol(
 			       int sign, unsigned flags);
   */
   //  unsigned flags=FFTW_MEASURE;
-  unsigned flags=( Vq > 1000 ? FFTW_PATIENT: FFTW_ESTIMATE);
+  unsigned flags=( Nq > 1000 ? FFTW_PATIENT: FFTW_ESTIMATE);
   //unsigned flags=FFTW_PATIENT;
 
   logfile << "Making FFT plans" << endl;    
@@ -308,7 +308,7 @@ realtype Driver::CalculateT(int sl)
   for(int s=0; s<NSPIN; s++) 
     {
       int m=mindx(s,sl); // make the composite index.
-      alpha[s] = NFAKESPINTRACE*real(Sumq(Kinvq,m,m))/(2.*Vq);
+      alpha[s] = NFAKESPINTRACE*real(Sumq(Kinvq,m,m))/(2.*Nq);
       sumalpha += alpha[s];
     }
 
@@ -348,14 +348,14 @@ NumberList Driver::CalculateEpsilonsOverT()
       realtype sum=0.;
       if(mui != 0.)
 	{
-	  for(int qi=0; qi<Vq; qi++)
+	  for(int qi=0; qi<Nq; qi++)
 	    {
 	      SMatrix<complex<realtype>> tmp(NMAT,NMAT);
 	      tmp=Kinvq[qi];
 	      tmp *= (*rule.gelptrs[i])[qi];
 	      sum += NFAKESPINTRACE*real(tr(tmp));
 	    }
-	  sum *= -1./(2.*Vq*mui);
+	  sum *= -1./(2.*mui*Nq*la.UnitCellVolume());
 	}
       epsoverT[i]= sum;
     }
@@ -376,13 +376,13 @@ vector<obstype> Driver::CalculateSpinOrderPars(realtype T)
       obstype sum=0.;
       KernelFunction* f=spinobservables[j];
 
-      for(int qi=0; qi<Vq; qi++)
+      for(int qi=0; qi<Nq; qi++)
 	{
 	  for(int m1=0; m1<Kinvq.Nrows; m1++)
 	    for(int m2=0; m2<Kinvq.Ncols; m2++)
 	      sum+= (*f)(qi,m1,m2)*Kinvq(qi,m1,m2);
 	}
-      opars[j]=0.5*T*invVq*sum;
+      opars[j]=0.5*T*invNq*sum;
     }
 
   if(TRACE) cout << "Done CalculateSpinOrderPars" << endl;
@@ -401,11 +401,11 @@ vector<obstype> Driver::CalculateOrderPars(realtype T,int m1,int m2)
       obstype sum=0.;
       vector<obstype>& f=rule.GetIrrep(j);
 
-      for(int i=0; i<Vq; i++)
+      for(int i=0; i<Nq; i++)
 	{
 	  sum+= f[i]*Kinvq(i,m1,m2);
 	}
-      opars[j]=0.5*T*invVq*sum;
+      opars[j]=0.5*T*invNq*sum;
     }
 
   if(TRACE) cout << "Done CalculateOrderPars" << endl;
@@ -431,12 +431,12 @@ void Driver::MakeSymmetric(VecMat<complex<realtype>>& m)
   vector<int> ThisT(TransformationTable);
   
   //cout << "Period: " << TransformationPeriod << endl;
-  //cout << "Vq=" << Vq << endl;
+  //cout << "Nq=" << Nq << endl;
 
 
   while( p < TransformationPeriod)
     {
-      for(int i=0; i<Vq; i++)
+      for(int i=0; i<Nq; i++)
 	{
 	  int q=ThisT[i];
 	  tempstart[i]+=mstart[q];
@@ -447,7 +447,7 @@ void Driver::MakeSymmetric(VecMat<complex<realtype>>& m)
   
   // Average over all transformations and transfer the result to the input array
   realtype invperiod=1./TransformationPeriod;
-  for(int i=0; i<Vq; i++){ mstart[i]=tempstart[i]*invperiod;}  
+  for(int i=0; i<Nq; i++){ mstart[i]=tempstart[i]*invperiod;}  
 
   if(TRACE) cout << "End of MakeSymmetric" << endl;
 
@@ -468,8 +468,8 @@ realtype Driver::CalculateFreeEnergy(realtype T)
  
   if(TRACE) cout << "--- T  = " << T << endl;
   // constants:
-  //realtype betaf_constants= -( 0.5*NSUBL*log(2.*Vq) + 0.5*NSUBL*(NS-1)*log(PI));
-  realtype betaf_constants = -0.5*NSUBL*log(Vq) -0.5*NSUBL*(Ns-2)*log(PI) - 0.5*NSUBL*log(TWOPI);
+  //realtype betaf_constants= -( 0.5*NSUBL*log(2.*Nq) + 0.5*NSUBL*(NS-1)*log(PI));
+  realtype betaf_constants = -0.5*NSUBL*log(Nq) -0.5*NSUBL*(Ns-2)*log(PI) - 0.5*NSUBL*log(TWOPI);
     
     
   if(TRACE) cout << "betaf_constants  = " << betaf_constants << endl;
@@ -515,20 +515,20 @@ realtype Driver::CalculateFreeEnergy(realtype T)
 
   if(TRACE) cout << "betaf_delta      = " << -(Delta[0]-mineigenvalue)/T << " (Delta= " << Delta[0] << " mineig: " << mineigenvalue << ")" << endl;
   
-  realtype betaf_logKinvq   = -0.5*invVq*NFAKESPINTRACE*SumLogDet(Kinvq);
+  realtype betaf_logKinvq   = -0.5*invNq*NFAKESPINTRACE*SumLogDet(Kinvq);
 
   if(TRACE) cout << "betaf_logKinvq   =  " << betaf_logKinvq << endl;
   f += T*betaf_logKinvq;
   
   ComputeDq(false,true); // excludeqzero=false, preserveinput=true not to jeopardize Keff
   
-  realtype betaf_logD       = -0.5*invVq*SumLogDet(Dq);
+  realtype betaf_logD       = -0.5*invNq*SumLogDet(Dq);
   if(TRACE) cout << "betaf_logD       =  " << betaf_logD << endl;
   f += T*betaf_logD;
 
   ComputeSelfEnergy(true); // ensure that Kinvq is the same.
 
-  realtype betaf_KinvqSigma = -0.5*invVq*NFAKESPINTRACE*SumTr(Kinvq,Sigmaq);
+  realtype betaf_KinvqSigma = -0.5*invNq*NFAKESPINTRACE*SumTr(Kinvq,Sigmaq);
   if(TRACE) cout << "betaf_KinvqSigma = " << betaf_KinvqSigma << endl;
   f += T*betaf_KinvqSigma;
 
@@ -548,7 +548,7 @@ realtype Driver::CalculateFreeEnergy(realtype T)
  
   if(TRACE) cout << "--- T  = " << T << endl;
   // constants:
-  realtype betaf_constants= -( 0.5*NSUBL*log(2.*Vq) + 0.5*NSUBL*(NS-1)*log(PI)); 
+  realtype betaf_constants= -( 0.5*NSUBL*log(2.*Nq) + 0.5*NSUBL*(NS-1)*log(PI)); 
   if(TRACE) cout << "betaf_constants  = " << betaf_constants << endl;
   
   f += T*betaf_constants;
@@ -562,20 +562,20 @@ realtype Driver::CalculateFreeEnergy(realtype T)
   if(TRACE) cout << "betaf_delta      = " << -(Delta[0]-mineigenvalue)/T << " (Delta= " << Delta[0] << " mineig: " << mineigenvalue << ")" << endl;
   
   // NSUBL*log(T) is needed because T is not part of Kinvq in the program
-  realtype betaf_logKinvq   = -0.5*NS*(invVq*SumLogDet(Kinvq) + NSUBL*log(T));
-  //  cout << "invVqq*SumLogDet= " << invVq*SumLogDet(Kinvq) << " log(T)= " << log(T) << endl;
+  realtype betaf_logKinvq   = -0.5*NS*(invNq*SumLogDet(Kinvq) + NSUBL*log(T));
+  //  cout << "invNqq*SumLogDet= " << invNq*SumLogDet(Kinvq) << " log(T)= " << log(T) << endl;
   if(TRACE) cout << "betaf_logKinvq   =  " << betaf_logKinvq << endl;					  f += T*betaf_logKinvq;
   
   ComputeDq(false,true); // excludeqzero=false, preserveinput=true not to jeopardize Keff
   
   // NSUBL*2.*log(T) needed because T is not part of Dq in the program
-  realtype betaf_logD       = -0.5*invVq*( SumLogDet(Dq) - Vq*NSUBL*2.*log(T) );
+  realtype betaf_logD       = -0.5*invNq*( SumLogDet(Dq) - Nq*NSUBL*2.*log(T) );
   if(TRACE) cout << "betaf_logD       =  " << betaf_logD << endl;
   f += T*betaf_logD;
 
   ComputeSelfEnergy(true); // ensure that Kinvq is the same.
 
-  realtype betaf_KinvqSigma = -0.5*NS*invVq*SumTr(Kinvq,Sigmaq);
+  realtype betaf_KinvqSigma = -0.5*NS*invNq*SumTr(Kinvq,Sigmaq);
   if(TRACE) cout << "betaf_KinvqSigma = " << betaf_KinvqSigma << endl;
   f += T*betaf_KinvqSigma;
 
@@ -595,8 +595,8 @@ realtype Driver::CalculateFreeEnergy(realtype T)
 // B = Dq
 //
 // FFTW omits volume prefactors in fourier transforms, we adopt the convention that the Fourier transform
-// is without prefactors in going from q->r, and the prefactor 1/Vq is inserted on going from r->q.
-// This means that using FFTW for transforming q->r->q, one should divide the result by Vq. 
+// is without prefactors in going from q->r, and the prefactor 1/Nq is inserted on going from r->q.
+// This means that using FFTW for transforming q->r->q, one should divide the result by Nq. 
 void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=false)
 {
 #ifdef PHONONS
@@ -608,8 +608,8 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
   if(TRACE){SanityCheck(Kinvq,"Kinvq, Initializing ComputeDq");}
 
 
-  FFTWEXECUTE(A1q_to_A1r); // Kinvq->Kinvr, stored in Ar, after: Ar=Kinvr*Sqrt(Vq)
-  Kinvr *= invSqrtVq; // Ar=Kinvr
+  FFTWEXECUTE(A1q_to_A1r); // Kinvq->Kinvr, stored in Ar, after: Ar=Kinvr*Sqrt(Nq)
+  Kinvr *= invSqrtNq; // Ar=Kinvr
 
   
 #ifdef FORCEINVERSIONSYMMETRY
@@ -624,7 +624,7 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
   for(int m1=0; m1<NSUBL; m1++)
     for(int m2=m1; m2<NSUBL; m2++)
       {
-	for(int r=0; r<Vq; r++)
+	for(int r=0; r<Nq; r++)
 	  {
 	    complex<realtype> tt(0.);
 	    for(int s1=0; s1<NSPIN; s1++)
@@ -641,12 +641,15 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 
 	FFTWEXECUTE(F1pluss); // 
 	
-	for(int qi=0; qi<Vq; qi++)
+	for(int qi=0; qi<Nq; qi++)
 	  {
 	    Dinvq(qi,m1,m2)=F1[qi];
 	    if(m2 != m1) Dinvq(qi,m2,m1)=conj(F1[qi]); 
 	  }
       }
+
+  //  cout << "after constraint block: " << endl;
+  //cout << Dinvq << endl;
 
 #ifdef PHONONS
   // the offdiagonal phonon-constraint part
@@ -659,7 +662,7 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
   for(int m1=0; m1<NSUBL; m1++) // m1 must be 0 here because phonons NSUBL=1
     for(int c=0; c<NC; c++)
       {
-	for(int r=0; r<Vq; r++)
+	for(int r=0; r<Nq; r++)
 	  {
 	    SMatrix<complex<realtype>> my(NMAT,NMAT);
 	    my  = g[c];
@@ -673,26 +676,30 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 	// do fourier-transform of theta
 	FFTWEXECUTE(F1pluss); 
 	
-	for(int qi=0; qi<Vq; qi++)
+	for(int qi=0; qi<Nq; qi++)
 	  {
 	    for(int m2=NSUBL; m2<NDMAT; m2++)
 	      {
 		int n2=m2-NSUBL; 
 		
 		if(c==0){Dinvq(qi,m1,m2)=0;}
-		Dinvq(qi,m1,m2)+= multiplier*0.5*invSqrtVq*F1[qi]*f(qi,c,n2)*conj(expi(la.qr(qi,clist[c])));
+
+		//	cout << "q=" << qi << " f=" << f(qi,c,n2) << endl;
+		Dinvq(qi,m1,m2)+= multiplier*0.5*invSqrtNq*F1[qi]*f(qi,c,n2)*conj(expi(la.qr(qi,clist[c])));
 	      }		   
 	  }
       }
   
   // Set the constraint-phonon part.
-  for(int qi=0; qi<Vq; qi++)
+  for(int qi=0; qi<Nq; qi++)
     for(int m1=0; m1<NSUBL; m1++)
       for(int m2=NSUBL; m2<NDMAT; m2++)
 	{
 	  Dinvq(la.GetInversionIndx(qi),m2,m1)=Dinvq(qi,m1,m2);
 	}
 
+  //cout << "after constraint-phonon block: " << endl;
+  //cout << Dinvq << endl;
   
   // finally the phonon-phonon part
 #ifdef CPOSITIVE
@@ -701,7 +708,7 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 	{	    
 	  Triplet myivec=clist[c2]+clist[c4];
 	  
-	  for(int r=0; r<Vq; r++)
+	  for(int r=0; r<Nq; r++)
 	    {
 	      SMatrix<complex<realtype>> my(NMAT,NMAT);
 	      
@@ -725,17 +732,17 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 		int n1=m1-NSUBL; 
 		int n2=m2-NSUBL; 
 		
-		for(int qi=0; qi<Vq; qi++)
+		for(int qi=0; qi<Nq; qi++)
 		  {
 		    if(c2==0 && c4==0){Dinvq(qi,m1,m2);}
-		    Dinvq(qi,m1,m2)+=-invVq*F1[qi]*conj(f(qi,c2,n1))*f(qi,c4,n2)*conj(expi(la.qr(qi,clist[c4])));
+		    Dinvq(qi,m1,m2)+=-invNq*F1[qi]*conj(f(qi,c2,n1))*f(qi,c4,n2)*conj(expi(la.qr(qi,clist[c4])));
 		  }
 	      }
 
 	  
 	  myivec=clist[c2]-clist[c4];
 	  
-	  for(int r=0; r<Vq; r++)
+	  for(int r=0; r<Nq; r++)
 	    {
 	      SMatrix<complex<realtype>> my(NMAT,NMAT);
 	      
@@ -760,9 +767,9 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 		int n1=m1-NSUBL; 
 		int n2=m2-NSUBL; 
 		
-		for(int qi=0; qi<Vq; qi++)
+		for(int qi=0; qi<Nq; qi++)
 		  {
-		    Dinvq(qi,m1,m2)+=-invVq*F1[qi]*conj(f(qi,c2,n1))*f(qi,c4,n2);
+		    Dinvq(qi,m1,m2)+=-invNq*F1[qi]*conj(f(qi,c2,n1))*f(qi,c4,n2);
 		  }
 	      }
 	}
@@ -772,7 +779,7 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
       {	    
 	Triplet myivec=clist[c2]+clist[c4];
 	
-	for(int i=0; i<Vq; i++)
+	for(int i=0; i<Nq; i++)
 	  {
 	    SMatrix<complex<realtype>> my(NMAT,NMAT);
 	    
@@ -796,20 +803,19 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 	      int n1=m1-NSUBL; 
 	      int n2=m2-NSUBL; 
 	      
-	      for(int qi=0; qi<Vq; qi++)
+	      for(int qi=0; qi<Nq; qi++)
 		{
 		  if(c2==0 && c4==0){Dinvq(qi,m1,m2);}
-		  Dinvq(qi,m1,m2)+=-invVq*F1[qi]*conj(f(qi,c2,n1))*f(qi,c4,n2)*conj(expi(la.qr(qi,clist[c4])));
+		  Dinvq(qi,m1,m2)+=-invNq*F1[qi]*conj(f(qi,c2,n1))*f(qi,c4,n2)*conj(expi(la.qr(qi,clist[c4])));
 		}
 	    }
       }
 #endif
 
  
-
   
   // Set the remainding phonon-phonon part.
-  for(int qi=0; qi<Vq; qi++)
+  for(int qi=0; qi<Nq; qi++)
     for(int m1=NSUBL; m1<NDMAT; m1++) 
       for(int m2=m1; m2<NDMAT; m2++) 
 	{
@@ -817,10 +823,14 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 	}
 
 
+  // cout << "before adding bare phonons: " << endl;
+  // cout << Dinvq << endl;
+
+
   // add the bare phonon part
   
   realtype barepart=1./currT; // the one-half is included in the def. of propagator 
-  for(int qi=0; qi<Vq; qi++)
+  for(int qi=0; qi<Nq; qi++)
     {
       for(int n=0; n<NMODE; n++)
 	{
@@ -829,6 +839,9 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 	}
     }
 #endif
+
+  // cout << "before forcinfg symmetries " << endl;
+  //  cout << Dinvq << endl;
   
   // FORCING
   MakeMixedHermitian(Dinvq,NSUBL,NSUBL);
@@ -848,8 +861,8 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 
   if(preserveinput)
     {
-      FFTWEXECUTE(A1r_to_A1q);  // Kinvr->Kinvq, so after transform: Aq=Kinvq*sqrt(Vq) 
-      Kinvq *= invSqrtVq; // Aq=Kinvq;
+      FFTWEXECUTE(A1r_to_A1q);  // Kinvr->Kinvq, so after transform: Aq=Kinvq*sqrt(Nq) 
+      Kinvq *= invSqrtNq; // Aq=Kinvq;
       
 #ifdef PRESERVESYMMETRY
       MakeSymmetric(Kinvq);
@@ -896,13 +909,13 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 	const int delta_l=subl(delta);
 
 	// Term 1:
-	for(int q=0; q<Vq; q++){F1[q]=Dq(q,delta_l,alpha_l);}
+	for(int q=0; q<Nq; q++){F1[q]=Dq(q,delta_l,alpha_l);}
 	FFTWEXECUTE(F1pluss); // we take the Fourier volume factor X1=0
 	
-	for(int r=0; r<Vq; r++){F2[r]=Kinvr(la.GetInversionIndx(r),alpha,delta)*F1[r];}
+	for(int r=0; r<Nq; r++){F2[r]=Kinvr(la.GetInversionIndx(r),alpha,delta)*F1[r];}
 	FFTWEXECUTE(F2pluss);
 
-	for(int k=0; k<Vq; k++){Sigmaq(k,alpha,delta) += invSqrtVq*F2[k];}
+	for(int k=0; k<Nq; k++){Sigmaq(k,alpha,delta) += invSqrtNq*F2[k];}
 
 	//	cout << "Sigmaq after term 1: alpha=" << alpha << " delta=" << delta << endl;
 	//cout << Sigmaq << endl;
@@ -916,7 +929,7 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 	// Term 2
 	for(int c=0; c<NC; c++)
 	  {
- 	    for(int q=0; q<Vq; q++)
+ 	    for(int q=0; q<Nq; q++)
 	      {
 		F1[q]=0;
 		for(int n=0; n<NMODE; n++)
@@ -926,7 +939,7 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 	      }
 	    FFTWEXECUTE(F1pluss);
 	    
-	    for(int r=0; r<Vq; r++)
+	    for(int r=0; r<Nq; r++)
 	      {
 		F2[r]=0;
 		for(int s=0; s<NSPIN; s++)
@@ -935,9 +948,9 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 	    
 	    FFTWEXECUTE(F2pluss);
 	    
-	    for(int k=0; k<Vq; k++){ Sigmaq(k,alpha,delta) += invVq*expi(la.qr(k,clist[c]))*F2[k];}
+	    for(int k=0; k<Nq; k++){ Sigmaq(k,alpha,delta) += invNq*expi(la.qr(k,clist[c]))*F2[k];}
 
-	    for(int r=0; r<Vq; r++)
+	    for(int r=0; r<Nq; r++)
 	      {
 		F2[r]=0;
 		int rpc=la.rAdd(r,clist[c]);
@@ -947,14 +960,14 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 	    
 	    FFTWEXECUTE(F2pluss);
 	    
-	    for(int k=0; k<Vq; k++){ Sigmaq(k,alpha,delta) += invVq*F2[k];}
+	    for(int k=0; k<Nq; k++){ Sigmaq(k,alpha,delta) += invNq*F2[k];}
 
 	  }
 
 	// Term 3 (as term 2, but switch alpha and delta and take complex conj)
 	for(int c=0; c<NC; c++)
 	  {
- 	    for(int q=0; q<Vq; q++)
+ 	    for(int q=0; q<Nq; q++)
 	      {
 		F1[q]=0;
 		for(int n=0; n<NMODE; n++)
@@ -965,7 +978,7 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 	    FFTWEXECUTE(F1pluss);
 
 
-	    for(int r=0; r<Vq; r++)
+	    for(int r=0; r<Nq; r++)
 	      {
 		F2[r]=0;
 		for(int s=0; s<NSPIN; s++)
@@ -974,9 +987,9 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 	    
 	    FFTWEXECUTE(F2pluss);
 	    
-	    for(int k=0; k<Vq; k++){ Sigmaq(k,alpha,delta) += invVq*conj(expi(la.qr(k,clist[c]))*F2[k]);}
+	    for(int k=0; k<Nq; k++){ Sigmaq(k,alpha,delta) += invNq*conj(expi(la.qr(k,clist[c]))*F2[k]);}
 
-	    for(int r=0; r<Vq; r++)
+	    for(int r=0; r<Nq; r++)
 	      {
 		F2[r]=0;
 		int rpc=la.rAdd(r,clist[c]);
@@ -986,14 +999,14 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 	    
 	    FFTWEXECUTE(F2pluss);
 	    
-	    for(int k=0; k<Vq; k++){ Sigmaq(k,alpha,delta) += invVq*conj(F2[k]);}
+	    for(int k=0; k<Nq; k++){ Sigmaq(k,alpha,delta) += invNq*conj(F2[k]);}
 	  }
 
 	// Term4:
 	for(int c1=0; c1<NC; c1++)
 	  for(int c2=0; c2<NC; c2++)
 	    {
-	      for(int q=0; q<Vq; q++)
+	      for(int q=0; q<Nq; q++)
 		{
 		  F1[q]=0;
 		  
@@ -1004,7 +1017,7 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 	      FFTWEXECUTE(F1pluss);
 
 	      
-	      for(int r=0; r<Vq; r++)
+	      for(int r=0; r<Nq; r++)
 		{
 		  F2[r]=0;
 		  for(int be=0; be<NSPIN; be++)
@@ -1016,10 +1029,10 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 		}
 	      
 	      FFTWEXECUTE(F2pluss);
-	      for(int k=0; k<Vq; k++){Sigmaq(k,alpha,delta)+= -invVq*invSqrtVq*F2[k]*expi(la.qr(k,clist[c1]))*expi(la.qr(k,clist[c2]));}
+	      for(int k=0; k<Nq; k++){Sigmaq(k,alpha,delta)+= -invNq*invSqrtNq*F2[k]*expi(la.qr(k,clist[c1]))*expi(la.qr(k,clist[c2]));}
 
 	      
-	      for(int r=0; r<Vq; r++)
+	      for(int r=0; r<Nq; r++)
 		{
 		  int rpc2=la.rAdd(r,clist[c2]);
 		  F2[r]=0;
@@ -1032,10 +1045,10 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 		}
 	      
 	      FFTWEXECUTE(F2pluss);
-	      for(int k=0; k<Vq; k++){Sigmaq(k,alpha,delta)+= -invVq*invSqrtVq*F2[k]*expi(la.qr(k,clist[c1]));}
+	      for(int k=0; k<Nq; k++){Sigmaq(k,alpha,delta)+= -invNq*invSqrtNq*F2[k]*expi(la.qr(k,clist[c1]));}
 
 
-	      for(int r=0; r<Vq; r++)
+	      for(int r=0; r<Nq; r++)
 		{
 		  int rpc1=la.rAdd(r,clist[c1]);
 		  F2[r]=0;
@@ -1048,9 +1061,9 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 		}
 	      
 	      FFTWEXECUTE(F2pluss);
-	      for(int k=0; k<Vq; k++){Sigmaq(k,alpha,delta)+= -invVq*invSqrtVq*F2[k]*expi(la.qr(k,clist[c2]));}
+	      for(int k=0; k<Nq; k++){Sigmaq(k,alpha,delta)+= -invNq*invSqrtNq*F2[k]*expi(la.qr(k,clist[c2]));}
 
-	      for(int r=0; r<Vq; r++)
+	      for(int r=0; r<Nq; r++)
 		{
 		  int rpc1c2=la.rAdd(r,clist[c1]+clist[c2]);
 		  F2[r]=0;
@@ -1063,13 +1076,13 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 		}
 	      
 	      FFTWEXECUTE(F2pluss);
-	      for(int k=0; k<Vq; k++){Sigmaq(k,alpha,delta)+= -invVq*invSqrtVq*F2[k];}
+	      for(int k=0; k<Nq; k++){Sigmaq(k,alpha,delta)+= -invNq*invSqrtNq*F2[k];}
 	    }
 #else	
 	// Term 2
 	for(int c=0; c<NC; c++)
 	  {
- 	    for(int q=0; q<Vq; q++)
+ 	    for(int q=0; q<Nq; q++)
 	      {
 		F1[q]=0;
 		for(int n=0; n<NMODE; n++)
@@ -1079,7 +1092,7 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 	      }
 	    FFTWEXECUTE(F1pluss);
 
-	    for(int r=0; r<Vq; r++)
+	    for(int r=0; r<Nq; r++)
 	      {
 		F2[r]=0;
 		for(int s=0; s<NSPIN; s++)
@@ -1088,20 +1101,20 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 	    
 	    FFTWEXECUTE(F2pluss);
 	    
-	    for(int k=0; k<Vq; k++){ Sigmaq(k,alpha,delta) += invVq*expi(la.qr(k,clist[c]))*F2[k];}
+	    for(int k=0; k<Nq; k++){ Sigmaq(k,alpha,delta) += invNq*expi(la.qr(k,clist[c]))*F2[k];}
 	  }
 
 	// Term 3 (as term 2, but switch alpha and delta and take complex conj)
 	for(int c=0; c<NC; c++)
 	  {
- 	    for(int q=0; q<Vq; q++)
+ 	    for(int q=0; q<Nq; q++)
 	      {
 		F1[q]=0;
 		for(int n=0; n<NMODE; n++){ F1[q]+=Dq(q,NSUBL+n,0)*f(q,c,n);}
 	      }
 	    FFTWEXECUTE(F1pluss);
 	    
-	    for(int r=0; r<Vq; r++)
+	    for(int r=0; r<Nq; r++)
 	      {
 		F2[r]=0;
 		for(int s=0; s<NSPIN; s++)
@@ -1110,14 +1123,14 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 	      }
 	    FFTWEXECUTE(F2pluss);
 	    
-	    for(int k=0; k<Vq; k++){ Sigmaq(k,alpha,delta) += invVq*conj(expi(la.qr(k,clist[c]))*F2[k]);}
+	    for(int k=0; k<Nq; k++){ Sigmaq(k,alpha,delta) += invNq*conj(expi(la.qr(k,clist[c]))*F2[k]);}
 	  }
 	
 	// Term 4:	
 	for(int c1=0; c1<NC; c1++)
 	  for(int c2=0; c2<NC; c2++)
 	    {
-	      for(int q=0; q<Vq; q++)
+	      for(int q=0; q<Nq; q++)
 		{
 		  F1[q]=0;
 		  
@@ -1127,7 +1140,7 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 		}
 	      FFTWEXECUTE(F1pluss);
 	      
-	      for(int r=0; r<Vq; r++)
+	      for(int r=0; r<Nq; r++)
 		{
 		  F2[r]=0;
 		  for(int s1=0; s1<NSPIN; s1++)
@@ -1139,7 +1152,7 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 		}
 	      
 	      FFTWEXECUTE(F2pluss);
-	      for(int k=0; k<Vq; k++){Sigmaq(k,alpha,delta)+= -invVq*invSqrtVq*F2[k]*expi(la.qr(k,clist[c1]))*expi(la.qr(k,clist[c2]));}
+	      for(int k=0; k<Nq; k++){Sigmaq(k,alpha,delta)+= -invNq*invSqrtNq*F2[k]*expi(la.qr(k,clist[c1]))*expi(la.qr(k,clist[c2]));}
 	    }
 #endif
 #endif
@@ -1154,8 +1167,8 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
   
   if(preserveinput)
     {
-      FFTWEXECUTE(A1r_to_A1q); // Kinvr->Kinvq, so after transform: A1q=Kinvq*sqrt(Vq)
-      Kinvq *= invSqrtVq;
+      FFTWEXECUTE(A1r_to_A1q); // Kinvr->Kinvq, so after transform: A1q=Kinvq*sqrt(Nq)
+      Kinvq *= invSqrtNq;
 
 #ifdef PRESERVESYMMETRY
       MakeSymmetric(Kinvq);
@@ -1229,12 +1242,13 @@ void Driver::MakeRandomSigma()
   logfile << "Making a random initialization of the self-energy" << endl;
 
   realtype da = par[DA];
+  realtype de = Delta[0]; //scale randomness with Delta
 
   for(int m=0; m<NMAT; m++)
     {
-      for(int i=0; i<Vq; i++)
+      for(int i=0; i<Nq; i++)
 	{
-	  complex<realtype> c=da*complex<realtype>(RAN(),0.); // real positive value 
+	  complex<realtype> c=da*de*complex<realtype>(RAN(),0.); // real positive value 
 	  Sigmaq(i,m,m)=c;
 	}
     }
@@ -1244,9 +1258,9 @@ void Driver::MakeRandomSigma()
       for(int m1=0; m1<NMAT; m1++)
 	for(int m2=m1+1; m2<NMAT; m2++)
 	  {
-	    for(int i=0; i<Vq; i++)
+	    for(int i=0; i<Nq; i++)
 	      {
-		complex<realtype> c=da*complex<realtype>(RAN(),RAN());
+		complex<realtype> c=da*de*complex<realtype>(RAN(),RAN());
 		Sigmaq(i,m1,m2)=c;
 	      }
 	  }
@@ -1261,7 +1275,7 @@ void Driver::MakeRandomSigma()
   FFTWEXECUTE(A2q_to_A2r);
   MakeReal(Sigmar);
   FFTWEXECUTE(A2r_to_A2q);
-  Sigmaq*=invVq;  // do not change magnitude
+  Sigmaq*=invNq;  // do not change magnitude
   */
 #endif
 
@@ -1289,7 +1303,7 @@ void Driver::SetQsToZero()
     {
       int qindx;
       ifile >> qindx;
-      if(qindx >=0 && qindx <Vq && ifile)
+      if(qindx >=0 && qindx <Nq && ifile)
 	{
 	  found=true;
 	  Coord thisq=la.qPos(qindx);
@@ -1464,7 +1478,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 
   //  nalphas=CalculateAlphas(newT); // calculate alphas
 
-  m2=NS*newT/(2.*Delta[0]*Vq); // calculate magnetic moment
+  m2=NS*newT/(2.*Delta[0]*Nq); // calculate magnetic moment
 
   CalculateTs(Ts); // calculate the final temperatures
   
@@ -1626,19 +1640,19 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 	      logfile << ", " << QCORRSFILENAME;
 	      ofstream qcorrfile(QCORRSFILENAME.c_str(),ios::app);
 	      realtype factor=newT*NS*0.5;
-	      vector<realtype> qcorr(Vq);
-	      //	      for(int i=0; i<Vq; i++) qcorr[i]=factor/K1[i];
+	      vector<realtype> qcorr(Nq);
+	      //	      for(int i=0; i<Nq; i++) qcorr[i]=factor/K1[i];
 	      
 	      if(BINARYOUTFILES)
 		{
 		  qcorrfile.write((char*) &lineid,sizeof(lineid)); // general format
-		  qcorrfile.write((char*) &Vq,sizeof(Vq));
-		  qcorrfile.write((char*) &qcorr[0],Vq*sizeof(qcorr[0]));
+		  qcorrfile.write((char*) &Nq,sizeof(Nq));
+		  qcorrfile.write((char*) &qcorr[0],Nq*sizeof(qcorr[0]));
 		}
 	      else
 		{
 		  qcorrfile << setprecision(16) << lineid << " ";
-		  for(int i=0; i<Vq; i++){ qcorrfile << qcorr[i] << " ";}
+		  for(int i=0; i<Nq; i++){ qcorrfile << qcorr[i] << " ";}
 		  qcorrfile << endl;
 		}
 	      qcorrfile.close();
@@ -1654,13 +1668,13 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 	      if(BINARYOUTFILES)
 		{
 		  sigmaefile.write((char*) &lineid,sizeof(lineid)); // general format
-		  sigmaefile.write((char*) &Vq,sizeof(Vq));
-		  sigmaefile.write((char*) &Sigma[0],Vq*sizeof(Sigma[0]));
+		  sigmaefile.write((char*) &Nq,sizeof(Nq));
+		  sigmaefile.write((char*) &Sigma[0],Nq*sizeof(Sigma[0]));
 		}
 	      else
 		{
 		  sigmaefile << setprecision(16) << lineid << " ";
-		  for(int i=0; i<Vq; i++){ sigmaefile << Sigma[i] << " ";}
+		  for(int i=0; i<Nq; i++){ sigmaefile << Sigma[i] << " ";}
 		  sigmaefile << endl;
 		}
 	      sigmaefile.close();

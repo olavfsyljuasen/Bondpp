@@ -4,6 +4,8 @@
 using namespace std;
 
 #include<complex>
+#include<fstream>
+#include<iostream>
 
 // include eigenvalue routines
 
@@ -37,6 +39,8 @@ enum voigt{epsxx,epsyy,epszz,epsyz,epsxz,epsxy};
 
 
 typedef std::array<complex<realtype>,3> cmplxcoord;
+
+ostream& operator<<(ostream& os,cmplxcoord& cmplx){ for(int i=0; i<3; i++) os << cmplx[i] << " "; return os;}
 
 #if defined XDISPLACEMENTS
 
@@ -90,7 +94,7 @@ class Phonons
 
   realtype GetSumLogOmegaoverV(){return sumlogomegaoverv;}
  private:  
-  const int Vq;
+  const int Nq;
   
   VecMat<realtype> omega;
   
@@ -107,7 +111,7 @@ class Phonons
 
 
 
-Phonons::Phonons(): Vq(la.SiteqVol()),omega(Vq,NMODE),normalmode(NSUBL),sumlogomegaoverv(0.),flist(Vq,NC,NMODE)
+Phonons::Phonons(): Nq(la.NqSites()),omega(Nq,NMODE),normalmode(NSUBL),sumlogomegaoverv(0.),flist(Nq,NC,NMODE)
 {
   if(TRACE) cout << "Initializing Phonons" << endl;
   // We start with the elastic constants
@@ -212,9 +216,10 @@ Phonons::Phonons(): Vq(la.SiteqVol()),omega(Vq,NMODE),normalmode(NSUBL),sumlogom
   Matrix<eigen_real_type,Dynamic,Dynamic> El(NELASTIC,NELASTIC); // the elastic matrix      
   El.setZero(NELASTIC,NELASTIC);
   
+
   for(int s=0; s<Nsprings; s++)
     {
-      double c=couplings[s];
+      double c=couplings[s]/la.UnitCellVolume();
       Coord  sp=la.rPos(springs[s]);
       double n2=sp.Norm()*sp.Norm();
       
@@ -290,12 +295,21 @@ Phonons::Phonons(): Vq(la.SiteqVol()),omega(Vq,NMODE),normalmode(NSUBL),sumlogom
       cout << El << endl;
     }
 
+
+
   // diagonalize it, and store the results
   SelfAdjointEigenSolver<Matrix<eigen_real_type,Dynamic,Dynamic> > elsolve(El);
   
   if(TRACE) cout << "Elastic modes:" << endl;
 
   ofstream ofile("elasticmodes.dat");  
+
+  ofile << "The elastic matrix:" << endl;
+  ofile << El << endl;
+  ofile << endl;
+
+  ofile.close();
+
   for(int n=0; n<NELASTIC; n++)
     {
       eigen_real_type eval= elsolve.eigenvalues()[n]; //eigen sorts eigenvalues,least first                     
@@ -329,11 +343,11 @@ Phonons::Phonons(): Vq(la.SiteqVol()),omega(Vq,NMODE),normalmode(NSUBL),sumlogom
     
   for(int i=0; i<NSUBL; i++)
     { 
-      normalmode[i]=new VecMat<cmplxcoord>(Vq,NMODE,1);
+      normalmode[i]=new VecMat<cmplxcoord>(Nq,NMODE,1);
     }
   
   
-  for(int j=0; j<Vq; j++)
+  for(int j=0; j<Nq; j++)
     {
       Coord q=la.qPos(j);
       
@@ -341,9 +355,8 @@ Phonons::Phonons(): Vq(la.SiteqVol()),omega(Vq,NMODE),normalmode(NSUBL),sumlogom
       Matrix<eigen_complex_type,Dynamic,Dynamic> D(NMODE,NMODE);      
       D.setZero(NMODE,NMODE);
 
-      // square lattice with horizontal and vertical bonds (alpha1), and diagonal bonds (alpha2). x and y displacements
-      // Nsublattice=1, Ndimutslag=2.     
 
+      if(TRACE) cout << j << " q=(" << q << "):\nD=\n" << D << endl; 
       for(int p=0; p<Nsprings; p++)
 	{
 	  Coord R=la.rPos(springs[p]);
@@ -352,55 +365,16 @@ Phonons::Phonons(): Vq(la.SiteqVol()),omega(Vq,NMODE),normalmode(NSUBL),sumlogom
 	  for(int i=0; i<NDISP; i++)
 	    for(int j=0; j<NDISP; j++)
 	      D(i,j)+= (R[i]*R[j]/R2)*2*couplings[p]*(1.-cos(q*R));
+
+	  if(TRACE) cout << "R=" << R << " coup=" << couplings[p] << " 1-cos=" << 1-cos(q*R) << "\nD(R)=\n" << D << endl; 
+
 	}
 
-      /*
-
-#if defined SQUAREPHONONS
-
-      //      D(0,0)=2*alpha1*(1-cos(q.x))+2*alpha2*(1-cos(q.x)*cos(q.y));
-      // D(1,1)=2*alpha1*(1-cos(q.y))+2*alpha2*(1-cos(q.x)*cos(q.y));
-      //D(0,1)=2*alpha2*sin(q.x)*sin(q.y);
-      //D(1,0)=D(0,1);
-
-      for(int p=0; p<Nsprings; p++)
+      if(TRACE)
 	{
-	  Coord R=la.rPos(springs[p]);
-	  realtype R2=scalarproduct(R,R);
-
-	  for(int i=0; i<NDISP; i++)
-	    for(int j=0; j<NDISP; j++)
-	      D(i,j)+= (R[i]*R[j]/R2)*2*couplings[p]*(1.-cos(q*R));
+	  cout << j << " q=(" << q << "):\nD=\n" << D << endl; 
 	}
 
-
-#elif defined TRIANGULARPHONONS
-      for(int p=0; p<Nsprings; p++)
-	{
-	  Coord R=la.rPos(springs[p]);
-	  realtype R2=scalarproduct(R,R);
-
-	  for(int i=0; i<NDISP; i++)
-	    for(int j=0; j<NDISP; j++)
-	      D(i,j)+= (R[i]*R[j]/R2)*2*couplings[p]*(1.-cos(q*R));
-	}
-#elif defined CUBICPHONONS
-      double alpha1=par[ALPHA1];
-      double alpha2=par[ALPHA2];
-
-      D(0,0)=2*alpha1*(1-cos(q.x))+2*alpha2*(2-cos(q.x)*cos(q.y)-cos(q.x)*cos(q.z));
-      D(1,1)=2*alpha1*(1-cos(q.y))+2*alpha2*(2-cos(q.y)*cos(q.z)-cos(q.y)*cos(q.x));
-      D(2,2)=2*alpha1*(1-cos(q.z))+2*alpha2*(2-cos(q.z)*cos(q.x)-cos(q.z)*cos(q.y));
-      D(0,1)=2*alpha2*sin(q.x)*sin(q.y);
-      D(0,2)=2*alpha2*sin(q.x)*sin(q.z);
-      D(1,2)=2*alpha2*sin(q.y)*sin(q.z);
-      D(1,0)=D(0,1);
-      D(2,0)=D(0,2);
-      D(2,1)=D(1,2);
-#else
-      
-#endif
-   */
       // diagonalize it, and store the results
       SelfAdjointEigenSolver<Matrix<eigen_complex_type,Dynamic,Dynamic> > es(D);
 
@@ -419,13 +393,13 @@ Phonons::Phonons(): Vq(la.SiteqVol()),omega(Vq,NMODE),normalmode(NSUBL),sumlogom
 	  */
 
 	  omega(j,n)=val;
-	  if(TRACE) cout << "eigenvalue[" << n << "]=" << omega(j,n) << endl;
+	  //	  if(TRACE) cout << "eigenvalue[" << n << "]=" << omega(j,n) << endl;
 	}
       
       for(int n=0; n<NMODE; n++)
 	{
-	  if(TRACE) cout << es.eigenvectors().col(n) << endl;
-	 
+	  if(TRACE) cout << "n=" << n << " eval=" << omega(j,n) << " evec=\n" << es.eigenvectors().col(n) << endl;
+
 	  for(int i=0; i<NSUBL; i++)
 	    {
 	      complex<realtype> u_x(0);
@@ -477,6 +451,10 @@ Phonons::Phonons(): Vq(la.SiteqVol()),omega(Vq,NMODE),normalmode(NSUBL),sumlogom
 	      cmplxcoord thisutslag={mysign*u_x,mysign*u_y,mysign*u_z};
 
 	      (*normalmode[i])(j,n,0)=thisutslag;
+
+
+	 
+
 	    } 
 	}
     }
@@ -484,7 +462,7 @@ Phonons::Phonons(): Vq(la.SiteqVol()),omega(Vq,NMODE),normalmode(NSUBL),sumlogom
   
   // enforce W_-q,n = W_q,n^*
 
-  for(int q=0; q<Vq; q++)
+  for(int q=0; q<Nq; q++)
     {
       const int mq=la.GetInversionIndx(q);
       if(mq==q) continue;
@@ -503,7 +481,7 @@ Phonons::Phonons(): Vq(la.SiteqVol()),omega(Vq,NMODE),normalmode(NSUBL),sumlogom
 
   
   if(TRACE) cout << "Checking that normal/mode eigenvectors are complex conjugate of each other" << endl;
-  for(int q=0; q<Vq; q++)
+  for(int q=0; q<Nq; q++)
     {
       const int mq=la.GetInversionIndx(q);
       
@@ -529,19 +507,19 @@ Phonons::Phonons(): Vq(la.SiteqVol()),omega(Vq,NMODE),normalmode(NSUBL),sumlogom
     }
 
   // compute sum log omega, not counting the q=0 mode.
-  for(int q=1; q<Vq; q++)
+  for(int q=1; q<Nq; q++)
     for(int n=0; n<NMODE; n++)
       {
 	sumlogomegaoverv += log(omega(q,n));
       }
-  sumlogomegaoverv /= Vq;
+  sumlogomegaoverv /= Nq;
   if(TRACE) cout << "sumlogomega=" << sumlogomegaoverv << endl;
   Initializef();
 
   
   
   ofstream outfile("phononenergies.dat");
-  for(int j=0; j<Vq; j++)
+  for(int j=0; j<Nq; j++)
     {
       Coord q=la.qPos(j);
       outfile << q;
@@ -554,7 +532,7 @@ Phonons::Phonons(): Vq(la.SiteqVol()),omega(Vq,NMODE),normalmode(NSUBL),sumlogom
   outfile.close();
 
   ofstream outfile2("normalmodes.dat");
-  for(int j=0; j<Vq; j++)
+  for(int j=0; j<Nq; j++)
     {
       Coord q=la.qPos(j);
       outfile2 << q;
@@ -571,7 +549,7 @@ Phonons::Phonons(): Vq(la.SiteqVol()),omega(Vq,NMODE),normalmode(NSUBL),sumlogom
     } 
   outfile2.close();
 
-  ofstream outfile3("elasticmodes.dat");
+  ofstream outfile3("elasticmodes.dat", ios_base::app);
 
   outfile3 << "mode" << " Eigenvalue"  << " Eigenvector( ";
   for(int j=0; j<NELASTIC; j++) outfile3 << voigtnames[j] << " ";
@@ -597,13 +575,14 @@ void Phonons::Initializef()
   if(TRACE) cout << "Initializing f" << endl;
   if(NSUBL != 1){ cout << "ftensor is not implemented for NSUBL != 1, exiting." << endl; exit(1);}
 
-  for(int qi=0; qi<Vq; qi++)
+  for(int qi=0; qi<Nq; qi++)
     {
       for(int n=0; n<NMODE; n++)
 	{
 	  double omega=GetOmega(qi,n);
 	  cmplxcoord w=GetNormalMode(qi,n,0);
 
+	  if(TRACE) cout << "qi=" << qi << " n=" << n << " omega=" << omega << endl; 
 
 	  for(int ci=0; ci<NC; ci++)
 	    {      
@@ -617,6 +596,10 @@ void Phonons::Initializef()
 	      tempf *= invsqrtmasses[0]*(1./omega);
 
 	      flist(qi,ci,n)=(qi==0 ? 0: tempf);
+
+	      if(TRACE) cout << "q=" << qi << "ci=" << ci << " n=" << n << " f=" << flist(qi,ci,n) << endl;
+
+
 	    }
 	}
     }

@@ -103,8 +103,8 @@ class BravaisLattice
  private:
   const int d;
 
-  const int vr; // real space number of sites
-  const int vq; // q-space number of sites
+  const int Nr; // real space number of sites
+  const int Nq; // q-space number of sites
   
  public:
 
@@ -115,9 +115,9 @@ class BravaisLattice
 
   Coord rPos(const Triplet i){return i[0]*a1+i[1]*a2+i[2]*a3;}
 
-  int SiterVol() const {return site_rvol;} 
+  int NrSites() const {return Nr;} 
   vector<int> SiterDims() const {return site_rdims;}
-  int SiteqVol() const {return site_qvol;}
+  int NqSites() const {return Nq;}
   vector<int> SiteqDims() const {return site_qdims;}
   
   int qAdd(const int k1,const int k2);  // return matrix entry for k1+k2
@@ -126,6 +126,7 @@ class BravaisLattice
   int rAdd(const int i,const Triplet ivec){return GetIndx(UsePBC(GetTriplet(i)+ivec));}
   int rSub(const int i,const Triplet ivec){return GetIndx(UsePBC(GetTriplet(i)-ivec));}
 
+  realtype UnitCellVolume(){return unitcellvolume;} // volume of unit cell
 #ifdef PRESERVESYMMETRY
   int TransformationPeriod;
   vector<int> TransformationTable;
@@ -137,17 +138,17 @@ class BravaisLattice
   const Coord a1;
   const Coord a2;
   const Coord a3;
+
+  const realtype unitcellvolume;
   const Coord origo;
 
   Coord b1;
   Coord b2;
   Coord b3;
 
-  const int site_rvol;
   vector<int> site_rdims;
   vector<Coord> site_r;
   
-  const int site_qvol;
   vector<int> site_qdims;
   vector<Coord> site_q;
 
@@ -191,14 +192,13 @@ N1(static_cast<int>(par[NX])),
   invN2(1./N2),
   invN3(1./N3),
   d( (N1>1)+(N2>1)+(N3>1) ),
-  
 #if defined QSPACEDIRECTLATTICE
 //  vr(N3*N2*(N1/2+1)),
-  vr(N3*N2*N1),
-  vq(N3*N2*N1),
+  Nr(N3*N2*N1),
+  Nq(N3*N2*N1),
 #else
-  vr(N3*N2*N1),
-  vq(N3*N2*(N1/2+1)),
+  Nr(N3*N2*N1),
+  Nq(N3*N2*(N1/2+1)),
 #endif    
   
 // real space basis vectors:
@@ -221,22 +221,21 @@ N1(static_cast<int>(par[NX])),
   a3(0.,0.,1.),
 #endif
   
+  unitcellvolume(scalarproduct(a1,crossproduct(a2,a3))),
   origo(0.,0.,0.),   
   
-  site_rvol(vr),
   site_rdims(d),
-  site_r(site_rvol),
+  site_r(Nr),
   
-  site_qvol(vq),
   site_qdims(d),
-  site_q(site_qvol),
+  site_q(Nq),
   
   nindx_r(0),  
   nindx_q(0)
 
 #ifdef REDUCEDOUTPUT
-  ,indx_site_r(site_rvol)
-  ,indx_site_q(site_qvol)
+  ,indx_site_r(Nr)
+  ,indx_site_q(Nq)
 #endif
 
   ,nselectedqpts(0)
@@ -246,10 +245,10 @@ N1(static_cast<int>(par[NX])),
   logfile << "initializing BravaisLattice" << endl;
   
   if(TRACE) cout << "d: " << d << endl;
-  if(TRACE) cout << "Vr: " << vr << " Vq: " << vq  << endl;
+  if(TRACE) cout << "Nr: " << Nr << " Nq: " << Nq  << endl;
  
   logfile << "d: " << d << endl;
-  logfile << "Vr: " << vr << " Vq: " << vq  << endl;
+  logfile << "Nr: " << Nr << " Nq: " << Nq  << endl;
 
   // initialize all sizes with 1
   int N1r=1;
@@ -287,7 +286,7 @@ N1(static_cast<int>(par[NX])),
   if(d==3){site_rdims[0]=N3r; site_rdims[1]=N2r; site_rdims[2]=N1r;}
 
   // reciprocal basisvectors
-  realtype invunitvolume=1./scalarproduct(a1,crossproduct(a2,a3));
+  realtype invunitvolume=1./unitcellvolume;
   b1= TWOPI*invunitvolume*crossproduct(a2,a3);
   b2= TWOPI*invunitvolume*crossproduct(a3,a1);
   b3= TWOPI*invunitvolume*crossproduct(a1,a2);
@@ -322,7 +321,7 @@ N1(static_cast<int>(par[NX])),
 
 
 #ifdef REDUCEDOUTPUT
-  for(int i=0; i<site_rvol; i++)
+  for(int i=0; i<Nr; i++)
     {
       if( InRegionOfInterest(site_r[i]) ){indx_site_r[nindx_r++]=i;}
     }
@@ -335,7 +334,7 @@ N1(static_cast<int>(par[NX])),
 #ifdef REDUCEDOUTPUT
       for(int i=0; i<nindx_r; i++) file_siter << site_r[indx_site_r[i]] << endl; 
 #else
-      for(int i=0; i<site_rvol; i++) file_siter << site_r[i] << endl; 
+      for(int i=0; i<Nr; i++) file_siter << site_r[i] << endl; 
 #endif
     }
 
@@ -374,7 +373,7 @@ N1(static_cast<int>(par[NX])),
   
 
 #ifdef REDUCEDOUTPUT
-  for(int i=0; i<site_qvol; i++)
+  for(int i=0; i<Nq; i++)
     {
       if( InRegionOfInterest(site_q[i]) ){indx_site_q[nindx_q++]=i;}
     }
@@ -391,7 +390,7 @@ N1(static_cast<int>(par[NX])),
 	{
 	  cout << qx << " " << qy << " " << qz << endl;
 	  
-	  for(i=0; i<site_qvol; i++)
+	  for(i=0; i<Nq; i++)
 	    if( abs(site_q[i].x - qx)< 1.e-6 &&
 		abs(site_q[i].y - qy)< 1.e-6 &&
 		abs(site_q[i].z - qz)< 1.e-6){ selectedqpts[nselectedqpts++]=i;}
@@ -406,7 +405,7 @@ N1(static_cast<int>(par[NX])),
 #ifdef REDUCEDOUTPUT
       for(int i=0; i<nindx_q; i++) file_siteq << setprecision(16) << site_q[indx_site_q[i]] << endl; 
 #else
-      for(int i=0; i<site_qvol; i++) file_siteq << setprecision(16) << site_q[i] << endl; 
+      for(int i=0; i<Nq; i++) file_siteq << setprecision(16) << site_q[i] << endl; 
 #endif
     }
 
@@ -527,7 +526,7 @@ N1(static_cast<int>(par[NX])),
   
   if(TRACE)
     {
-      for(int i=0; i<vq; i++)
+      for(int i=0; i<Nq; i++)
 	{
 	  Coord ic=qPos(i);
 	  int ni=GetInversionIndx(i);
@@ -638,7 +637,7 @@ inline int BravaisLattice::qSub(const int ka,const int kb)
 
 vector<int> BravaisLattice::ConstructTransformationTable(Coord ap1,Coord ap2,Coord ap3)
 {
-  vector<int> T(vq);
+  vector<int> T(Nq);
   // reciprocal basisvectors in transformed basis
   realtype invunitvolume=1./scalarproduct(ap1,crossproduct(ap2,ap3));
   Coord bp1= TWOPI*invunitvolume*crossproduct(ap2,ap3);
@@ -647,7 +646,7 @@ vector<int> BravaisLattice::ConstructTransformationTable(Coord ap1,Coord ap2,Coo
 
   Coord Tq;
 
-  for(int s=0; s<vq; s++)
+  for(int s=0; s<Nq; s++)
     {
       Triplet q=GetTriplet(s);
 
@@ -665,7 +664,7 @@ vector<int> BravaisLattice::ConstructTransformationTable(Coord ap1,Coord ap2,Coo
       int j=0;
       bool done=false;
       
-      while(!done && j<vq)
+      while(!done && j<Nq)
 	{
 	  Triplet oq=GetTriplet(j);
 
@@ -684,7 +683,7 @@ vector<int> BravaisLattice::ConstructTransformationTable(Coord ap1,Coord ap2,Coo
 	}
     }
   ofstream tfile("symmetrytable.dat"); 
-  for(int i=0; i<vq; i++) tfile << i << " " << T[i] << endl;
+  for(int i=0; i<Nq; i++) tfile << i << " " << T[i] << endl;
   tfile.close();
   
   return T;
