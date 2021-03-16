@@ -1478,7 +1478,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 
   //  nalphas=CalculateAlphas(newT); // calculate alphas
 
-  m2=NS*newT/(2.*Delta[0]*Nq); // calculate magnetic moment
+  m2=NFAKESPINTRACE*NS*newT/(2.*Delta[0]*Nq); // calculate magnetic moment
 
   CalculateTs(Ts); // calculate the final temperatures
   

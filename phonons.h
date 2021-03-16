@@ -517,37 +517,42 @@ Phonons::Phonons(): Nq(la.NqSites()),omega(Nq,NMODE),normalmode(NSUBL),sumlogome
   Initializef();
 
   
-  
-  ofstream outfile("phononenergies.dat");
-  for(int j=0; j<Nq; j++)
-    {
-      Coord q=la.qPos(j);
-      outfile << q;
-      for(int n=0; n<NMODE; n++)
+  if(PRINTPHONONENERGIES)
+    {  
+      ofstream outfile("phononenergies.dat");
+      for(int j=0; j<Nq; j++)
 	{
-	  outfile << " " << GetOmega(j,n);
-	}
-      outfile << endl;  
-    } 
-  outfile.close();
-
-  ofstream outfile2("normalmodes.dat");
-  for(int j=0; j<Nq; j++)
-    {
-      Coord q=la.qPos(j);
-      outfile2 << q;
-      for(int n=0; n<NMODE; n++)
-	{
-	  outfile2 << " | ";
-	  for(int i=0; i<NSUBL; i++)
+	  Coord q=la.qPos(j);
+	  outfile << q;
+	  for(int n=0; n<NMODE; n++)
 	    {
-	      cmplxcoord thismode=GetNormalMode(j,n,i);
-	      for(int k=0; k<3; k++) outfile2 << thismode[k] << "  ";
+	      outfile << " " << GetOmega(j,n);
 	    }
-	}
-      outfile2 << endl;  
-    } 
-  outfile2.close();
+	  outfile << endl;  
+	} 
+      outfile.close();
+    }
+
+  if(PRINTNORMALMODES)
+    {
+      ofstream outfile2("normalmodes.dat");
+      for(int j=0; j<Nq; j++)
+	{
+	  Coord q=la.qPos(j);
+	  outfile2 << q;
+	  for(int n=0; n<NMODE; n++)
+	    {
+	      outfile2 << " | ";
+	      for(int i=0; i<NSUBL; i++)
+		{
+		  cmplxcoord thismode=GetNormalMode(j,n,i);
+		  for(int k=0; k<3; k++) outfile2 << thismode[k] << "  ";
+		}
+	    }
+	  outfile2 << endl;  
+	} 
+      outfile2.close();
+    }
 
   ofstream outfile3("elasticmodes.dat", ios_base::app);
 

@@ -103,6 +103,11 @@ const bool PRINTSIGMAE=false;
 const bool PRINTRPTS=true;
 const bool PRINTQPTS=true;
 #endif
+
+
+const bool PRINTNORMALMODES=false;
+const bool PRINTPHONONENERGIES=false;
+
   
 const string RESULTSNAME= "res.dat";
 const string RES1NAME= "res1.dat";
