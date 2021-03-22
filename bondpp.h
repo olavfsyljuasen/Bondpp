@@ -486,12 +486,12 @@ realtype Driver::CalculateFreeEnergy(realtype T)
 
 #ifdef PHONONS
   //elastic modes
-  realtype betaf_elastic = 0;
-  for(int i=0; i<NELASTIC; i++){ betaf_elastic += 0.5*epsilon[i]*epsilon[i]*rule.elasticeigenvalues[i];}
+  realtype f_elastic = 0;
+  for(int i=0; i<NELASTIC; i++){ f_elastic += 0.5*epsilon[i]*epsilon[i]*rule.elasticeigenvalues[i];}
 
-  if(TRACE) cout << "betaf_elastic  = " << betaf_elastic << endl;
+  if(TRACE) cout << "f_elastic  = " << f_elastic << endl;
 
-  f += T*betaf_elastic;
+  f += f_elastic;
 
   // constants:
   realtype betaf_phononconst = -0.5*2.*NMODE*log(TWOPI);
@@ -1420,7 +1420,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
       ComputeSelfEnergy(); // careful with this, it overwrites K
 
 #ifdef NOSELFENERGY
-      for(int i=0; i<Vtot; i++){Sigmaq[i]=0.;}      
+      Sigmaq.SetToZero();
 #endif
 
       if(TRACE) SanityCheck(Sigmaq,"Sigmaq, after ComputeSelfEnergy");

@@ -36,6 +36,8 @@ force : ;
 
 phonons_x64 : squareHeisenberg.x64 cubicHeisenberg.x64 triangularHeisenberg.x64 
 
+phonons_saga : squareHeisenberg.saga cubicHeisenberg.saga triangularHeisenberg.saga 
+
 
 
 
