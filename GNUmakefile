@@ -38,6 +38,17 @@ phonons_x64 : squareHeisenberg.x64 cubicHeisenberg.x64 triangularHeisenberg.x64
 
 phonons_saga : squareHeisenberg.saga cubicHeisenberg.saga triangularHeisenberg.saga 
 
+CrI3_x64: CrI3iso.x64 CrI3ssym.x64 CrI3nooffd.x64 CrI3.x64
+
+CrI3_saga: CrI3iso.saga CrI3ssym.saga CrI3nooffd.saga CrI3.saga
+
+square_x64 : square.x64 squareiso.x64 squarenooffd.x64
+square_saga : square.saga squareiso.saga squarenooffd.saga
+
+squareXY_x64 : squareXY.x64 squareXYiso.x64 squareXYnooffd.x64
+squareXY_saga : squareXY.saga squareXYiso.saga squareXYnooffd.saga
+
+
 
 
 

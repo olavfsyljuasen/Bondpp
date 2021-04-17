@@ -15,9 +15,6 @@ const int NDMAT=NSUBL;
 #endif
 const int NDMAT2=NDMAT*NDMAT;
 
-const int NS=1; // remove this 
-
-
   //#g++ -I/data/sylju/include -L/data/sylju/lib FFTWtest.C -lfftw3 -lm;
 #include <fftw3.h>
 #include "matrixroutines.h"
@@ -66,6 +63,7 @@ class Driver
   realtype CalculateT(int);
   void CalculateTs(vector<realtype>&);
 
+
 #ifdef PHONONS
   NumberList CalculateEpsilonsOverT();
 #endif
@@ -74,6 +72,8 @@ class Driver
   vector<obstype> CalculateSpinOrderPars(realtype);
   vector<obstype> CalculateOrderPars(realtype,int,int);
   vector<obstype> CalculateAlphas(realtype);
+
+  void FindMaxVals(SMatrix<int>&, SMatrix<realtype>&);
 
   //void Convolve(const bool);
   //  realtype CalculateSecondDerivative(const realtype T,const int k);
@@ -365,6 +365,28 @@ NumberList Driver::CalculateEpsilonsOverT()
 }
 #endif
 
+void Driver::FindMaxVals(SMatrix<int>& maxqs,SMatrix<realtype>& maxvals)
+{
+  if(TRACE) cout << "Starting FindMaxVals" << endl;
+
+  for(int m1=0; m1<Kinvq.Nrows; m1++)
+    for(int m2=0; m2<Kinvq.Ncols; m2++)
+      {
+	int maxq(-1);
+	realtype maxv(0.);
+	for(int qi=0; qi<Nq; qi++)
+	  {
+	    complex<realtype> val=(m1==m2 ? Kinvq(qi,m1,m2): 0.5*(Kinvq(qi,m1,m2)+Kinvq(qi,m2,m1)));
+	    if( val.real() > maxv){ maxv=val.real(); maxq=qi;}
+	  }
+	maxvals(m1,m2) = maxv;
+	maxqs(m1,m2)   = maxq;
+      }
+
+  if(TRACE) cout << "Done FindMaxVals" << endl;
+}
+
+
 
 vector<obstype> Driver::CalculateSpinOrderPars(realtype T)
 {
@@ -382,7 +404,7 @@ vector<obstype> Driver::CalculateSpinOrderPars(realtype T)
 	    for(int m2=0; m2<Kinvq.Ncols; m2++)
 	      sum+= (*f)(qi,m1,m2)*Kinvq(qi,m1,m2);
 	}
-      opars[j]=0.5*T*invNq*sum;
+      opars[j]=0.5*T*invNq*NFAKESPINTRACE*sum;
     }
 
   if(TRACE) cout << "Done CalculateSpinOrderPars" << endl;
@@ -478,34 +500,50 @@ realtype Driver::CalculateFreeEnergy(realtype T)
 
   //temperature factors
   realtype betaf_Tdep = 0.5*NSUBL*(Ns-2)*log(1./T); 
-
   if(TRACE) cout << "betaf_Tdep  = " << betaf_Tdep << endl;
   
   f += T*betaf_Tdep;
 
 
-#ifdef PHONONS
+
+#if defined PHONONS 
   //elastic modes
   realtype f_elastic = 0;
   for(int i=0; i<NELASTIC; i++){ f_elastic += 0.5*epsilon[i]*epsilon[i]*rule.elasticeigenvalues[i];}
 
-  if(TRACE) cout << "f_elastic  = " << f_elastic << endl;
 
+#if !defined OMITELASTICCONT
+  if(TRACE) cout << "f_elastic  = " << f_elastic << endl;
   f += f_elastic;
+#endif
+
+  //#if !defined(ELASTICONLY)  || !defined(OMITPHONONCONT)
+#ifndef OMITPHONONCONT
+
+  // the following term is subtracted from D, but added here, so as to count phonon
+  // contrubutions to the free energy where it is appropriate. Remember,
+  // the Dinv in this code contains a term beta on the phonon diagonal part, also
+  // when the coupling to phonons g=0. Thus in order to count this as a contribution to
+  // the phonons part of the free energy, we subtract it from D and add it here.    
+  realtype betaf_phononTdep = -0.5*NMODE*log(T); 
+  if(TRACE) cout << "betaf_phononTdep  = " << betaf_Tdep << endl;
+  
+  f += T*betaf_phononTdep;
+
 
   // constants:
   realtype betaf_phononconst = -0.5*2.*NMODE*log(TWOPI);
   if(TRACE) cout << "betaf_phononconst  = " << betaf_phononconst << endl;
 
   f += T*betaf_phononconst;
-  
-#if !defined ELASTICONLY  
+
   //the phonon spectrum
   realtype betaf_phonons = 2.*rule.GetSumLogOmegaoverV(); // 2 both X^2 and P^2
 
   if(TRACE) cout << "betaf_phonons  = " << betaf_phonons << endl;
   
   f += T*betaf_phonons;
+
 #endif
   
 #endif  
@@ -522,7 +560,7 @@ realtype Driver::CalculateFreeEnergy(realtype T)
   
   ComputeDq(false,true); // excludeqzero=false, preserveinput=true not to jeopardize Keff
   
-  realtype betaf_logD       = -0.5*invNq*SumLogDet(Dq);
+  realtype betaf_logD       = -0.5*invNq*SumLogDet(Dq) + 0.5*NMODE*log(T);
   if(TRACE) cout << "betaf_logD       =  " << betaf_logD << endl;
   f += T*betaf_logD;
 
@@ -617,6 +655,9 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
   MakeInversionTransposedSymmetric(Kinvr); 
 #endif
   
+  // Initialize Dinvq:
+  Dinvq.SetToZero();
+
   // first compute the constraint block
 
   complex<realtype> tmp(0);
@@ -682,7 +723,7 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 	      {
 		int n2=m2-NSUBL; 
 		
-		if(c==0){Dinvq(qi,m1,m2)=0;}
+		//		if(c==0){Dinvq(qi,m1,m2)=0;}
 
 		//	cout << "q=" << qi << " f=" << f(qi,c,n2) << endl;
 		Dinvq(qi,m1,m2)+= multiplier*0.5*invSqrtNq*F1[qi]*f(qi,c,n2)*conj(expi(la.qr(qi,clist[c])));
@@ -734,7 +775,7 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 		
 		for(int qi=0; qi<Nq; qi++)
 		  {
-		    if(c2==0 && c4==0){Dinvq(qi,m1,m2);}
+		    //  if(c2==0 && c4==0){Dinvq(qi,m1,m2)=0;}
 		    Dinvq(qi,m1,m2)+=-invNq*F1[qi]*conj(f(qi,c2,n1))*f(qi,c4,n2)*conj(expi(la.qr(qi,clist[c4])));
 		  }
 	      }
@@ -805,7 +846,7 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 	      
 	      for(int qi=0; qi<Nq; qi++)
 		{
-		  if(c2==0 && c4==0){Dinvq(qi,m1,m2);}
+		  //		  if(c2==0 && c4==0){Dinvq(qi,m1,m2);}
 		  Dinvq(qi,m1,m2)+=-invNq*F1[qi]*conj(f(qi,c2,n1))*f(qi,c4,n2)*conj(expi(la.qr(qi,clist[c4])));
 		}
 	    }
@@ -822,10 +863,10 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 	  Dinvq(qi,m2,m1)=conj(Dinvq(qi,m1,m2));
 	}
 
-
-  // cout << "before adding bare phonons: " << endl;
-  // cout << Dinvq << endl;
-
+  if(TRACE)
+    {
+      cout << "Dinvq before adding bare phonons: " << Dinvq << endl;
+    }
 
   // add the bare phonon part
   
@@ -840,8 +881,10 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
     }
 #endif
 
-  // cout << "before forcinfg symmetries " << endl;
-  //  cout << Dinvq << endl;
+  if(TRACE) 
+    {
+      cout << "Dinvq after adding bare phonon part: " << Dinvq << endl;
+    }
   
   // FORCING
   MakeMixedHermitian(Dinvq,NSUBL,NSUBL);
@@ -852,10 +895,14 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
   
   if(TRACE){SanityCheck(Dinvq,"Dinvq, after constructing it",false);}
   
+  if(TRACE){ cout << "Dinvq before inversion=" << Dinvq << endl;}
+
   MatrixInverse(Dinvq); // B = Dq
 
   if(TRACE){SanityCheck(Dq,"Dq, after inverting Dinvq",false);}
   
+  if(TRACE){ cout << "Dq=" << Dq << endl;}
+
   if(excludeqzero) Setqzerotozero(Dq);
 
 
@@ -871,6 +918,8 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
     }
 
   if(TRACE){SanityCheck(Dq,"Dq, at end of ComputeDq",false);}
+
+  if(TRACE){ cout << "Dq=" << Dq << endl;}
   
   if(TRACE) cout << "Done with ComputeDq " << endl;
 }
@@ -1162,6 +1211,8 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
   MakeSymmetric(Sigmaq);
 #endif  
   MakeHermitian(Sigmaq,false);
+  //TRY
+  MakeSpinDiagonal(Sigmaq,false);
 
   if(TRACE) SanityCheck(Sigmaq,"Sigmaq after explicitly constructing it");
   
@@ -1228,6 +1279,8 @@ void Driver::ConstructKinvq()
   // Force correct properties on the matrix
   MakeHermitian(Kinvq); 
   MakeInversionTransposedSymmetric(Kinvq); 
+  // TRY
+  MakeSpinDiagonal(Kinvq);
 
   if(TRACE){SanityCheck(Kinvq,"Kinvq, after inverting");}
   
@@ -1268,6 +1321,15 @@ void Driver::MakeRandomSigma()
 
 
   MakeHermitian(Sigmaq,false); // no warnings
+  //MakeHermitian(Sigmaq);
+
+  //  cout << "Sigmaq after MakeHermitian..." << endl;
+  // cout << Sigmaq << endl;
+
+  //  MakeSpinSymmetric(Sigmaq,false);
+  // TRY
+  MakeSpinDiagonal(Sigmaq,false);
+  //  MakeSpinDiagonalEqual(Sigmaq,false);
 
 #ifdef FORCEINVERSIONSYMMETRY
   MakeInversionTransposedSymmetric(Sigmaq);
@@ -1279,13 +1341,14 @@ void Driver::MakeRandomSigma()
   */
 #endif
 
+  //  cout << "Sigmaq after MakeInversionTrans..." << endl;
+  //  cout << Sigmaq << endl;
+
 #ifdef PRESERVESYMMETRY
   MakeSymmetric(Sigmaq);
 #endif
 
-  MakeHermitian(Sigmaq);
 
-  MakeSpinSymmetric(Sigmaq,false);
   
   if(TRACE) SanityCheck(Sigmaq,"Sigmaq, at end of MakeRandomSigma");
   if(TRACE) cout << "Finished MakeRandomSigma()" << endl;
@@ -1430,11 +1493,33 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
       if(TRACE) SanityCheck(Kinvq,"Kinvq, in iteration loop after making sigmaq");
 
       // convergence checks
-      newT=CalculateT(0);
+      CalculateTs(Ts); // calculate all the temperatures      
+      newT=Ts[0];
+
             
 #ifdef PHONONS
       NumberList epsoverT=CalculateEpsilonsOverT();
 #endif
+
+      // monitor maximum values of Kinv
+      if(NSPIN>1)
+	{
+	  SMatrix<realtype> maxvals(NMAT,NMAT);
+	  SMatrix<int> maxqs(NMAT,NMAT);
+	  
+	  FindMaxVals(maxqs,maxvals);
+
+	  ofstream outfile(CONVERGENCEMONITORNAME,ios::app);
+	  outfile << iter << " ";
+	  for(int s=0; s<NSPIN; s++)
+	    {
+	      realtype outmax = maxvals(mindx(s,0),mindx(s,0));
+	      outfile << outmax << " ";
+	    }
+	  outfile << endl;
+	  outfile.close();
+	}
+
 
       if(TRACE)
 	{
@@ -1449,8 +1534,10 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
       // write progress to logfile
       if(PRINTPROGRESS && iter%PRINTPROGRESSTICKLER==0)
 	{
-	  logfile.precision(17);
-	  logfile << "iteration: " << iter << " T= " << newT << " oldT=" << oldT << " dev: " << fabs((newT-oldT)/oldT);
+	  logfile.precision(9);
+	  logfile << "iteration: " << iter << " T= "; 
+	  for(int i=0; i<NSUBL; i++) logfile << Ts[i] << " ";
+	  logfile << " oldT=" << oldT << " dev: " << fabs((newT-oldT)/oldT);
 #ifdef PHONONS
 	  logfile << " epsilon/T= " << epsoverT;
 #endif
@@ -1459,6 +1546,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
       
       if( fabs((newT-oldT)/oldT) < par[TOLERANCE]) converged=true;
 
+      //      const realtype inertia=0.5; // how much to resist changes: [0,1] 
       const realtype inertia=0.5; // how much to resist changes: [0,1] 
 
       currT= (1.-inertia)*newT+inertia*oldT; 
@@ -1478,7 +1566,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 
   //  nalphas=CalculateAlphas(newT); // calculate alphas
 
-  m2=NFAKESPINTRACE*NS*newT/(2.*Delta[0]*Nq); // calculate magnetic moment
+  m2=NFAKESPINTRACE*NSPIN*newT/(2.*Delta[0]*Nq); // calculate magnetic moment
 
   CalculateTs(Ts); // calculate the final temperatures
   
@@ -1517,6 +1605,102 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
   else
     {      
 
+      SMatrix<realtype> maxvals(NMAT,NMAT);
+      SMatrix<int> maxqs(NMAT,NMAT);
+
+      FindMaxVals(maxqs,maxvals);
+
+      //Writing diagonal magnetization for different spins and sublattices.
+      for(int l1=0; l1<NSUBL; l1++)
+	for(int s1=0; s1<NSPIN; s1++)
+	  {
+	    stringstream ss;
+	    ss << "m" << l1 << l1 << "_" << s1 << s1 << ".dat";
+	    
+	    int m1=mindx(s1,l1);
+	    int m2=mindx(s1,l1);
+	    realtype mm=0.5*newT*invNq*maxvals(m1,m2);
+	  
+	    ofstream outfile(ss.str().c_str(),ios::app);
+	    outfile << setprecision(16) << newT << " " << mm << endl;
+	    outfile.close();
+	  }
+
+
+
+
+      ofstream peakfile(PEAKREPORTNAME.c_str(),ios::app);
+      
+      peakfile << "Delta=" << Delta[0] << " T=" << newT << " Max K^-1  @ q:" << endl; 
+      for(int l1=0; l1<NSUBL; l1++)
+	{
+	  peakfile << "(l1=" << l1 << ",l2=" << l1 << ") ";
+
+	  for(int s1=0; s1<NSPIN; s1++)
+	    {
+	      int m1=mindx(s1,l1);
+	      int m2=mindx(s1,l1);
+	      realtype mval=maxvals(m1,m2);
+	      Coord q=la.qPos(maxqs(m1,m2));
+	      if(mval > 0)
+		peakfile << "(" << s1 << "," << s1 << "):" << mval << " @q=" << q << " ";
+	    }
+	  peakfile << endl;
+	}
+
+      for(int l1=0; l1<NSUBL; l1++)
+	{
+	  peakfile << "(l1=" << l1 << ",l2=" << l1 << ") ";
+
+	  for(int s1=0; s1<NSPIN; s1++)
+	    for(int s2=s1+1; s2<NSPIN; s2++)
+	    {
+	      int m1=mindx(s1,l1);
+	      int m2=mindx(s2,l1);
+	      realtype mval=maxvals(m1,m2);
+	      Coord q=la.qPos(maxqs(m1,m2));
+	      if(mval > 0)
+		peakfile << "(" << s1 << "," << s2 << "):" << mval << " @q=" << q << " ";
+	    }
+	  peakfile << endl;
+	}
+
+      for(int l1=0; l1<NSUBL; l1++)
+	for(int l2=l1+1; l2<NSUBL; l2++)
+	  {
+	    peakfile << "(l1=" << l1 << ",l2=" << l2 << ") ";
+	    for(int s1=0; s1<NSPIN; s1++)
+	      {
+		int m1=mindx(s1,l1);
+		int m2=mindx(s1,l2);
+		realtype mval=maxvals(m1,m2);
+		Coord q=la.qPos(maxqs(m1,m2));
+		if(mval > 0)
+		  peakfile << "(" << s1 << "," << s1 << "):" << mval << " @q=" << q << " ";
+	      }
+	    peakfile << endl;
+	  }
+
+      for(int l1=0; l1<NSUBL; l1++)
+	for(int l2=l1+1; l2<NSUBL; l2++)
+	  {
+	    peakfile << "(l1=" << l1 << ",l2=" << l2 << ") ";
+	    
+	    for(int s1=0; s1<NSPIN; s1++)
+	      for(int s2=s1+1; s2<NSPIN; s2++)
+		{
+		  int m1=mindx(s1,l1);
+		  int m2=mindx(s2,l2);
+		  realtype mval=maxvals(m1,m2);
+		  Coord q=la.qPos(maxqs(m1,m2));
+		  if(mval > 0)
+		    peakfile << "(" << s1 << "," << s2 << "):" << mval << " @q=" << q << " ";
+		}
+	    peakfile << endl;
+	  }
+
+      peakfile << endl; // extra space in report
+      peakfile.close();
       //      lineid++;
 
 
@@ -1556,7 +1740,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 	      //	      ofstream qcorrfile(QCORRSFILENAME.c_str(),ios::app);
 	      ofstream qcorrfile(ss.str().c_str());
 
-	      realtype factor=newT*NS*0.5;
+	      realtype factor=newT*NSPIN*0.5;
 	      complex<realtype>* start=Kinvq(0,0);
 	      
 	      if(BINARYOUTFILES)

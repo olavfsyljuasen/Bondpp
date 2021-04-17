@@ -208,6 +208,48 @@ Phonons::Phonons(): Nq(la.NqSites()),omega(Nq,NMODE),normalmode(NSUBL),sumlogome
   couplings[6]=par[ALPHA2];
   couplings[7]=par[ALPHA2];
   couplings[8]=par[ALPHA2];
+#elif defined FCCPHONONS
+  int Nsprings=9;
+  vector<Triplet> springs(Nsprings);
+  springs[0]=Triplet{ 1, 0, 0};
+  springs[1]=Triplet{ 0, 1, 0};
+  springs[2]=Triplet{ 0, 0, 1};
+  springs[3]=Triplet{ 1,-1, 0};
+  springs[4]=Triplet{ 0, 1,-1};
+  springs[5]=Triplet{-1, 0, 1};
+  springs[6]=Triplet{-1, 1, 1};
+  springs[7]=Triplet{ 1,-1, 1};
+  springs[8]=Triplet{ 1, 1,-1};
+ 
+  vector<double> couplings(Nsprings);
+  couplings[0]=par[ALPHA1];
+  couplings[1]=par[ALPHA1];
+  couplings[2]=par[ALPHA1];
+  couplings[3]=par[ALPHA1];
+  couplings[4]=par[ALPHA1];
+  couplings[5]=par[ALPHA1];
+  couplings[6]=par[ALPHA2];
+  couplings[7]=par[ALPHA2];
+  couplings[8]=par[ALPHA2];
+#elif defined BCCPHONONS
+  int Nsprings=7;
+  vector<Triplet> springs(Nsprings);
+  springs[0]=Triplet{ 1, 0, 0};
+  springs[1]=Triplet{ 0, 1, 0};
+  springs[2]=Triplet{ 0, 0, 1};
+  springs[3]=Triplet{ 1, 1, 1};
+  springs[4]=Triplet{ 0, 1, 1};
+  springs[5]=Triplet{ 1, 0, 1};
+  springs[6]=Triplet{ 1, 1, 0};
+ 
+  vector<double> couplings(Nsprings);
+  couplings[0]=par[ALPHA1];
+  couplings[1]=par[ALPHA1];
+  couplings[2]=par[ALPHA1];
+  couplings[3]=par[ALPHA1];
+  couplings[4]=par[ALPHA2];
+  couplings[5]=par[ALPHA2];
+  couplings[6]=par[ALPHA2];
 #endif
   
   

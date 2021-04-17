@@ -108,7 +108,7 @@ const bool PRINTQPTS=true;
 const bool PRINTNORMALMODES=false;
 const bool PRINTPHONONENERGIES=false;
 
-  
+const string CONVERGENCEMONITORNAME="monitor.dat";  
 const string RESULTSNAME= "res.dat";
 const string RES1NAME= "res1.dat";
 const string RES2NAME= "res2.dat";
@@ -119,6 +119,7 @@ const string RESULTS4NAME= "m2.dat";
 const string RESULTS5NAME= "chiq.dat";
 
 const string MAXQNAME="maxq.dat";
+const string PEAKREPORTNAME= "peaks.dat";
 
 const string PARAMETERFILENAME = "Deltas.in";
 

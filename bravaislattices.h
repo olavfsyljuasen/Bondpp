@@ -207,11 +207,11 @@ N1(static_cast<int>(par[NX])),
   a1(1.,0.,0.),
   a2(0.,1.,0.),
   a3(0.,0.,1.),
-#elif defined BODYCENTEREDCUBICBRAVAISLATTICE
-  a1(1.,0.,0.),
-  a2(0.,1.,0.),
-  a3(0.5,0.5,0.5),
-#elif defined FACECENTEREDCUBICBRAVAISLATTICE
+#elif defined BCCBRAVAISLATTICE
+  a1(-0.5, 0.5, 0.5),
+  a2( 0.5,-0.5, 0.5),
+  a3( 0.5, 0.5,-0.5),
+#elif defined FCCBRAVAISLATTICE
   a1(0. ,0.5,0.5),
   a2(0.5,0.0,0.5),
   a3(0.5,0.5,0. ),

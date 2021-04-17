@@ -43,25 +43,29 @@ void MakeEqualSpinDiagonalEntries(VecMat<T>& M,bool warning=true)
 {
   for(int q=0; q<M.Nvecs; q++)
     {
-      for(int l=0; l<NSUBL; l++)
-	{
-	  const int m0=mindx(0,l);
-	  for(int s=0; s<NSPIN; s++)
-	    {
-	      const int m =mindx(s,l);
+      for(int l1=0; l1<NSUBL; l1++)
+	for(int l2=0; l2<NSUBL; l2++)
+	  {
+	    const int m1=mindx(0,l1);
+	    const int m2=mindx(0,l2);
 
-	      if(TRACE && warning)
+	    for(int s=1; s<NSPIN; s++)
 	      {
-		realtype diff= abs(M(q,m,m)-M(q,m0,m0));
-		if( diff  > sensitivity)
+		const int m1n =mindx(s,l1);
+		const int m2n =mindx(s,l2);
+		
+		if(TRACE && warning)
 		  {
-		    cout << "Warning: MakeEqualSpinDiagonalEntries sets "
-			 << M(q,m,m) << " equal to " << M(q,m0,m0) << " dev: " << diff << endl;
+		    realtype diff= abs(M(q,m1n,m2n)-M(q,m1,m2));
+		    if( diff  > sensitivity)
+		      {
+			cout << "Warning: MakeEqualSpinDiagonalEntries sets "
+			     << M(q,m1n,m2n) << " equal to " << M(q,m1,m2) << " dev: " << diff << endl;
+		      }
 		  }
+		M(q,m1n,m2n)=M(q,m1,m2);
 	      }
-	      M(q,m,m)=M(q,m0,m0);
-	    }
-	}
+	  }
     }
 }
 
@@ -71,23 +75,24 @@ void EraseSpinOffdiagonals(VecMat<T>& M,bool warning=true)
 {
   for(int q=0; q<M.Nvecs; q++)
     {
-      for(int l=0; l<NSUBL; l++)
-	for(int s1=0; s1<NSPIN; s1++)
-	  for(int s2=s1+1; s2<NSPIN; s2++)
-	    {
-	      int m1=mindx(s1,l);
-	      int m2=mindx(s2,l);
+      for(int l1=0; l1<NSUBL; l1++)
+	for(int l2=0; l2<NSUBL; l2++)
+	  for(int s1=0; s1<NSPIN; s1++)
+	    for(int s2=s1+1; s2<NSPIN; s2++)
+	      {
+		int m1=mindx(s1,l1);
+		int m2=mindx(s2,l2);
 	      
-	      if(TRACE && warning)
-		{
-		  if( abs(M(q,m1,m2))  > sensitivity){
-		    cout << "Warning: MakeSpinDiagonal sets an entry " << M(q,m1,m2) << " to 0" << endl;}
-		  if( abs(M(q,m2,m1)) > sensitivity){
-		    cout << "Warning: MakeSpinDiagonal sets an entry " << M(q,m2,m1) << " to 0" << endl;}
-		}
-	      M(q,m1,m2)=0.;
-	      M(q,m2,m1)=0.;
-	    }
+		if(TRACE && warning)
+		  {
+		    if( abs(M(q,m1,m2))  > sensitivity){
+		      cout << "Warning: MakeSpinDiagonal sets an entry " << M(q,m1,m2) << " to 0" << endl;}
+		    if( abs(M(q,m2,m1)) > sensitivity){
+		      cout << "Warning: MakeSpinDiagonal sets an entry " << M(q,m2,m1) << " to 0" << endl;}
+		  }
+		M(q,m1,m2)=0.;
+		M(q,m2,m1)=0.;
+	      }
     }
 }
 
@@ -95,10 +100,27 @@ void EraseSpinOffdiagonals(VecMat<T>& M,bool warning=true)
 
 
 template<class T>
-void MakeSpinSymmetric(VecMat<T>& M,bool warning=true)
+void MakeSpinDiagonal(VecMat<T>& M,bool warning=true)
 {
   EraseSpinOffdiagonals(M,warning);
+}
+
+template<class T>
+void MakeSpinDiagonalEqual(VecMat<T>& M,bool warning=true)
+{
   MakeEqualSpinDiagonalEntries(M,warning);
+}
+
+
+template<class T>
+void MakeSpinSymmetric(VecMat<T>& M,bool warning=true)
+{
+#if defined NORANDOMSPINOFFDIAGONALS
+  EraseSpinOffdiagonals(M,warning);
+#endif
+#if defined EQUALRANDOMSPINDIAGONALS
+  MakeEqualSpinDiagonalEntries(M,warning);
+#endif
 }
 
 
@@ -198,11 +220,11 @@ void MakeInversionTransposedSymmetric(VecMat<T>& M)
     {
       const int invq=la.GetInversionIndx(q); // the negative q
       
-      for(int s1=0; s1<Nrows; s1++)
-	for(int s2=0; s2<Ncols; s2++)
+      for(int m1=0; m1<Nrows; m1++)
+	for(int m2=0; m2<Ncols; m2++)
 	  {
-	    if( q==invq ){ M(q,s1,s2).imag(0.);}
-	    M(invq,s2,s1) = M(q,s1,s2);
+	    if( q==invq ){ M(q,m1,m2).imag(0.);}
+	    else M(q,m1,m2) = M(invq,m2,m1);
 	  }
     }
 }
@@ -323,10 +345,11 @@ void SanityCheck(VecMat<complex<realtype>>& M,string message,bool checkHermitian
 {
   bool stop=false;
   if(M.ContainsNaN(message)){stop=true;}
-  
+
+  if(!IsSpinSymmetric(M)){cout << "WARNING Matrix: " << message << " is not spin symmetric" << endl; cout << M << endl;} 
+ 
   if(checkHermitian && !IsHermitian(M)){cout << "Matrix: " << message << " is not Hermitian."<< endl; stop=true;}
-  if(!IsInversionTransposedSymmetric(M)){cout << "Matrix: " << message << " is not inv trans sym."; stop=true;}
-  if(!IsSpinSymmetric(M)){cout << "WARNING Matrix: " << message << " is not spin symmetric" << endl; cout << M << endl; stop=false;}
+  if(!IsInversionTransposedSymmetric(M)){cout << "Matrix: " << message << " is not inv trans symmetric" << endl; stop=true;}
   if(stop){ cout << "Sanity check failed! \n" << "Matrix " << message << "\n" << M << "\n SanityCheck FAILED" << endl; exit(1);}
   else
     {cout << "Sanity check passed for " << message << endl;}

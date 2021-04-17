@@ -82,12 +82,12 @@ realtype SumLogDet(VecMat<complex<realtype>>& A)
 	  realtype value=real(A(i,0));
 	  if(value != 0.)
 	    {
-	      //cout << "in SumLogDet value " << i << "= " << value << endl;
+	      if(TRACE) cout << "in SumLogDet value " << i << "= " << value << endl;
 	      sum+=log(value);
 	    }
 	}
     }
-  else // NSUBL>1
+  else 
     {
 //#ifdef EIGENBOOST
       Matrix<eigen_complex_type,Dynamic,Dynamic> M(Nrows,Ncols);
@@ -217,7 +217,7 @@ realtype FindMinimumEigenvalue(VecMat<complex<realtype>>& A)
     {
       for(int i=0; i<n; i++){if(real(A(i,0,0)) < global_min){global_min=real(A(i,0,0));}}
     }
-  else // NSUBL>1
+  else
     {
       //#ifdef EIGENBOOST
       Matrix<eigen_complex_type,Dynamic,Dynamic> M(Nrows,Ncols); // use the dynamic type h
@@ -270,10 +270,19 @@ void MatrixInverse(VecMat<complex<realtype>>& A)
 
   if(Nrows==1 && Ncols==1) // just take the inverse of each element
     {
-      for(int k=0; k<n; k++){ A(k,0,0)=static_cast<realtype>(1.)/A(k,0,0);}
+      for(int k=0; k<n; k++){ A(k,0,0)=complex<realtype>(1./A(k,0,0).real(),0.);}
     }
   else 
     {
+      // TEST to avoid matrix diag.
+      /*
+      for(int k=0; k<n; k++)
+	for(int s=0; s<NSPIN; s++)
+	  {
+	    A(k,s,s)=complex<realtype>(1./A(k,s,s).real(),0.);
+	  }
+      */
+
       Matrix<eigen_complex_type,Dynamic,Dynamic> M(Nrows,Ncols);
       Matrix<eigen_complex_type,Dynamic,Dynamic> Minv(Nrows,Ncols);
 
@@ -288,22 +297,7 @@ void MatrixInverse(VecMat<complex<realtype>>& A)
 		M(i,j)=static_cast<eigen_complex_type>(A(k,i,j)); // row-major order
 	      }
 
-	  /*
-	  if(TRACE) cout << "M for k=" << k << endl;
-	  if(TRACE) cout << M << endl;
-	  if(TRACE) cout << "determinant:" << M.determinant() << endl;
-	  */
-	  
 	  Minv=M.inverse();
-
-	  /*
-	  for(int i=0; i<Nrows; i++)
-	    for(int j=i+1; j<Ncols; j++)
-	      {
-		Minv(i,i).imag(0); // Hermitian: set diagonal real
-		Minv(j,i) = conj(Minv(i,j)) ; // Hermitian: offd are c.c.
-	      }
-	  */
 
 	  
 	  for(int i=0; i<Nrows; i++)
@@ -316,6 +310,7 @@ void MatrixInverse(VecMat<complex<realtype>>& A)
 #endif
 	      }
 	}
+
     }
   if(TRACE) cout << "Finished  MatrixInverse" << endl;
 }

@@ -251,7 +251,7 @@ class VecMat
       for(unsigned int i=0; i<A.size(); i++){ A[i]=*(ptr+i);}
     }
   
-  const unsigned int size() const {return A.size();}
+  unsigned int size() const {return A.size();}
   
   T* start(){return &A[0];} // needed to access start of data-array
   
