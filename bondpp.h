@@ -883,7 +883,7 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 
   if(TRACE) 
     {
-      cout << "Dinvq after adding bare phonon part: " << Dinvq << endl;
+      //  cout << "Dinvq after adding bare phonon part: " << Dinvq << endl;
     }
   
   // FORCING
@@ -895,13 +895,13 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
   
   if(TRACE){SanityCheck(Dinvq,"Dinvq, after constructing it",false);}
   
-  if(TRACE){ cout << "Dinvq before inversion=" << Dinvq << endl;}
+  //if(TRACE){ cout << "Dinvq before inversion=" << Dinvq << endl;}
 
   MatrixInverse(Dinvq); // B = Dq
 
   if(TRACE){SanityCheck(Dq,"Dq, after inverting Dinvq",false);}
   
-  if(TRACE){ cout << "Dq=" << Dq << endl;}
+  //  if(TRACE){ cout << "Dq=" << Dq << endl;}
 
   if(excludeqzero) Setqzerotozero(Dq);
 
@@ -919,7 +919,7 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 
   if(TRACE){SanityCheck(Dq,"Dq, at end of ComputeDq",false);}
 
-  if(TRACE){ cout << "Dq=" << Dq << endl;}
+  //  if(TRACE){ cout << "Dq=" << Dq << endl;}
   
   if(TRACE) cout << "Done with ComputeDq " << endl;
 }

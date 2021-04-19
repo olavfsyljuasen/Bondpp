@@ -20,7 +20,7 @@ EXTENSION = _saga.x
 CCC= icpc
 #CCOPTS= $(CFLAGS) -mkl -O3 -DNDEBUG 
 #CCOPTS= $(CFLAGS) -mkl -O3 -std=c++17 -DLONGDOUBLE
-CCOPTS= $(CFLAGS) -mkl -O3 -std=c++17 
+CCOPTS= $(CFLAGS) -mkl -O3 -std=c++17 -DNDEBUG
 LINKOPTS =  -O3 
 CCFLAGS = $(CCOPTS) $(INCDIR) 
 

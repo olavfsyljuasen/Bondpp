@@ -11,7 +11,7 @@
 using namespace std;
 
 const realtype epsilon=1.e-15;   // used to repair matrices, chomp.
-const double sensitivity=1.e-14; // used in SanityCheck
+const realtype sensitivity=1.e-10; // used in SanityCheck
 
 // first define a small matrix class. It should just be a pointer class unless defined specially to keep contents.
 
