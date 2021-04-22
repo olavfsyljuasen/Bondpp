@@ -362,15 +362,17 @@ Phonons::Phonons(): Nq(la.NqSites()),omega(Nq,NMODE),normalmode(NSUBL),sumlogome
       realtype eigenvalue=eval;
 #endif
 
-      if(TRACE) cout << "eigenvalue[" << n << "]=" << eigenvalue << endl;
+      //      if(TRACE) cout << "eigenvalue[" << n << "]=" << eigenvalue << endl;
 
       VectorXd evec=elsolve.eigenvectors().col(n);
 
+      /*
       if(TRACE)
 	{
 	  cout << "eigenvector:" << endl;
 	  cout << evec << endl;
 	}
+      */
 
       ofile << eigenvalue << " : " << endl;
       ofile << evec << endl;
@@ -398,7 +400,7 @@ Phonons::Phonons(): Nq(la.NqSites()),omega(Nq,NMODE),normalmode(NSUBL),sumlogome
       D.setZero(NMODE,NMODE);
 
 
-      if(TRACE) cout << j << " q=(" << q << "):\nD=\n" << D << endl; 
+      //      if(TRACE) cout << j << " q=(" << q << "):\nD=\n" << D << endl; 
       for(int p=0; p<Nsprings; p++)
 	{
 	  Coord R=la.rPos(springs[p]);
@@ -408,13 +410,13 @@ Phonons::Phonons(): Nq(la.NqSites()),omega(Nq,NMODE),normalmode(NSUBL),sumlogome
 	    for(int j=0; j<NDISP; j++)
 	      D(i,j)+= (R[i]*R[j]/R2)*2*couplings[p]*(1.-cos(q*R));
 
-	  if(TRACE) cout << "R=" << R << " coup=" << couplings[p] << " 1-cos=" << 1-cos(q*R) << "\nD(R)=\n" << D << endl; 
+	  //	  if(TRACE) cout << "R=" << R << " coup=" << couplings[p] << " 1-cos=" << 1-cos(q*R) << "\nD(R)=\n" << D << endl; 
 
 	}
 
       if(TRACE)
 	{
-	  cout << j << " q=(" << q << "):\nD=\n" << D << endl; 
+	  //	  cout << j << " q=(" << q << "):\nD=\n" << D << endl; 
 	}
 
       // diagonalize it, and store the results
@@ -540,9 +542,12 @@ Phonons::Phonons(): Nq(la.NqSites()),omega(Nq,NMODE),normalmode(NSUBL),sumlogome
 		  {
 		    cmplxcoord Wq=(*normalmode[i])( q,n);
 		    cmplxcoord Wmq=(*normalmode[i])(mq,n);
-		    cout << "n= " << n;
-		    cout << " Wq =(" << Wq[0]  << "," << Wq[1]  << "," << Wq[2]  << ") : "
-			 << " Wmq=(" << Wmq[0] << "," << Wmq[1] << "," << Wmq[2] << ")" << endl;
+		    if(TRACE)
+		      {
+			cout << "n= " << n;
+			cout << " Wq =(" << Wq[0]  << "," << Wq[1]  << "," << Wq[2]  << ") : "
+			     << " Wmq=(" << Wmq[0] << "," << Wmq[1] << "," << Wmq[2] << ")" << endl;
+		      }
 		  }
 	      }
 	  }
@@ -629,7 +634,7 @@ void Phonons::Initializef()
 	  double omega=GetOmega(qi,n);
 	  cmplxcoord w=GetNormalMode(qi,n,0);
 
-	  if(TRACE) cout << "qi=" << qi << " n=" << n << " omega=" << omega << endl; 
+	  //	  if(TRACE) cout << "qi=" << qi << " n=" << n << " omega=" << omega << endl; 
 
 	  for(int ci=0; ci<NC; ci++)
 	    {      
@@ -644,7 +649,7 @@ void Phonons::Initializef()
 
 	      flist(qi,ci,n)=(qi==0 ? 0: tempf);
 
-	      if(TRACE) cout << "q=" << qi << "ci=" << ci << " n=" << n << " f=" << flist(qi,ci,n) << endl;
+	      //  if(TRACE) cout << "q=" << qi << "ci=" << ci << " n=" << n << " f=" << flist(qi,ci,n) << endl;
 
 
 	    }

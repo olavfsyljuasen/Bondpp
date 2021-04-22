@@ -49,10 +49,13 @@ const realtype SQRTTHREEOVERTWO= 0.866025403784438646763723170753;
 // Options for this run
 #if defined NDEBUG 
 const bool TRACE= false; 
+const bool TRACE2=false; // more debug info
 #else
 const bool TRACE= true; // debugging option
+const bool TRACE2=true; // more debug info
 //const bool TRACE= false; // debugging option
 #endif
+
 
 
 const bool dcheck=false; // check if D is 0 or negative and output warning

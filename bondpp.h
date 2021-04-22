@@ -148,6 +148,7 @@ class Driver
   VecMat<complex<realtype>> A2;  // holds Sigmaq,
   VecMat<complex<realtype>> B;  // holds Dq,Dinvq
 
+
   vector<complex<realtype>>  F1 ; // holds inplace intermediate Fourier-transform
   vector<complex<realtype>>  F2 ; // holds inplace intermediate Fourier-transform
 
@@ -689,8 +690,11 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 	  }
       }
 
-  //  cout << "after constraint block: " << endl;
-  //cout << Dinvq << endl;
+  if(TRACE2)
+    {
+      cout << "after constraint block: " << endl;
+      cout << Dinvq << endl;
+    }
 
 #ifdef PHONONS
   // the offdiagonal phonon-constraint part
@@ -723,8 +727,6 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 	      {
 		int n2=m2-NSUBL; 
 		
-		//		if(c==0){Dinvq(qi,m1,m2)=0;}
-
 		//	cout << "q=" << qi << " f=" << f(qi,c,n2) << endl;
 		Dinvq(qi,m1,m2)+= multiplier*0.5*invSqrtNq*F1[qi]*f(qi,c,n2)*conj(expi(la.qr(qi,clist[c])));
 	      }		   
@@ -739,27 +741,96 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 	  Dinvq(la.GetInversionIndx(qi),m2,m1)=Dinvq(qi,m1,m2);
 	}
 
-  //cout << "after constraint-phonon block: " << endl;
-  //cout << Dinvq << endl;
-  
+  if(TRACE2)
+    {
+      cout << "after constraint-phonon block: " << endl;
+      cout << Dinvq << endl;
+    }
+
+
+  if(TRACE2)
+    {
+      cout << "Dinvq[4]: " << Dinvq.qcomp(4) << endl;
+    }
+
   // finally the phonon-phonon part
 #ifdef CPOSITIVE
+  /*
     for(int c2=0; c2<NC; c2++)
       for(int c4=0; c4<NC; c4++)
 	{	    
-	  Triplet myivec=clist[c2]+clist[c4];
+	  if(TRACE2)
+	    cout << "EXPERIMENTAL code: c2=" << c2 << " c4=" << c4 << endl;
+	  
+	  for(int r=0; r<Nq; r++)
+	    {
+	      SMatrix<complex<realtype>> my(NMAT,NMAT);
+	      
+	      int mrpc4=la.rAdd(r,clist[c4]);
+	      
+	      my  = g[c4];
+	      my *= Kinvr[mrpc4];
+	      my *= g[c2];
+	      
+	      int mrpc2=la.rAdd(la.GetInversionIndx(r),clist[c2]);
+	      
+	      my *= Kinvr[mrpc2];
+	      
+	      F1[r]=invNq*NFAKESPINTRACE*tr(my);
+	    } 
+	  FFTWEXECUTE(F1pluss); 
+	  
+	  
+	  for(int m1=NSUBL; m1<NDMAT; m1++) 
+	    for(int m2=m1; m2<NDMAT; m2++) 
+	      {
+		
+		int n1=m1-NSUBL; 
+		int n2=m2-NSUBL; 
+		
+		for(int qi=0; qi<Nq; qi++)
+		  {
+		    const complex<realtype> myF1 =( qi> la.qlimit ? F1[la.GetInversionIndx(qi)].conj():F1[qi]);
+		    
+		    //		    Dinvq(qi,m1,m2)+=-F1[qi]*conj(f(qi,c2,n1))*f(qi,c4,n2);
+		    Dinvq(qi,m1,m2)+=-myF1*conj(f(qi,c2,n1))*f(qi,c4,n2);
+		  }
+		
+		if(TRACE2)
+		  {
+		    if(m1==1 && m2==1)
+		      {
+			cout << "F1[4]=" << F1[4] 
+			     << " f(4,"<< c2 << "," << n1 << ")^*=" << conj(f(4,c2,n1)) 
+			     << " f(4," << c4 << "," << n2 << ")=" << f(4,c4,n2) 
+			     << " expi(-q,c4)= " << conj(expi(la.qr(4,clist[c4]))) << endl;
+			cout << "Dinvq(4,1,1) = " << Dinvq(4,m1,m2) << endl;
+		      }
+		  }
+		
+		
+	      }
+	  
+	  if(TRACE2)
+	    {
+	      cout << "B: Dinvq[4]: " << Dinvq.qcomp(4) << endl;
+	    }
+	  
+	  	  
+	  myivec=clist[c2]-clist[c4];
 	  
 	  for(int r=0; r<Nq; r++)
 	    {
 	      SMatrix<complex<realtype>> my(NMAT,NMAT);
 	      
 	      my  = g[c4];
+	      my.Transpose();
 	      my *= Kinvr[r];
 	      my *= g[c2];
 	      
-	      int mrpc2c4=la.rAdd(la.GetInversionIndx(r),myivec);
+	      int mrc2mc4=la.rAdd(la.GetInversionIndx(r),myivec);
 	      
-	      my *= Kinvr[mrpc2c4];
+	      my *= Kinvr[mrc2mc4];
 	      
 	      F1[r]=NFAKESPINTRACE*tr(my);
 	    } 
@@ -775,10 +846,91 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 		
 		for(int qi=0; qi<Nq; qi++)
 		  {
-		    //  if(c2==0 && c4==0){Dinvq(qi,m1,m2)=0;}
-		    Dinvq(qi,m1,m2)+=-invNq*F1[qi]*conj(f(qi,c2,n1))*f(qi,c4,n2)*conj(expi(la.qr(qi,clist[c4])));
+		    Dinvq(qi,m1,m2)+=-invNq*F1[qi]*conj(f(qi,c2,n1))*f(qi,c4,n2);
 		  }
+
+		if(TRACE2)
+		  {
+		    if(m1==1 && m2==1)
+		      {
+			cout << "F1[4]=" << F1[4] 
+			     << " f(4,"<< c2 << "," << n1 << ")^*=" << conj(f(4,c2,n1)) 
+			     << " f(4," << c4 << "," << n2 << ")=" << f(4,c4,n2) 
+			     << " new cont=" << -invNq*F1[4]*conj(f(4,c2,n1))*f(4,c4,n2) << endl; 
+			cout << "Dinvq(4,1,1) = " << Dinvq(4,m1,m2) << endl;
+		      }
+		  }
+
 	      }
+
+
+	  if(TRACE2)
+	    {
+	      //	      cout << "Dinvq=" << Dinvq << endl;
+	      cout << "C: Dinvq[4]=" << Dinvq.qcomp(4) << endl;
+	    }
+
+  */
+    for(int c2=0; c2<NC; c2++)
+      for(int c4=0; c4<NC; c4++)
+	{	    
+	  if(TRACE2)
+	    cout << "c2=" << c2 << " c4=" << c4 << endl;
+
+	  	  	  
+	  Triplet myivec=clist[c2]+clist[c4];
+	  
+	  for(int r=0; r<Nq; r++)
+	    {
+	      SMatrix<complex<realtype>> my(NMAT,NMAT);
+	      
+	      my  = g[c4];
+	      my *= Kinvr[r];
+	      my *= g[c2];
+	      
+	      int mrpc2c4=la.rAdd(la.GetInversionIndx(r),myivec);
+	      
+	      my *= Kinvr[mrpc2c4];
+	      	      
+	      //    F1[r]=NFAKESPINTRACE*tr(my);
+	      F1[r]=invNq*NFAKESPINTRACE*tr(my);
+	    } 
+	  FFTWEXECUTE(F1pluss); 
+	  
+	  
+	  for(int m1=NSUBL; m1<NDMAT; m1++) 
+	    for(int m2=m1; m2<NDMAT; m2++) 
+	      {
+		
+		int n1=m1-NSUBL; 
+		int n2=m2-NSUBL; 
+		
+		for(int qi=0; qi<Nq; qi++)
+		  {
+		    //		    Dinvq(qi,m1,m2)+=-invNq*F1[qi]*conj(f(qi,c2,n1))*f(qi,c4,n2)*conj(expi(la.qr(qi,clist[c4])));
+		    Dinvq(qi,m1,m2)+=-F1[qi]*conj(f(qi,c2,n1))*f(qi,c4,n2)*conj(expi(la.qr(qi,clist[c4])));
+		  }
+
+		if(TRACE2)
+		  {
+		    if(m1==1 && m2==1)
+		      {
+			cout << "F1[4]=" << F1[4] 
+			     << " f(4,"<< c2 << "," << n1 << ")^*=" << conj(f(4,c2,n1)) 
+			     << " f(4," << c4 << "," << n2 << ")=" << f(4,c4,n2) 
+			     << " expi(-q,c4)= " << conj(expi(la.qr(4,clist[c4]))) << endl;
+			cout << "Dinvq(4,1,1) = " << Dinvq(4,m1,m2) << endl;
+		      }
+		  }
+                       
+
+	      }
+
+	  if(TRACE2)
+	    {
+	      cout << "B: Dinvq[4]: " << Dinvq.qcomp(4) << endl;
+	    }
+
 
 	  
 	  myivec=clist[c2]-clist[c4];
@@ -812,7 +964,26 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 		  {
 		    Dinvq(qi,m1,m2)+=-invNq*F1[qi]*conj(f(qi,c2,n1))*f(qi,c4,n2);
 		  }
+
+		if(TRACE2)
+		  {
+		    if(m1==1 && m2==1)
+		      {
+			cout << "F1[4]=" << F1[4] 
+			     << " f(4,"<< c2 << "," << n1 << ")^*=" << conj(f(4,c2,n1)) 
+			     << " f(4," << c4 << "," << n2 << ")=" << f(4,c4,n2) 
+			     << " new cont=" << -invNq*F1[4]*conj(f(4,c2,n1))*f(4,c4,n2) << endl; 
+			cout << "Dinvq(4,1,1) = " << Dinvq(4,m1,m2) << endl;
+		      }
+		  }
+
 	      }
+
+	  if(TRACE2)
+	    {
+	      //	      cout << "Dinvq=" << Dinvq << endl;
+	      cout << "C: Dinvq[4]=" << Dinvq.qcomp(4) << endl;
+	    }
 	}
 #else  
   for(int c2=0; c2<NC; c2++)
@@ -846,7 +1017,6 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 	      
 	      for(int qi=0; qi<Nq; qi++)
 		{
-		  //		  if(c2==0 && c4==0){Dinvq(qi,m1,m2);}
 		  Dinvq(qi,m1,m2)+=-invNq*F1[qi]*conj(f(qi,c2,n1))*f(qi,c4,n2)*conj(expi(la.qr(qi,clist[c4])));
 		}
 	    }
@@ -863,9 +1033,10 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 	  Dinvq(qi,m2,m1)=conj(Dinvq(qi,m1,m2));
 	}
 
-  if(TRACE)
+
+  if(TRACE2)
     {
-      cout << "Dinvq before adding bare phonons: " << Dinvq << endl;
+      cout  << "Dinvq before adding bare phonons: " << Dinvq << endl;
     }
 
   // add the bare phonon part
@@ -881,9 +1052,9 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
     }
 #endif
 
-  if(TRACE) 
+  if(TRACE2) 
     {
-      //  cout << "Dinvq after adding bare phonon part: " << Dinvq << endl;
+      cout << "Dinvq after adding bare phonon part: " << Dinvq << endl;
     }
   
   // FORCING
@@ -895,13 +1066,13 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
   
   if(TRACE){SanityCheck(Dinvq,"Dinvq, after constructing it",false);}
   
-  //if(TRACE){ cout << "Dinvq before inversion=" << Dinvq << endl;}
+  if(TRACE2){ cout << "Dinvq before inversion=" << Dinvq << endl;}
 
   MatrixInverse(Dinvq); // B = Dq
 
   if(TRACE){SanityCheck(Dq,"Dq, after inverting Dinvq",false);}
   
-  //  if(TRACE){ cout << "Dq=" << Dq << endl;}
+  if(TRACE2){ cout << "Dq, after inverting Dinvq, Dq=" << Dq << endl;}
 
   if(excludeqzero) Setqzerotozero(Dq);
 
@@ -919,7 +1090,7 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 
   if(TRACE){SanityCheck(Dq,"Dq, at end of ComputeDq",false);}
 
-  //  if(TRACE){ cout << "Dq=" << Dq << endl;}
+  if(TRACE2){ cout << "At end of ComputDq, Dq=" << Dq << endl;}
   
   if(TRACE) cout << "Done with ComputeDq " << endl;
 }
@@ -1562,7 +1733,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
       if(converged && pconverged){ done=true; continue;} // two iterations must fulfill conv. crit.
     }
   
-  if(TRACE) cout << "Final Kinv_q: " << Kinvq << endl;  
+  //  if(TRACE) cout << "Final Kinv_q: " << Kinvq << endl;  
 
   //  nalphas=CalculateAlphas(newT); // calculate alphas
 

@@ -27,6 +27,7 @@ complex<double> operator+(const float& l,const complex<double>& r){return comple
 complex<double> operator*(const float& l,const complex<double>& r){return complex<double>(l*real(r),l*imag(r));}
 
 complex<double> expi(const double phi){return polar(1.,phi);}
+//complex<double> expi(const double phi){return complex<double>(cos(phi),sin(phi));}
 #endif
 
 

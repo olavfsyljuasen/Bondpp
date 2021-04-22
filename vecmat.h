@@ -24,7 +24,17 @@ class SMatrix
   { 
     for(int i=0; i<m.Nrows; i++)
       {
-	for(int j=0; j<m.Ncols; j++){ os << setprecision(35) << m(i,j) << " ";}
+	for(int j=0; j<m.Ncols; j++){ os << setprecision(16) << m(i,j) << " ";}
+	os << endl;
+      }
+    return os;
+  }
+
+  friend ostream& operator<<(ostream& os,SMatrix m)
+  { 
+    for(int i=0; i<m.Nrows; i++)
+      {
+	for(int j=0; j<m.Ncols; j++){ os << setprecision(16) << m(i,j) << " ";}
 	os << endl;
       }
     return os;
@@ -260,7 +270,9 @@ class VecMat
   void SetToZero(){for(unsigned int i=0; i<A.size(); i++){A[i]=0;}}
   
   T* operator[](const int i){ return &A[indx(i,0,0)];}  
-  //const SMatrix<T>& constant(const int i) const { return A[i];}  
+
+  SMatrix<T> qcomp(const int q){return SMatrix<T>(Nrows,Ncols,&A[indx(q,0,0)]);} // only used for printing
+
   
   const int Nvecs; // size of vector
   const int Nrows; // number of rows;

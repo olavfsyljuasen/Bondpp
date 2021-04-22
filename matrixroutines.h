@@ -82,7 +82,7 @@ realtype SumLogDet(VecMat<complex<realtype>>& A)
 	  realtype value=real(A(i,0));
 	  if(value != 0.)
 	    {
-	      if(TRACE) cout << "in SumLogDet value " << i << "= " << value << endl;
+	      //	      if(TRACE) cout << "in SumLogDet value " << i << "= " << value << endl;
 	      sum+=log(value);
 	    }
 	}
