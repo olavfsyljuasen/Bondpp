@@ -195,7 +195,7 @@ N1(static_cast<int>(par[NX])),
 #if defined QSPACEDIRECTLATTICE
 //  vr(N3*N2*(N1/2+1)),
   Nr(N3*N2*N1),
-  Nq(N1*N2*N3),
+  Nq(N3*N2*N1),
 #else
   Nr(N3*N2*N1),
   Nq(N3*N2*(N1/2+1)),
@@ -576,8 +576,24 @@ inline int BravaisLattice::GetInversionIndx(const int s)
 
 inline Triplet BravaisLattice::UsePBC(const Triplet v)
 {
-  Triplet w={(v[0]+N1)%N1,(v[1]+N2)%N2,(v[2]+N3)%N3};
+  /*
+  Triplet w(v);
 
+  int w0int=int(w[0]);
+  w[0] = (w0int+N1)%N1+(w[0]-w0int); // adding offset if not integer.
+
+  int w1int=int(w[1]);
+  w[1] = (w1int+N2)%N2+(w[1]-w1int); // adding offset if not integer.
+
+  int w2int=int(w[2]);
+  w[2] = (w2int+N3)%N3+(w[2]-w2int); // adding offset if not integer.
+ 
+  return w;
+  */
+
+  
+  Triplet w={(v[0]+N1)%N1,(v[1]+N2)%N2,(v[2]+N3)%N3};
+  //  cout << "UsePBC: " << v << "->" << w << endl;
   return w;
 }
 

@@ -103,8 +103,8 @@ const bool PRINTQPTS=true;
 const bool PRINTRCORRS=false;
 const bool PRINTQCORRS=false;
 const bool PRINTSIGMAE=false;
-const bool PRINTRPTS=true;
-const bool PRINTQPTS=true;
+const bool PRINTRPTS=false;
+const bool PRINTQPTS=false;
 #endif
 
 

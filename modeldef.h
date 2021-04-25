@@ -18,6 +18,36 @@ const int NFAKESPINTRACE=1;
 const int NSUBL= 1;
 
 
+#if defined NBRRANGE==1
+
+#ifdef CPOSITIVE
+const int NC=2;
+const int NN=2;
+const int NNN=2;
+vector<Triplet> clist{{ 1,  0,  0 }, { 0,  1,  0 }};
+#else
+const int NC=4;
+const int NN=4;
+const int NNN=4;
+vector<Triplet> clist{{ 1,  0,  0 }, {-1,  0,  0 }, { 0,  1,  0 }, { 0, -1,  0 }};
+#endif //CPOSITIVE
+
+
+#elif defined NBRRANGE==2
+
+#ifdef CPOSITIVE
+const int NC=4;
+const int NN=2;
+const int NNN=4;
+vector<Triplet> clist{{ 1,  0,  0 }, { 0,  1,  0 }, { 1,  1,  0 }, { 1, -1,  0 }};
+#else
+const int NC=8;
+const int NN=4;
+const int NNN=8;
+vector<Triplet> clist{{ 1,  0,  0 }, {-1,  0,  0 }, { 0,  1,  0 }, { 0, -1,  0 }, { 1,  1,  0 }, {-1, -1, 0}, { 1, -1,  0 }, {-1,  1,  0 }};
+#endif //CPOSITIVE
+
+#else
 
 #ifdef CPOSITIVE
 const int NC=6;
@@ -30,7 +60,10 @@ const int NN=4;
 const int NNN=8;
 vector<Triplet> clist{{ 1,  0,  0 }, {-1,  0,  0 }, { 0,  1,  0 }, { 0, -1,  0 }, { 1,  1,  0 }, {-1, -1, 0}, { 1, -1,  0 }, {-1,  1,  0 },{ 2,0,0},{-2,0,0},{0,2,0},{0,-2,0}};
 #endif //CPOSITIVE
-//vector<int> minusc{1,0,3,2,5,4,7,6,9,8,11,10}; // refers to indx in clist
+
+#endif  // NBRRANGE
+
+
 vector<Coord> roffset={Coord(0,0,0)};
 vector<double> invsqrtmasses={1.};
 
