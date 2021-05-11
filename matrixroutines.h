@@ -50,12 +50,9 @@ using namespace Eigen;
 
 
 
-
-void Setqzerotozero(VecMat<complex<realtype>>& A)
+template<class T,int Nrows,int Ncols>
+  void Setqzerotozero(VecMat<T,Nrows,Ncols>& A)
 {
-  const int Nrows=A.Nrows;
-  const int Ncols=A.Ncols;
-
   for(int s1=0; s1<Nrows; s1++)
     for(int s2=0; s2<Ncols; s2++)
       {
@@ -64,13 +61,12 @@ void Setqzerotozero(VecMat<complex<realtype>>& A)
 }
 
 // A routine to sum over the ln of sublattice determinants for all q.
-realtype SumLogDet(VecMat<complex<realtype>>& A)
+template<class T,int Nrows,int Ncols>
+  realtype SumLogDet(VecMat<T,Nrows,Ncols>& A)
 {
   if(TRACE) cout << "Starting SumLogDet" << endl;
 
   realtype sum=0.;
-  const int Nrows= A.Nrows;
-  const int Ncols= A.Ncols;
   const int n    = A.Nvecs; // the number of q values
   const int N    = A.size(); // the total array size
 
@@ -127,12 +123,12 @@ realtype SumLogDet(VecMat<complex<realtype>>& A)
 
 // Routine to subtract the minimum of an array from all its element. 
 // The routine modifies the array, and returns the value subtracted. 
-vector<realtype> SubtractMinimum(VecMat<complex<realtype>>& K)
+template<class T,int Nrows,int Ncols>
+  vector<realtype> SubtractMinimum(VecMat<T,Nrows,Ncols>& K)
 {
   if(TRACE) cout << "Start SubtractMinimum" << endl;
 
   const int nq=K.Nvecs; // the number of q components.
-  const int Nrows=K.Nrows;
 
   vector<realtype> min(Nrows);
   
@@ -156,11 +152,11 @@ vector<realtype> SubtractMinimum(VecMat<complex<realtype>>& K)
 // Routine to subtract the minimum of an array from all its diagonal elements. 
 // The routine modifies the array, and returns the value subtracted. 
 // This routine also returns the element for which the minimum occurred
-vector<realtype> SubtractMinimum(VecMat<complex<realtype>>& K,vector<int>& element)
+template<class T,int Nrows,int Ncols>
+  vector<realtype> SubtractMinimum(VecMat<T,Nrows,Ncols>& K,vector<int>& element)
 {
   if(TRACE) cout << "Start SubtractMinimum" << endl;
   const int nq=K.Nvecs; // the number of q components.
-  const int Nrows=K.Nrows;
 
   vector<realtype> min(Nrows);
   
@@ -188,26 +184,24 @@ vector<realtype> SubtractMinimum(VecMat<complex<realtype>>& K,vector<int>& eleme
 
 
 
-
-void AddDelta(VecMat<complex<realtype>>& K,NumberList& delta)
+template<class T,int Nrows,int Ncols>
+  void AddDelta(VecMat<T,Nrows,Ncols>& K,NumberList& delta)
 {
   for(int q=0; q<K.Nvecs; q++)
     {
-      for(int m=0; m<K.Nrows; m++)
+      for(int m=0; m<Nrows; m++)
 	K(q,m,m) += delta[subl(m)];
     }
 }
 
 
 
-
-realtype FindMinimumEigenvalue(VecMat<complex<realtype>>& A)
+template<class T,int Nrows,int Ncols>
+  realtype FindMinimumEigenvalue(VecMat<T,Nrows,Ncols>& A)
 {
   if(TRACE) cout << "Starting FindMinimumEigenvalue " << endl;
 
   const int n=A.Nvecs;   // the number of q values
-  const int Nrows=A.Nrows;
-  const int Ncols=A.Ncols;  
   
   realtype lambda_min; // the min eigenvalue of a sublattice-matrix
   realtype global_min=numeric_limits<realtype>::max();
@@ -246,7 +240,8 @@ realtype FindMinimumEigenvalue(VecMat<complex<realtype>>& A)
   return global_min;
 }
 
-realtype SubtractMinimumEigenvalue(VecMat<complex<realtype>>& A)
+template<class T,int Nrows,int Ncols>
+  realtype SubtractMinimumEigenvalue(VecMat<T,Nrows,Ncols>& A)
 {
   realtype emin=FindMinimumEigenvalue(A);
   if(TRACE) cout << "having found MinimumEigenvalue: " << emin << endl;
@@ -259,12 +254,11 @@ realtype SubtractMinimumEigenvalue(VecMat<complex<realtype>>& A)
 
 
 // A routine to perform the matrix inversion, replacing the input data with output values.
-void MatrixInverse(VecMat<complex<realtype>>& A)
+template<class T,int Nrows,int Ncols>
+  void MatrixInverse(VecMat<T,Nrows,Ncols>& A)
 {
   if(TRACE) cout << "Starting MatrixInverse" << endl;
   const int n=A.Nvecs;   // the number of q values
-  const int Nrows=A.Nrows;
-  const int Ncols=A.Ncols;  
 
   if(TRACE) cout << "Nrows= " << Nrows << " Ncols="<< Ncols << " n=" << n << endl;
 
@@ -316,12 +310,10 @@ void MatrixInverse(VecMat<complex<realtype>>& A)
 }
 
 
-void MatrixPseudoInverse(VecMat<complex<realtype>>& A)
+template<class T,int Nrows,int Ncols>
+  void MatrixPseudoInverse(VecMat<T,Nrows,Ncols>& A)
 {
   const int n=A.Nvecs;   // the number of q values
-  const int Nrows=A.Nrows;
-  const int Ncols=A.Ncols;  
-  
   
   if(Nrows==1 && Ncols==1) // just take the inverse of each element
     {
@@ -386,14 +378,15 @@ void MatrixPseudoInverse(VecMat<complex<realtype>>& A)
 
 // A routine to sum over the trace of sublattice matrices for all q
 // it computes sum_q Tr(Aq Bq)
-realtype SumTr(VecMat<complex<realtype>>& A,VecMat<complex<realtype>>& B)
+template<class T,int Nrows,int Ncols>
+  realtype SumTr(VecMat<T,Nrows,Ncols>& A,VecMat<T,Nrows,Ncols>& B)
 {
   if(TRACE) cout << "Starting SumTr" << endl;
   realtype sum=0.;
 
   for(int k=0; k<A.Nvecs; k++)
     {
-      SMatrix<complex<realtype> > temp(A.Nrows,A.Ncols,A[k]);
+      SMatrix<complex<realtype>,Nrows,Ncols> temp(A[k]);
       temp *= B[k];
       sum += real( tr(temp) );
     }

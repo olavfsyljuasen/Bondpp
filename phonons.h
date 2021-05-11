@@ -44,8 +44,8 @@ ostream& operator<<(ostream& os,cmplxcoord& cmplx){ for(int i=0; i<3; i++) os <<
 
 #if defined XDISPLACEMENTS
 
-const int NDISP  =1; // the dimension of the displacements 
-const int NELASTIC=1; // the number of elastic constants.
+const auto NDISP  =1; // the dimension of the displacements 
+const auto NELASTIC=1; // the number of elastic constants.
 typedef std::array<realtype,1> voigtstring;
 // voigt:                   xx
 vector<double> voigt1indx{  0 };
@@ -55,8 +55,8 @@ vector<string> voigtnames{"Exx"};
 
 #elif defined XYDISPLACEMENTS
 
-const int NDISP  =2; // the dimension of the displacements 
-const int NELASTIC=3; // the number of elastic constants.
+const auto NDISP  =2; // the dimension of the displacements 
+const auto NELASTIC=3; // the number of elastic constants.
 typedef std::array<realtype,3> voigtstring;
 // voigt:                   xx,   yy,   xy
 vector<double> voigt1indx{  0 ,   1 ,   0 };
@@ -65,8 +65,8 @@ vector<string> voigtnames{"Exx","Eyy","Exy"};
 
 #elif defined XYZDISPLACEMENTS
 
-const int NDISP  =3; // the dimension of the displacements 
-const int NELASTIC=6; // the number of elastic constants.
+const auto NDISP  =3; // the dimension of the displacements 
+const auto NELASTIC=6; // the number of elastic constants.
 typedef std::array<realtype,6> voigtstring;
 // voigt:                   xx,   yy,   zz,   yz,   xz,   xy
 vector<double> voigt1indx{  0 ,   1 ,   2 ,   1 ,   0 ,   0 };
@@ -74,7 +74,7 @@ vector<double> voigt2indx{   0,    1,    2,    2,    2,    1};
 vector<string> voigtnames{"Exx","Eyy","Ezz","Eyz","Exz","Exy"};
 #endif
 
-const int NMODE=NSUBL*NDISP; // the number of normal modes
+const auto NMODE=NSUBL*NDISP; // the number of normal modes
 
 
 
@@ -90,15 +90,15 @@ class Phonons
   voigtstring GetElasticMode(int i){return elasticmode[i];}
   realtype GetElasticeigenvalue(int i){return elasticeigenvalue[i];}
 
-  VecMat<complex<realtype>>& Getf(){return flist;}
+  VecMat<complex<realtype>,NC,NMODE>& Getf(){return flist;}
 
   realtype GetSumLogOmegaoverV(){return sumlogomegaoverv;}
  private:  
   const int Nq;
   
-  VecMat<realtype> omega;
+  VecMat<realtype,NMODE,1> omega;
   
-  vector<VecMat<cmplxcoord>* > normalmode;
+  vector<VecMat<cmplxcoord,NMODE,1>* > normalmode;
 
   vector<voigtstring> elasticmode;
   vector<double> elasticeigenvalue;
@@ -106,12 +106,12 @@ class Phonons
   realtype sumlogomegaoverv;
   
   void Initializef();
-  VecMat<complex<realtype>> flist;
+  VecMat<complex<realtype>,NC,NMODE> flist;
 };
 
 
 
-Phonons::Phonons(): Nq(la.NqSites()),omega(Nq,NMODE),normalmode(NSUBL),sumlogomegaoverv(0.),flist(Nq,NC,NMODE)
+Phonons::Phonons(): Nq(la.NqSites()),omega(Nq),normalmode(NSUBL),sumlogomegaoverv(0.),flist(Nq)
 {
   if(TRACE) cout << "Initializing Phonons" << endl;
   // We start with the elastic constants
@@ -387,7 +387,7 @@ Phonons::Phonons(): Nq(la.NqSites()),omega(Nq,NMODE),normalmode(NSUBL),sumlogome
     
   for(int i=0; i<NSUBL; i++)
     { 
-      normalmode[i]=new VecMat<cmplxcoord>(Nq,NMODE,1);
+      normalmode[i]=new VecMat<cmplxcoord,NMODE,1>(Nq);
     }
   
   

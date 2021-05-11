@@ -2,8 +2,8 @@
 #define SYMMETRYROUTINES_H
 
 
-template<class T,int Nrows,int Ncols>
-  void MakeHermitian(VecMat<T,Nrows,Ncols>& M,bool warning=true)
+template<class T>
+  void MakeHermitian(VecMat<T>& M,bool warning=true)
 {  
   for(int q=0; q<M.Nvecs; q++)
     {
@@ -35,8 +35,8 @@ template<class T,int Nrows,int Ncols>
 }
 
 // make all diagonal spin entries equal 
-template<class T,int Nrows,int Ncols>
-  void MakeEqualSpinDiagonalEntries(VecMat<T,Nrows,Ncols>& M,bool warning=true)
+template<class T>
+void MakeEqualSpinDiagonalEntries(VecMat<T>& M,bool warning=true)
 {
   for(int q=0; q<M.Nvecs; q++)
     {
@@ -67,8 +67,8 @@ template<class T,int Nrows,int Ncols>
 }
 
 // erase all off-diagonal spin entries. 
-template<class T,int Nrows,int Ncols>
-  void EraseSpinOffdiagonals(VecMat<T,Nrows,Ncols>& M,bool warning=true)
+template<class T>
+void EraseSpinOffdiagonals(VecMat<T>& M,bool warning=true)
 {
   for(int q=0; q<M.Nvecs; q++)
     {
@@ -96,20 +96,21 @@ template<class T,int Nrows,int Ncols>
 
 
 
-template<class T,int Nrows,int Ncols>
-  void MakeSpinDiagonal(VecMat<T,Nrows,Ncols>& M,bool warning=true)
+template<class T>
+void MakeSpinDiagonal(VecMat<T>& M,bool warning=true)
 {
   EraseSpinOffdiagonals(M,warning);
 }
 
-template<class T,int Nrows,int Ncols>
-void MakeSpinDiagonalEqual(VecMat<T,Nrows,Ncols>& M,bool warning=true)
+template<class T>
+void MakeSpinDiagonalEqual(VecMat<T>& M,bool warning=true)
 {
   MakeEqualSpinDiagonalEntries(M,warning);
 }
 
-template<class T,int Nrows,int Ncols>
-  void MakeSpinSymmetric(VecMat<T,Nrows,Ncols>& M,bool warning=true)
+
+template<class T>
+void MakeSpinSymmetric(VecMat<T>& M,bool warning=true)
 {
 #if defined NORANDOMSPINOFFDIAGONALS
   EraseSpinOffdiagonals(M,warning);
@@ -120,8 +121,8 @@ template<class T,int Nrows,int Ncols>
 }
 
 
-template<class T,int Nrows,int Ncols>
-  bool IsSpinSymmetric(VecMat<T,Nrows,Ncols>& M)
+template<class T>
+bool IsSpinSymmetric(VecMat<T>& M)
 {
   for(int q=0; q<M.Nvecs; q++)
     {
@@ -162,11 +163,14 @@ template<class T,int Nrows,int Ncols>
 
 
 // makes a matrix Hermitian in the block, but anti-Hermitian between the blocks
-template<class T,int Nrows,int Ncols>
-  void MakeMixedHermitian(VecMat<T,Nrows,Ncols>& M,const int N1rows,const int N1cols)
+template<class T>
+void MakeMixedHermitian(VecMat<T>& M,const int N1rows,const int N1cols)
 {
   // N1rows and N1cols are the dimensions of the upper block matrix
 
+  const int Nrows=M.Nrows;
+  const int Ncols=M.Ncols;
+  
   for(int q=0; q<M.Nvecs; q++)
     {
       for(int s=0; s<Nrows; s++)
@@ -203,9 +207,12 @@ template<class T,int Nrows,int Ncols>
 }
 
 
-template<class T,int Nrows,int Ncols>
-  void MakeInversionTransposedSymmetric(VecMat<T,Nrows,Ncols>& M)
+template<class T>
+void MakeInversionTransposedSymmetric(VecMat<T>& M)
 {
+  const int Nrows=M.Nrows;
+  const int Ncols=M.Ncols;
+  
   for(int q=0; q<M.Nvecs; q++)
     {
       const int invq=la.GetInversionIndx(q); // the negative q
@@ -221,11 +228,14 @@ template<class T,int Nrows,int Ncols>
 
 
 
-template<class T,int Nrows,int Ncols>
-  bool IsHermitian(VecMat<T,Nrows,Ncols>& M)
+template<class T>
+bool IsHermitian(VecMat<T>& M)
 {
   //  if(TRACE) cout << "Checking if Hermitian: ";
   //  bool retval=true;
+  const int Nrows=M.Nrows;
+  const int Ncols=M.Ncols;
+
   for(int q=0; q<M.Nvecs; q++)
     {
       
@@ -255,11 +265,13 @@ template<class T,int Nrows,int Ncols>
 
 }
 
-template<class T,int Nrows,int Ncols>
-bool IsMixedHermitian(VecMat<T,Nrows,Ncols>& M,const int N1rows,const int N1cols)
+template<class T>
+bool IsMixedHermitian(VecMat<T>& M,const int N1rows,const int N1cols)
 {
   //  if(TRACE) cout << "Checking if Hermitian: ";
   //  bool retval=true;
+  const int Nrows=M.Nrows;
+  const int Ncols=M.Ncols;
 
   for(int q=0; q<M.Nvecs; q++)
     {
@@ -292,11 +304,13 @@ bool IsMixedHermitian(VecMat<T,Nrows,Ncols>& M,const int N1rows,const int N1cols
 
 }
 
-template<class T,int Nrows,int Ncols>
-bool IsInversionTransposedSymmetric(VecMat<T,Nrows,Ncols>& M)
+template<class T>
+bool IsInversionTransposedSymmetric(VecMat<T>& M)
 {
   //  if(TRACE) cout << "Checking if InversionTransposedSymmetric: ";
 
+  const int Nrows=M.Nrows;
+  const int Ncols=M.Ncols;
   
   for(int q=0; q<M.Nvecs; q++)
     {
@@ -324,8 +338,7 @@ bool IsInversionTransposedSymmetric(VecMat<T,Nrows,Ncols>& M)
   return true;
 }
 
-template<class T,int Nrows,int Ncols>
-void SanityCheck(VecMat<T,Nrows,Ncols>& M,string message,bool checkHermitian=true)
+void SanityCheck(VecMat<complex<realtype>>& M,string message,bool checkHermitian=true)
 {
   bool stop=false;
   if(M.ContainsNaN(message)){stop=true;}

@@ -123,8 +123,9 @@ class BravaisLattice
   int qAdd(const int k1,const int k2);  // return matrix entry for k1+k2
   int qSub(const int k1,const int k2);  // return matrix entry for k1-k2
 
-  int rAdd(const int i,const Triplet ivec){return GetIndx(UsePBC(GetTriplet(i)+ivec));}
-  int rSub(const int i,const Triplet ivec){return GetIndx(UsePBC(GetTriplet(i)-ivec));}
+
+  int rAdd(const int s,const Triplet v);
+  int rSub(const int s,const Triplet v);
 
   realtype UnitCellVolume(){return unitcellvolume;} // volume of unit cell
 #ifdef PRESERVESYMMETRY
@@ -588,18 +589,37 @@ inline int BravaisLattice::GetIndx(const Triplet v)
 }
 
 
-
-
 inline Triplet BravaisLattice::GetTriplet(const int s)
 {
+  /*
   const int xc = s%N1;
   const int r  = s/N1;
   const int yc = r%N2;
   const int zc = r/N2;
-
-  Triplet myval={xc,yc,zc};
-  return myval;
+  return Triplet{xc,yc,zc};
+  */
+  const int r  = s/N1;
+  return Triplet{s%N1,r%N2,r/N2};
 }
+
+//inline int BravaisLattice::rAdd(const int s,const Triplet v){return GetIndx(UsePBC(GetTriplet(s)+v));}
+
+int BravaisLattice::rAdd(const int s,const Triplet v)
+{
+  const int r  = s/N1;
+  return (s%N1+v[0]+N1)%N1 + N1*( (r%N2+v[1]+N2)%N2 + N2*( (r/N2+v[2]+N3)%N3));
+}
+
+
+//inline int BravaisLattice::rSub(const int s,const Triplet v){return GetIndx(UsePBC(GetTriplet(s)-v));}
+
+int BravaisLattice::rSub(const int s,const Triplet v)
+{
+  const int r  = s/N1;
+  return (s%N1-v[0]+N1)%N1 + N1*( (r%N2-v[1]+N2)%N2 + N2*( (r/N2-v[2]+N3)%N3));
+}
+
+
 
 
 inline int BravaisLattice::qAdd(const int ka,const int kb)

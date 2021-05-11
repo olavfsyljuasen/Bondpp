@@ -69,7 +69,7 @@ const int Nlargestqvalues=6; // keep track of the locations of the ... susc peak
 const bool SHOWSUBTRACTED = true; // true to write subtractions to logfile when printino=true
 
 const bool PRINTPROGRESS        = true; // true to write T and epsilons to logfile
-const int  PRINTPROGRESSTICKLER = 10;   // print every TICKLER steps
+int  PRINTPROGRESSTICKLER = 10;   // print every TICKLER steps, can be modified
 
 const bool BINARYOUTFILES=false;
 
@@ -147,11 +147,21 @@ realtype* par = rp.GetPars(1); // only the first line is read
 
 BravaisLattice la(par); // declare lattice globally 
 
+
+
 #include "vecmat.h"
+
+#include "modeldef.h" // set number of sublattices, and other compile-time parameters, modify it for new models
 
 #include "couplings.h" // generic coupling class
 
-#include "modeldef.h" // set number of sublattices, etc. modify it for new models
+#include "modelcouplings.h" // set couplings, modify for new models
+
+
+
+
+
+
 
 #ifdef PHONONS
 #include "phonons.h" // must set the springs, modify for different phonons

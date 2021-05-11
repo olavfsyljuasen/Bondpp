@@ -9,11 +9,11 @@
 #include<sstream>
 
 #if defined PHONONS && !defined ELASTICONLY 
-const int NDMAT=NSUBL+NMODE;
+const auto NDMAT=NSUBL+NMODE;
 #else
-const int NDMAT=NSUBL;
+const auto NDMAT=NSUBL;
 #endif
-const int NDMAT2=NDMAT*NDMAT;
+const auto NDMAT2=NDMAT*NDMAT;
 
   //#g++ -I/data/sylju/include -L/data/sylju/lib FFTWtest.C -lfftw3 -lm;
 #include <fftw3.h>
@@ -73,7 +73,7 @@ class Driver
   vector<obstype> CalculateOrderPars(realtype,int,int);
   vector<obstype> CalculateAlphas(realtype);
 
-  void FindMaxVals(SMatrix<int>&, SMatrix<realtype>&);
+  void FindMaxVals(SMatrix<int,NMAT,NMAT>&, SMatrix<realtype,NMAT,NMAT>&);
 
   //void Convolve(const bool);
   //  realtype CalculateSecondDerivative(const realtype T,const int k);
@@ -85,7 +85,7 @@ class Driver
   void SetQsToZero(); // routine to set some q's to zero in self-energy
   void MakeRandomSigma();
 
-  void MakeSymmetric(VecMat<complex<realtype>>&);
+  void MakeSymmetric(VecMat<complex<realtype>,NMAT,NMAT>&);
   
   void SolveSelfConsistentEquation(NumberList Delta); 
 
@@ -142,24 +142,24 @@ class Driver
   realtype mineigenvalue; // for storing the minimum SigmaE value
   realtype currT; // for storing the current value of the temperature 
 
-  VecMat<complex<realtype>>& Jq;
+  VecMat<complex<realtype>,NMAT,NMAT>& Jq;
   // The actual storage areas
-  VecMat<complex<realtype>> A1;  // holds Kq,Kinvq
-  VecMat<complex<realtype>> A2;  // holds Sigmaq,
-  VecMat<complex<realtype>> B;  // holds Dq,Dinvq
+  VecMat<complex<realtype>,NMAT,NMAT> A1;  // holds Kq,Kinvq
+  VecMat<complex<realtype>,NMAT,NMAT> A2;  // holds Sigmaq,
+  VecMat<complex<realtype>,NDMAT,NDMAT> B;  // holds Dq,Dinvq
 
 
   vector<complex<realtype>>  F1 ; // holds inplace intermediate Fourier-transform
   vector<complex<realtype>>  F2 ; // holds inplace intermediate Fourier-transform
 
 #ifdef FFTS_INPLACE
-  VecMat<complex<realtype>>& A1r; // holds Kinvr
-  VecMat<complex<realtype>>& A2r; // holds Sigmar
-  VecMat<complex<realtype>>& Br; // holds Dr
+  VecMat<complex<realtype>,NMAT,NMAT>& A1r; // holds Kinvr
+  VecMat<complex<realtype>,NMAT,NMAT>& A2r; // holds Sigmar
+  VecMat<complex<realtype>,NDMAT,NDMAT>& Br; // holds Dr
 #else   
-  VecMat<complex<realtype>> A1r;  // holds Kinvr
-  VecMat<complex<realtype>> A2r;  // holds Sigmar
-  VecMat<complex<realtype>> Br;  // holds Dr
+  VecMat<complex<realtype>,NMAT,NMAT> A1r;  // holds Kinvr
+  VecMat<complex<realtype>,NMAT,NMAT> A2r;  // holds Sigmar
+  VecMat<complex<realtype>,NDMAT,NDMAT> Br;  // holds Dr
 #endif
 
 
@@ -181,22 +181,22 @@ class Driver
   // the following references are used for readability of the code
 
 
-  VecMat<complex<realtype>>& Kq;     // points to the A1 array
-  VecMat<complex<realtype>>& Kinvq;  // points to the A1 array
-  VecMat<complex<realtype>>& Kinvr;  // points to the A1 array
+  VecMat<complex<realtype>,NMAT,NMAT>& Kq;     // points to the A1 array
+  VecMat<complex<realtype>,NMAT,NMAT>& Kinvq;  // points to the A1 array
+  VecMat<complex<realtype>,NMAT,NMAT>& Kinvr;  // points to the A1 array
 
-  VecMat<complex<realtype>>& Sigmar; // points to the A2 array
-  VecMat<complex<realtype>>& Sigmaq; // points to the A2 array
+  VecMat<complex<realtype>,NMAT,NMAT>& Sigmar; // points to the A2 array
+  VecMat<complex<realtype>,NMAT,NMAT>& Sigmaq; // points to the A2 array
 
-  VecMat<complex<realtype>>& Dq;     // points to the B array
-  VecMat<complex<realtype>>& Dinvq;  // points to the B array
-  VecMat<complex<realtype>>& Dr;     // points to the B array
+  VecMat<complex<realtype>,NDMAT,NDMAT>& Dq;     // points to the B array
+  VecMat<complex<realtype>,NDMAT,NDMAT>& Dinvq;  // points to the B array
+  VecMat<complex<realtype>,NDMAT,NDMAT>& Dr;     // points to the B array
 
 #ifdef PHONONS
-  VecMat<complex<realtype>>& f; // holds the vertex information
-  VecMat<complex<realtype>>& g; // points to rule
+  VecMat<complex<realtype>,NC,NMODE>& f; // holds the vertex information
+  VecMat<complex<realtype>,NMAT,NMAT>& g; // points to rule
   
-  vector<VecMat<complex<realtype>>*> gel;
+  vector<VecMat<complex<realtype>,NMAT,NMAT>* > gel;
 #endif
   NumberList epsilon;  // amplitude of elastic modes
 
@@ -206,11 +206,11 @@ class Driver
 
 
 Driver::Driver(Rule& r):rule(r),dim(la.D()),dims(la.SiteqDims()),Nq(la.NqSites()),invNq(static_cast<realtype>(1.)/Nq),invSqrtNq(1./sqrt(Nq)),converged(false),Delta(NSUBL),Printinfo(false),lineid(0),Jq(r.Jq),  
-  A1(Nq,NMAT,NMAT),A2(Nq,NMAT,NMAT),B(Nq,NDMAT,NDMAT),F1(Nq),F2(Nq),
+  A1(Nq),A2(Nq),B(Nq),F1(Nq),F2(Nq),
 #ifdef FFTS_INPLACE
   A1r(A1),A2r(A2),Br(B),
 #else
-  A1r(Nq,NMAT,NMAT),A2r(Nq,NMAT,NMAT),Br(Nq,NDMAT,NDMAT),
+  A1r(Nq),A2r(Nq),Br(Nq),
 #endif
   Kq(A1),
   Kinvq(A1),Kinvr(A1r),Sigmar(A2r),Sigmaq(A2),
@@ -351,7 +351,7 @@ NumberList Driver::CalculateEpsilonsOverT()
 	{
 	  for(int qi=0; qi<Nq; qi++)
 	    {
-	      SMatrix<complex<realtype>> tmp(NMAT,NMAT);
+	      SMatrix<complex<realtype>,NMAT,NMAT> tmp;
 	      tmp=Kinvq[qi];
 	      tmp *= (*rule.gelptrs[i])[qi];
 	      sum += NFAKESPINTRACE*real(tr(tmp));
@@ -366,12 +366,13 @@ NumberList Driver::CalculateEpsilonsOverT()
 }
 #endif
 
-void Driver::FindMaxVals(SMatrix<int>& maxqs,SMatrix<realtype>& maxvals)
+
+void Driver::FindMaxVals(SMatrix<int,NMAT,NMAT>& maxqs,SMatrix<realtype,NMAT,NMAT>& maxvals)
 {
   if(TRACE) cout << "Starting FindMaxVals" << endl;
 
-  for(int m1=0; m1<Kinvq.Nrows; m1++)
-    for(int m2=0; m2<Kinvq.Ncols; m2++)
+  for(int m1=0; m1<NMAT; m1++)
+    for(int m2=0; m2<NMAT; m2++)
       {
 	int maxq(-1);
 	realtype maxv(0.);
@@ -401,8 +402,8 @@ vector<obstype> Driver::CalculateSpinOrderPars(realtype T)
 
       for(int qi=0; qi<Nq; qi++)
 	{
-	  for(int m1=0; m1<Kinvq.Nrows; m1++)
-	    for(int m2=0; m2<Kinvq.Ncols; m2++)
+	  for(int m1=0; m1<NMAT; m1++)
+	    for(int m2=0; m2<NMAT; m2++)
 	      sum+= (*f)(qi,m1,m2)*Kinvq(qi,m1,m2);
 	}
       opars[j]=0.5*T*invNq*NFAKESPINTRACE*sum;
@@ -436,7 +437,7 @@ vector<obstype> Driver::CalculateOrderPars(realtype T,int m1,int m2)
 }
 
 #ifdef PRESERVESYMMETRY
-void Driver::MakeSymmetric(VecMat<complex<realtype>>& m)
+void Driver::MakeSymmetric(VecMat<complex<realtype>,NMAT,NMAT>& m)
 {
   if(TRACE) cout << "Starting MakeSymmetric" << endl;
   if( NSUBL !=1){ cout << "MakeSymmetric works only for NSUBL=1" << endl; exit(1);}
@@ -709,7 +710,7 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
       {
 	for(int r=0; r<Nq; r++)
 	  {
-	    SMatrix<complex<realtype>> my(NMAT,NMAT);
+	    SMatrix<complex<realtype>,NMAT,NMAT> my;
 	    my  = g[c];
 	    my *= Kinvr[r];
 	    int mrpc = la.rAdd(la.GetInversionIndx(r),clist[c]); // index of -r+c	    
@@ -882,7 +883,7 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 	  
 	  for(int r=0; r<Nq; r++)
 	    {
-	      SMatrix<complex<realtype>> my(NMAT,NMAT);
+	      SMatrix<complex<realtype>,NMAT,NMAT> my;
 	      
 	      my  = g[c4];
 	      my *= Kinvr[r];
@@ -937,7 +938,7 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 	  
 	  for(int r=0; r<Nq; r++)
 	    {
-	      SMatrix<complex<realtype>> my(NMAT,NMAT);
+	      SMatrix<complex<realtype>,NMAT,NMAT> my;
 	      
 	      my  = g[c4];
 	      my.Transpose();
@@ -1426,7 +1427,7 @@ void Driver::ConstructKinvq()
   if(TRACE) cout << "Adding elastic modes " << endl;
   for(int j=0; j<NELASTIC; j++)
     {
-      VecMat<complex<realtype>> temp(*rule.gelptrs[j]);
+      VecMat<complex<realtype>,NMAT,NMAT> temp(*rule.gelptrs[j]);
       temp *= epsilon[j];
       Kq += temp;
     }
@@ -1619,6 +1620,11 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 
   currT=oldT; // set the current operating temperature
 
+  realtype absTdev(0.);
+  realtype oldabsTdev(0.);
+  int nincreases(0); // number of times that a new iteration gets a T that deviates more from the oldT than the previous iteration. Sign of no convergence.
+
+
   vector<realtype> Ts(NSUBL); // A list of Ts
   
   if(TRACE)
@@ -1641,8 +1647,11 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
   converged=false;
   bool pconverged=true; // convergence in the previous iteration,
   bool done=false;
+
+  bool reachedMAXITER=false;
+
  
-  while(iter< par[MAXITER] && !done)  
+  while(!done && !reachedMAXITER)  
     {
       if(TRACE) cout << "New iteration: " << iter << endl;
       iter++;
@@ -1667,6 +1676,17 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
       CalculateTs(Ts); // calculate all the temperatures      
       newT=Ts[0];
 
+      absTdev=fabs((newT-oldT)/oldT);
+      if(absTdev > oldabsTdev)
+	{
+	  if(iter>40) nincreases++; // only increment this after 40 iterations.
+	  if(nincreases > 0)
+	    PRINTPROGRESSTICKLER=1; // monitor every step.
+	  else
+	    PRINTPROGRESSTICKLER=10;
+	}
+      oldabsTdev=absTdev;
+
             
 #ifdef PHONONS
       NumberList epsoverT=CalculateEpsilonsOverT();
@@ -1675,8 +1695,8 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
       // monitor maximum values of Kinv
       if(NSPIN>1)
 	{
-	  SMatrix<realtype> maxvals(NMAT,NMAT);
-	  SMatrix<int> maxqs(NMAT,NMAT);
+	  SMatrix<realtype,NMAT,NMAT> maxvals;
+	  SMatrix<int,NMAT,NMAT> maxqs;
 	  
 	  FindMaxVals(maxqs,maxvals);
 
@@ -1695,7 +1715,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
       if(TRACE)
 	{
 	  cout << "iteration: " << iter << " T= " << newT << " oldT=" << oldT
-	       << " dev: " << fabs((newT-oldT)/oldT);
+	       << " dev: " << absTdev;
 #ifdef PHONONS
 	  cout << " epsilon/T= " << epsoverT;
 #endif
@@ -1708,17 +1728,17 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 	  logfile.precision(9);
 	  logfile << "iteration: " << iter << " T= "; 
 	  for(int i=0; i<NSUBL; i++) logfile << Ts[i] << " ";
-	  logfile << " oldT=" << oldT << " dev: " << fabs((newT-oldT)/oldT);
+	  logfile << " oldT=" << oldT << " dev: " << absTdev << " ninc: " << nincreases;
 #ifdef PHONONS
 	  logfile << " epsilon/T= " << epsoverT;
 #endif
 	  logfile << endl;
 	}
       
-      if( fabs((newT-oldT)/oldT) < par[TOLERANCE]) converged=true;
+      if( absTdev < par[TOLERANCE]) converged=true;
 
       //      const realtype inertia=0.5; // how much to resist changes: [0,1] 
-      const realtype inertia=0.5; // how much to resist changes: [0,1] 
+      const realtype inertia=0.2; // how much to resist changes: [0,1] 
 
       currT= (1.-inertia)*newT+inertia*oldT; 
 
@@ -1731,6 +1751,11 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
       if(TRACE) cout << "converged= " << converged << " TOLERANCE:" << par[TOLERANCE] << endl;
       
       if(converged && pconverged){ done=true; continue;} // two iterations must fulfill conv. crit.
+
+      if(nincreases > 4){ done =true; logfile << "Too many nincr=" << nincreases << ", Not converging, exiting" << endl; continue;} // to many increases in Tdiff, so exiting without converging.
+
+
+      reachedMAXITER=(iter >= par[MAXITER]);
     }
   
   //  if(TRACE) cout << "Final Kinv_q: " << Kinvq << endl;  
@@ -1771,13 +1796,16 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 
   if(!converged)
     {
-      logfile << "reached MAXITER=" << par[MAXITER] << " iterations without converging, increase MAXITER!" << endl;
+      if(reachedMAXITER)
+	logfile << "reached MAXITER=" << par[MAXITER] << " iterations without converging, increase MAXITER!" << endl;
+      else
+	logfile << "no uniform convergence of iterations, exiting!" << endl;
     }
   else
     {      
 
-      SMatrix<realtype> maxvals(NMAT,NMAT);
-      SMatrix<int> maxqs(NMAT,NMAT);
+      SMatrix<realtype,NMAT,NMAT> maxvals;
+      SMatrix<int,NMAT,NMAT> maxqs;
 
       FindMaxVals(maxqs,maxvals);
 
@@ -2226,7 +2254,7 @@ class Simulation{
 };
 
 
-Simulation::Simulation(): couplings(par,NC,NMAT),rule(couplings),mysolver(rule),Deltalist(0),Deltastoshowlist(0),Printinfolist(0),epsilonlist(0)
+Simulation::Simulation(): couplings(par,NC),rule(couplings),mysolver(rule),Deltalist(0),Deltastoshowlist(0),Printinfolist(0),epsilonlist(0)
 {
   if(TRACE) cout << "Initializing Simulation" << endl;
 
