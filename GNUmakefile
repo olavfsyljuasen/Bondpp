@@ -34,9 +34,9 @@ OSXDIR = $(HOME)
 
 force : ;
 
-phonons_x64 : squareHeisenberg.x64 squareHeisenbergnophonons.x64 cubicHeisenberg.x64 triangularHeisenberg.x64 
+phonons_x64 : squareHeisenberg.x64 cubicHeisenberg.x64 triangularHeisenberg.x64 squareHeisenberg_rev.x64
 
-phonons_saga : squareHeisenberg.saga squareHeisenbergnophonons.saga cubicHeisenberg.saga triangularHeisenberg.saga 
+phonons_saga : squareHeisenberg.saga cubicHeisenberg.saga triangularHeisenberg.saga squareHeisenberg_rev.saga
 
 CrI3_x64: CrI3iso.x64 CrI3ssym.x64 CrI3nooffd.x64 CrI3.x64
 

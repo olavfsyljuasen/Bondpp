@@ -138,6 +138,7 @@ class Driver
   
   bool Printinfo; // set this to print out correlation functions
   int lineid; 
+  bool SigmaInitialized; // flag to indicate whether Sigma is initialized.  
 
   realtype mineigenvalue; // for storing the minimum SigmaE value
   realtype currT; // for storing the current value of the temperature 
@@ -205,7 +206,7 @@ class Driver
 };
 
 
-Driver::Driver(Rule& r):rule(r),dim(la.D()),dims(la.SiteqDims()),Nq(la.NqSites()),invNq(static_cast<realtype>(1.)/Nq),invSqrtNq(1./sqrt(Nq)),converged(false),Delta(NSUBL),Printinfo(false),lineid(0),Jq(r.Jq),  
+Driver::Driver(Rule& r):rule(r),dim(la.D()),dims(la.SiteqDims()),Nq(la.NqSites()),invNq(static_cast<realtype>(1.)/Nq),invSqrtNq(1./sqrt(Nq)),converged(false),Delta(NSUBL),Printinfo(false),lineid(0),SigmaInitialized(false),Jq(r.Jq),  
   A1(Nq),A2(Nq),B(Nq),F1(Nq),F2(Nq),
 #ifdef FFTS_INPLACE
   A1r(A1),A2r(A2),Br(B),
@@ -1556,11 +1557,13 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 {
   if(TRACE) cout << "Starting SolveSelfConsistentEquation " << endl;
 
-  lineid++;
+  //  lineid++;
 
 
 #ifdef RANDOMINITIALIZATION
   MakeRandomSigma();
+#elif defined USELASTSIGMA
+  if(!SigmaInitialized){MakeRandomSigma(); SigmaInitialized=true;}
 #else
   rule.InitializeSigma(Sigmaq); // Get initial values of Sigmaq
 #endif
@@ -1803,6 +1806,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
     }
   else
     {      
+      lineid++; 
 
       SMatrix<realtype,NMAT,NMAT> maxvals;
       SMatrix<int,NMAT,NMAT> maxqs;
@@ -2426,7 +2430,11 @@ Simulation::Simulation(): couplings(par,NC),rule(couplings),mysolver(rule),Delta
 void Simulation::Run()
 {
   if(TRACE) cout << "Starting Run" << endl;
+#ifdef REVERSEDELTALIST
+  for(unsigned int i=Deltalist.size()-1; i>=0; i--)
+#else
   for(unsigned int i=0; i< Deltalist.size(); i++)
+#endif
     {
       mysolver.Solve(Deltalist[i],epsilonlist[i],Printinfolist[i]);
     }
