@@ -2430,13 +2430,15 @@ Simulation::Simulation(): couplings(par,NC),rule(couplings),mysolver(rule),Delta
 void Simulation::Run()
 {
   if(TRACE) cout << "Starting Run" << endl;
-#ifdef REVERSEDELTALIST
-  for(unsigned int i=Deltalist.size()-1; i>=0; i--)
-#else
-  for(unsigned int i=0; i< Deltalist.size(); i++)
-#endif
+  for(unsigned int i=0; i<Deltalist.size(); i++)
     {
-      mysolver.Solve(Deltalist[i],epsilonlist[i],Printinfolist[i]);
+      unsigned int elem=
+#ifdef REVERSEDELTALIST
+	Deltalist.size()-1-i;
+#else
+      i;
+#endif
+      mysolver.Solve(Deltalist[elem],epsilonlist[elem],Printinfolist[elem]);
     }
   if(TRACE) cout << "Done Run" << endl;
 }
