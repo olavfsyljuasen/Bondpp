@@ -2262,19 +2262,28 @@ Simulation::Simulation(): couplings(par,NC),rule(couplings),mysolver(rule),Delta
 {
   if(TRACE) cout << "Initializing Simulation" << endl;
 
-      
   ifstream parameterfile(PARAMETERFILENAME.c_str());
   if(!parameterfile)
     {
-      if(TRACE) 
-	cout << "No file " << PARAMETERFILENAME << " found." 
-	     << " Using Delta=" << par[DELTA] << endl;
-      logfile << "No file " << PARAMETERFILENAME << " found." 
-	      << " Using Delta=" << par[DELTA] << endl;
-      
-      NumberList myval(NSUBL,par[DELTA]);
-      Deltalist.push_back(myval); 
-      Printinfolist.push_back(true);
+      if(TRACE)
+	cout << "No file " << PARAMETERFILENAME << " found." << endl;
+      logfile << "No file " << PARAMETERFILENAME << " found." << endl;
+
+      int NDeltas=par[NDELTAS];
+      realtype dDelta=(NDeltas>1 ? (log(par[DELTASLUTT])-log(par[DELTASTART]))/(NDeltas-1):0);
+
+      if(TRACE)
+         cout << "Creating " << NDeltas << " on log-scale from " << par[DELTASTART] << " to " << par[DELTASLUTT] << endl;
+      logfile << "Creating " << NDeltas << " on log-scale from " << par[DELTASTART] << " to " << par[DELTASLUTT] << endl;
+
+      for(int i=0; i<NDeltas; i++)
+        {
+          realtype this_Delta=par[DELTASTART]*exp(dDelta*i);
+          NumberList myval(NSUBL,this_Delta); // initialize with one value for all sublattices
+          Deltalist.push_back(myval);
+          Printinfolist.push_back(true);
+	}
+
     }
   else
     {
@@ -2310,11 +2319,11 @@ Simulation::Simulation(): couplings(par,NC),rule(couplings),mysolver(rule),Delta
     {
       if(TRACE) 
 	cout << "No file " << DELTASTOSHOWFILENAME << " found." 
-	     << " Using Delta=" << par[DELTA] << endl;
+	     << " Using Delta=" << par[DELTASTART] << endl;
       logfile << "No file " << DELTASTOSHOWFILENAME << " found." 
-	      << " Using Delta=" << par[DELTA] << endl;
+	      << " Using Delta=" << par[DELTASTART] << endl;
       
-      NumberList myval(NSUBL,par[DELTA]);
+      NumberList myval(NSUBL,par[DELTASTART]);
       Deltastoshowlist.push_back(myval); 
     }
   else
@@ -2432,13 +2441,7 @@ void Simulation::Run()
   if(TRACE) cout << "Starting Run" << endl;
   for(unsigned int i=0; i<Deltalist.size(); i++)
     {
-      unsigned int elem=
-#ifdef REVERSEDELTALIST
-	Deltalist.size()-1-i;
-#else
-      i;
-#endif
-      mysolver.Solve(Deltalist[elem],epsilonlist[elem],Printinfolist[elem]);
+      mysolver.Solve(Deltalist[i],epsilonlist[i],Printinfolist[i]);
     }
   if(TRACE) cout << "Done Run" << endl;
 }
