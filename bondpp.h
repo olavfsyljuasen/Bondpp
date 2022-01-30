@@ -2269,21 +2269,28 @@ Simulation::Simulation(): couplings(par,NC),rule(couplings),mysolver(rule),Delta
 	cout << "No file " << PARAMETERFILENAME << " found." << endl;
       logfile << "No file " << PARAMETERFILENAME << " found." << endl;
 
-      int NDeltas=par[NDELTAS];
-      realtype dDelta=(NDeltas>1 ? (log(par[DELTASLUTT])-log(par[DELTASTART]))/(NDeltas-1):0);
+      bool logscale=int(par[DELTALOGSCALE])==1;
 
-      if(TRACE)
-         cout << "Creating " << NDeltas << " on log-scale from " << par[DELTASTART] << " to " << par[DELTASLUTT] << endl;
-      logfile << "Creating " << NDeltas << " on log-scale from " << par[DELTASTART] << " to " << par[DELTASLUTT] << endl;
+      int NDeltas=par[NDELTAS];
+      
+      realtype D2=(logscale ? log(par[DELTASLUTT]) : par[DELTASLUTT]);
+      realtype D1=(logscale ? log(par[DELTASTART]) : par[DELTASTART]);
+
+      realtype dDelta=(NDeltas>1 ? (D2-D1)/(NDeltas-1):0);
+      
+      if(TRACE) 
+        cout << "Creating " << NDeltas << " on " << (logscale ? "log" : "linear") << " scale from " 
+             << par[DELTASTART] << " to " << par[DELTASLUTT] << endl;
+      logfile << "Creating " << NDeltas << " on " << (logscale ? "log" : "linear") << " scale from " 
+	      << par[DELTASTART] << " to " << par[DELTASLUTT] << endl;
 
       for(int i=0; i<NDeltas; i++)
         {
-          realtype this_Delta=par[DELTASTART]*exp(dDelta*i);
-          NumberList myval(NSUBL,this_Delta); // initialize with one value for all sublattices
-          Deltalist.push_back(myval);
+          realtype this_Delta=(logscale ? exp(D1+dDelta*i): D1+dDelta*i);
+          NumberList myval(NSUBL,this_Delta);
+          Deltalist.push_back(myval); 
           Printinfolist.push_back(true);
-	}
-
+        }
     }
   else
     {
