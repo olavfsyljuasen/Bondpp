@@ -73,7 +73,7 @@ int  PRINTPROGRESSTICKLER = 10;   // print every TICKLER steps, can be modified
 
 const bool BINARYOUTFILES=false;
 
-const bool USEPREVIOUSEPSILONS = false; // use previous epsilon values whenever last run converged.
+const bool USEPREVIOUSEPSILONS = true; // use previous epsilon values whenever last run converged.
 
 const string RCORRSFILENAME="rcorrs.dat";
 const string QCORRSFILENAME="qcorrs";

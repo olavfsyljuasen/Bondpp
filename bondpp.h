@@ -94,7 +94,7 @@ class Driver
     Delta = delta;
 
 #ifdef PHONONS
-    if( USEPREVIOUSEPSILONS && converged)
+    if( USEPREVIOUSEPSILONS && converged && EpsilonInitialized)
       {
 	// use the old epsilons if previous step converged, do not do anything
 	logfile << "Use previous converged epsilons" << endl;
@@ -103,6 +103,7 @@ class Driver
       {
 	// set in new starting epsilon values
 	epsilon=thisepsilon;
+	EpsilonInitialized=true;
       }
 #endif
     
@@ -139,6 +140,7 @@ class Driver
   bool Printinfo; // set this to print out correlation functions
   int lineid; 
   bool SigmaInitialized; // flag to indicate whether Sigma is initialized.  
+  bool EpsilonInitialized; // flag to indicate whether Epsilonlist is initialized.  
 
   realtype mineigenvalue; // for storing the minimum SigmaE value
   realtype currT; // for storing the current value of the temperature 
@@ -206,7 +208,7 @@ class Driver
 };
 
 
-Driver::Driver(Rule& r):rule(r),dim(la.D()),dims(la.SiteqDims()),Nq(la.NqSites()),invNq(static_cast<realtype>(1.)/Nq),invSqrtNq(1./sqrt(Nq)),converged(false),Delta(NSUBL),Printinfo(false),lineid(0),SigmaInitialized(false),Jq(r.Jq),  
+Driver::Driver(Rule& r):rule(r),dim(la.D()),dims(la.SiteqDims()),Nq(la.NqSites()),invNq(static_cast<realtype>(1.)/Nq),invSqrtNq(1./sqrt(Nq)),converged(false),Delta(NSUBL),Printinfo(false),lineid(0),SigmaInitialized(false),EpsilonInitialized(false),Jq(r.Jq),  
   A1(Nq),A2(Nq),B(Nq),F1(Nq),F2(Nq),
 #ifdef FFTS_INPLACE
   A1r(A1),A2r(A2),Br(B),
