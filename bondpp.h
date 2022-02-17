@@ -141,6 +141,7 @@ class Driver
   int lineid; 
   bool SigmaInitialized; // flag to indicate whether Sigma is initialized.  
   bool EpsilonInitialized; // flag to indicate whether Epsilonlist is initialized.  
+  int MaxIterMultiplier; // multiplier for MaxIter, usually only used in the first step
 
   realtype mineigenvalue; // for storing the minimum SigmaE value
   realtype currT; // for storing the current value of the temperature 
@@ -208,7 +209,7 @@ class Driver
 };
 
 
-Driver::Driver(Rule& r):rule(r),dim(la.D()),dims(la.SiteqDims()),Nq(la.NqSites()),invNq(static_cast<realtype>(1.)/Nq),invSqrtNq(1./sqrt(Nq)),converged(false),Delta(NSUBL),Printinfo(false),lineid(0),SigmaInitialized(false),EpsilonInitialized(false),Jq(r.Jq),  
+Driver::Driver(Rule& r):rule(r),dim(la.D()),dims(la.SiteqDims()),Nq(la.NqSites()),invNq(static_cast<realtype>(1.)/Nq),invSqrtNq(1./sqrt(Nq)),converged(false),Delta(NSUBL),Printinfo(false),lineid(0),SigmaInitialized(false),EpsilonInitialized(false),MaxIterMultiplier(1),Jq(r.Jq),  
   A1(Nq),A2(Nq),B(Nq),F1(Nq),F2(Nq),
 #ifdef FFTS_INPLACE
   A1r(A1),A2r(A2),Br(B),
@@ -1565,7 +1566,8 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 #ifdef RANDOMINITIALIZATION
   MakeRandomSigma();
 #elif defined USELASTSIGMA
-  if(!SigmaInitialized){MakeRandomSigma(); SigmaInitialized=true;}
+  if(!SigmaInitialized){MakeRandomSigma(); SigmaInitialized=true; MaxIterMultiplier=20;}
+  else{MaxIterMultiplier=1;}
 #else
   rule.InitializeSigma(Sigmaq); // Get initial values of Sigmaq
 #endif
@@ -1760,7 +1762,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
       if(nincreases > 4){ done =true; logfile << "Too many nincr=" << nincreases << ", Not converging, exiting" << endl; continue;} // to many increases in Tdiff, so exiting without converging.
 
 
-      reachedMAXITER=(iter >= par[MAXITER]);
+      reachedMAXITER=(iter >= MaxIterMultiplier*par[MAXITER]);
     }
   
   //  if(TRACE) cout << "Final Kinv_q: " << Kinvq << endl;  
