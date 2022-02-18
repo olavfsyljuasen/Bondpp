@@ -1566,7 +1566,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 #ifdef RANDOMINITIALIZATION
   MakeRandomSigma();
 #elif defined USELASTSIGMA
-  if(!SigmaInitialized){MakeRandomSigma(); SigmaInitialized=true; MaxIterMultiplier=20;}
+  if(!SigmaInitialized){MakeRandomSigma(); SigmaInitialized=true; MaxIterMultiplier=100;}
   else{MaxIterMultiplier=1;}
 #else
   rule.InitializeSigma(Sigmaq); // Get initial values of Sigmaq
