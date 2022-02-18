@@ -2395,7 +2395,7 @@ Simulation::Simulation(): couplings(par,NC),rule(couplings),mysolver(rule),Delta
     {
       // set default starting values
       NumberList newepsilon(NELASTIC);
-      for(int i=0; i<NELASTIC; i++) newepsilon[i]=(RAN()-0.5)*0.0001; // small values
+      for(int i=0; i<NELASTIC; i++) newepsilon[i]=(RAN()-0.5)*par[EPSILONNULL]; // small values
       // put the same starting value for all entries:
       for(unsigned int i=0; i<Deltalist.size(); i++){epsilonlist.push_back(newepsilon);}
       
