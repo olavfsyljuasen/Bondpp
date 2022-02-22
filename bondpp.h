@@ -2105,34 +2105,6 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 
       
 
-      for(int s=0; s<NSUBL; s++)
-	{
-	  stringstream ss;
-	  ss << "td" << "_" << s << ".dat";
-	  
-	  ofstream outfile_a(ss.str().c_str(),ios::app);
-	  outfile_a << setprecision(16) << Ts[s] << " " << Delta[s] << endl;
-	  outfile_a.close();
-	  
-	  ss.str("");
-	  ss << "dt" << "_" << s << ".dat";
-	  
-	  ofstream outfile_b(ss.str().c_str(),ios::app);
-	  outfile_b << setprecision(16) << Delta[s] << " " << Ts[s] << endl;
-	  outfile_b.close();
-	}
-
-#ifdef PHONONS
-      for(int i=0; i<NELASTIC; i++)
-	{
-	  stringstream ss;
-	  ss << "teps" << "_" << i << ".dat";
-	  ofstream outfile_a(ss.str().c_str(),ios::app);
-	  outfile_a << setprecision(16) << Ts[0] << " " << epsilon[i] << endl;
-	  outfile_a.close();	
-	}
-#endif
-
       /*
       
       for(int s1=0; s1<NSUBL; s1++)
@@ -2235,6 +2207,44 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
       ofstream outfile2(ss.str().c_str(),ios::app);
       outfile2 << setprecision(16) << Delta[0] << " " << f << endl;
       outfile2.close();
+
+
+      for(int s=0; s<NSUBL; s++)
+	{
+	  stringstream ss;
+	  ss << "td" << "_" << s << ".dat";
+	  
+	  ofstream outfile_a(ss.str().c_str(),ios::app);
+	  outfile_a << setprecision(16) << Ts[s] << " " << Delta[s] << endl;
+	  outfile_a.close();
+	  
+	  ss.str("");
+	  ss << "dt" << "_" << s << ".dat";
+	  
+	  ofstream outfile_b(ss.str().c_str(),ios::app);
+	  outfile_b << setprecision(16) << Delta[s] << " " << Ts[s] << endl;
+	  outfile_b.close();
+	}
+
+#ifdef PHONONS
+      for(int i=0; i<NELASTIC; i++)
+	{
+	  stringstream ss;
+	  ss << "teps" << "_" << i << ".dat";
+	  ofstream outfile_a(ss.str().c_str(),ios::app);
+	  outfile_a << setprecision(16) << Ts[0] << " " << epsilon[i] << endl;
+	  outfile_a.close();	
+	}
+#endif
+
+
+
+
+
+
+
+
+
     }
   
   if(TRACE) cout << "Done SolveSelfConsistentEquation " << endl;
