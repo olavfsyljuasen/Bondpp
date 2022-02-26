@@ -12,7 +12,7 @@ LIBS   = -lfftw3xc_intel -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 
 #LIBS   = -lfftw3 -lfftw3l -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lm -lstdc++
 
 BINDIR = $(HOMEDIR)/bin
-EXTENSION = _saga.x
+EXTENSION = _fox.x
 
 
 # C++ compiler
