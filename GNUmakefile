@@ -25,6 +25,11 @@ OSXDIR = $(HOME)
 	@echo `git describe`
 	make -f makefile $*.exec
 
+%.fox : force
+	cp Makefile.fox Makefile.local
+	@echo `git describe`
+	make -f makefile $*.exec
+
 # The envirmoment variable MYMAKEFILE contains the name of the appropriate Makefile.local
 %    :  force
 	cp $(MYMAKEFILE) Makefile.local 
@@ -37,6 +42,8 @@ force : ;
 phonons_x64 : squareHeisenberg.x64 cubicHeisenberg.x64 triangularHeisenberg.x64
 
 phonons_saga : squareHeisenberg.saga cubicHeisenberg.saga triangularHeisenberg.saga
+
+phonons_fox : squareHeisenberg.fox cubicHeisenberg.fox triangularHeisenberg.fox
 
 CrI3_x64: CrI3iso.x64 CrI3ssym.x64 CrI3nooffd.x64 CrI3.x64
 
