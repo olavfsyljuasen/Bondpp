@@ -173,7 +173,8 @@ void Rule::InitializeElasticMode(int i,VecMat<complex<realtype>,NMAT,NMAT>& gel)
 		for(int i2=0; i2<NSUBL; i2++)
 		  {
 		    Coord crr=c+roffset[i2]-roffset[i1];
-		    realtype crr2=crr[voigt1indx[vi]]*crr[voigt2indx[vi]]*(voigt1indx[vi] != voigt2indx[vi] ? 2:1);
+		    //		    realtype crr2=crr[voigt1indx[vi]]*crr[voigt2indx[vi]]*(voigt1indx[vi] != voigt2indx[vi] ? 2:1);
+		    realtype crr2=crr[voigt1indx[vi]]*crr[voigt2indx[vi]];
 	      
 		    for(int s1=0; s1<NSPIN; s1++)
 		      for(int s2=0; s2<NSPIN; s2++)
@@ -189,8 +190,8 @@ void Rule::InitializeElasticMode(int i,VecMat<complex<realtype>,NMAT,NMAT>& gel)
 		for(int i2=0; i2<NSUBL; i2++)
 		  {
 		    Coord crr=c+roffset[i1]-roffset[i2];
-		    realtype crr2=crr[voigt1indx[vi]]*crr[voigt2indx[vi]]*(voigt1indx[vi] != voigt2indx[vi] ? 2:1);
-		    
+		    //		    realtype crr2=crr[voigt1indx[vi]]*crr[voigt2indx[vi]]*(voigt1indx[vi] != voigt2indx[vi] ? 2:1);
+		    realtype crr2=crr[voigt1indx[vi]]*crr[voigt2indx[vi]];
 		    for(int s1=0; s1<NSPIN; s1++)
 		      for(int s2=0; s2<NSPIN; s2++)
 			{
@@ -227,7 +228,8 @@ void Rule::InitializeElasticMode(int i,VecMat<complex<realtype>>& gel)
 		for(int i2=0; i2<NSUBL; i2++)
 		  {
 		    Coord crr=c+roffset[i2]-roffset[i1];
-		    realtype crr2=crr[voigt1indx[vi]]*crr[voigt2indx[vi]]*(voigt1indx[vi] != voigt2indx[vi] ? 2:1);
+		    //		    realtype crr2=crr[voigt1indx[vi]]*crr[voigt2indx[vi]]*(voigt1indx[vi] != voigt2indx[vi] ? 2:1);
+		    realtype crr2=crr[voigt1indx[vi]]*crr[voigt2indx[vi]]; // do not overcount
 		    
 		    for(int s1=0; s1<NSPIN; s1++)
 		      for(int s2=0; s2<NSPIN; s2++)
