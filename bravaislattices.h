@@ -44,6 +44,11 @@ realtype scalarproduct(const Triplet& a,const Triplet& b)
   return sum;
 }
 
+realtype norm(const Triplet& a)
+{
+  return sqrt(scalarproduct(a,a));
+}
+
 ostream& operator<<(ostream& os,const Triplet& t){os << "(" << t[0] << "," << t[1] << "," << t[2] << ")"; return os;}
 
 

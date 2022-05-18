@@ -112,26 +112,27 @@ void Couplings::Initializeg()
 #ifdef FAKEHEISENBERG
   for(int c=0; c<NN; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X];
+     //      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X];  // use g =1/r dJ/dr
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X]/norm(clist[c]); // use g = dJ/dr
     } 
 
   for(int c=NN; c<NNN; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X];
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X]/norm(clist[c]);
     } 
 #else  
   for(int c=0; c<NN; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X];
-      g(c,mindx(SY,0),mindx(SY,0)) = par[g1Y];
-      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g1Z];
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X]/norm(clist[c]);
+      g(c,mindx(SY,0),mindx(SY,0)) = par[g1Y]/norm(clist[c]);
+      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g1Z]/norm(clist[c]);
     } 
 
   for(int c=NN; c<NNN; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X];
-      g(c,mindx(SY,0),mindx(SY,0)) = par[g2Y];
-      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g2Z];
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X]/norm(clist[c]);
+      g(c,mindx(SY,0),mindx(SY,0)) = par[g2Y]/norm(clist[c]);
+      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g2Z]/norm(clist[c]);
     }
 #endif  // FAKEHEISENBERG
 }
@@ -212,26 +213,27 @@ void Couplings::Initializeg()
 #ifdef FAKEHEISENBERG
   for(int c=0; c<NN; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X];
+      //      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X];
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X]/norm(clist[c]); // use g = dJ/dr
     } 
 
   for(int c=NN; c<NNN; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X];
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X]/norm(clist[c]); // use g = dJ/dr;
     } 
 #else  
   for(int c=0; c<NN; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X];
-      g(c,mindx(SY,0),mindx(SY,0)) = par[g1Y];
-      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g1Z];
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X]/norm(clist[c]); // use g = dJ/dr;
+      g(c,mindx(SY,0),mindx(SY,0)) = par[g1Y]/norm(clist[c]); // use g = dJ/dr;
+      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g1Z]/norm(clist[c]); // use g = dJ/dr;
     } 
 
   for(int c=NN; c<NNN; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X];
-      g(c,mindx(SY,0),mindx(SY,0)) = par[g2Y];
-      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g2Z];
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X]/norm(clist[c]); // use g = dJ/dr;
+      g(c,mindx(SY,0),mindx(SY,0)) = par[g2Y]/norm(clist[c]); // use g = dJ/dr;
+      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g2Z]/norm(clist[c]); // use g = dJ/dr;
     }
 #endif //FAKEHEISENBERG 
 }
@@ -307,26 +309,26 @@ void Couplings::Initializeg()
 #ifdef FAKEHEISENBERG
   for(int c=0; c<NN; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X];
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X]/norm(clist[c]); // use g = dJ/dr;
     } 
 
   for(int c=NN; c<NC; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X];
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X]/norm(clist[c]); // use g = dJ/dr;
     } 
 #else  
   for(int c=0; c<NN; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X];
-      g(c,mindx(SY,0),mindx(SY,0)) = par[g1Y];
-      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g1Z];
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X]/norm(clist[c]); // use g = dJ/dr;
+      g(c,mindx(SY,0),mindx(SY,0)) = par[g1Y]/norm(clist[c]); // use g = dJ/dr;
+      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g1Z]/norm(clist[c]); // use g = dJ/dr;
     } 
 
   for(int c=NN; c<NC; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X];
-      g(c,mindx(SY,0),mindx(SY,0)) = par[g2Y];
-      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g2Z];
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X]/norm(clist[c]); // use g = dJ/dr;
+      g(c,mindx(SY,0),mindx(SY,0)) = par[g2Y]/norm(clist[c]); // use g = dJ/dr;
+      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g2Z]/norm(clist[c]); // use g = dJ/dr;
     }
 #endif //FAKEHEISENBERG
 }
@@ -402,26 +404,26 @@ void Couplings::Initializeg()
 #ifdef FAKEHEISENBERG
   for(int c=0; c<NN; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X];
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X]/norm(clist[c]); // use g = dJ/dr;
     } 
 
   for(int c=NN; c<NC; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X];
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X]/norm(clist[c]); // use g = dJ/dr;
     } 
 #else  
   for(int c=0; c<NN; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X];
-      g(c,mindx(SY,0),mindx(SY,0)) = par[g1Y];
-      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g1Z];
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X]/norm(clist[c]); // use g = dJ/dr;
+      g(c,mindx(SY,0),mindx(SY,0)) = par[g1Y]/norm(clist[c]); // use g = dJ/dr;
+      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g1Z]/norm(clist[c]); // use g = dJ/dr;
     } 
 
   for(int c=NN; c<NC; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X];
-      g(c,mindx(SY,0),mindx(SY,0)) = par[g2Y];
-      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g2Z];
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X]/norm(clist[c]); // use g = dJ/dr;
+      g(c,mindx(SY,0),mindx(SY,0)) = par[g2Y]/norm(clist[c]); // use g = dJ/dr;
+      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g2Z]/norm(clist[c]); // use g = dJ/dr;
     }
 #endif  //FAKEHEISENBERG
 }
@@ -486,26 +488,26 @@ void Couplings::Initializeg()
 #ifdef FAKEHEISENBERG
   for(int c=0; c<NN; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X];
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X]/norm(clist[c]); // use g = dJ/dr;
     } 
 
   for(int c=NN; c<NC; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X];
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X]/norm(clist[c]); // use g = dJ/dr;
     } 
 #else  
   for(int c=0; c<NN; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X];
-      g(c,mindx(SY,0),mindx(SY,0)) = par[g1Y];
-      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g1Z];
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X]/norm(clist[c]); // use g = dJ/dr;
+      g(c,mindx(SY,0),mindx(SY,0)) = par[g1Y]/norm(clist[c]); // use g = dJ/dr;
+      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g1Z]/norm(clist[c]); // use g = dJ/dr;
     } 
 
   for(int c=NN; c<NC; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X];
-      g(c,mindx(SY,0),mindx(SY,0)) = par[g2Y];
-      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g2Z];
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X]/norm(clist[c]); // use g = dJ/dr;
+      g(c,mindx(SY,0),mindx(SY,0)) = par[g2Y]/norm(clist[c]); // use g = dJ/dr;
+      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g2Z]/norm(clist[c]); // use g = dJ/dr;
     }
 #endif  //FAKEHEISENBERG
 }
