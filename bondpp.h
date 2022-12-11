@@ -701,7 +701,7 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
       cout << Dinvq << endl;
     }
 
-#ifdef PHONONS
+#if defined PHONONS && !defined ELASTICONLY
   // the offdiagonal phonon-constraint part
 #ifdef CPOSITIVE
   realtype multiplier=2.;
@@ -1764,7 +1764,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 
       reachedMAXITER=(iter >= MaxIterMultiplier*par[MAXITER]);
     }
-  
+   
   //  if(TRACE) cout << "Final Kinv_q: " << Kinvq << endl;  
 
   //  nalphas=CalculateAlphas(newT); // calculate alphas
