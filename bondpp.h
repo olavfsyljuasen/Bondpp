@@ -514,7 +514,7 @@ realtype Driver::CalculateFreeEnergy(realtype T)
 
 #if defined PHONONS 
 
-#if !defined OMITELASTICCONT || !defined NOELASTIC
+#if !(defined OMITELASTICCONT || defined NOELASTIC)
   //elastic modes  
   realtype f_elastic = 0;
   for(int i=0; i<NELASTIC; i++){ f_elastic += 0.5*epsilon[i]*epsilon[i]*rule.elasticeigenvalues[i];}
