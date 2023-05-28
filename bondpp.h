@@ -64,7 +64,7 @@ class Driver
   void CalculateTs(vector<realtype>&);
 
 
-#ifdef PHONONS
+#if defined PHONONS && !defined NOELASTIC
   NumberList CalculateEpsilonsOverT();
 #endif
 
@@ -93,7 +93,7 @@ class Driver
   {
     Delta = delta;
 
-#ifdef PHONONS
+#if defined PHONONS && !defined NOELASTIC
     if( USEPREVIOUSEPSILONS && converged && EpsilonInitialized)
       {
 	// use the old epsilons if previous step converged, do not do anything
@@ -341,7 +341,7 @@ void Driver::CalculateTs(vector<realtype>& Ts)
 }
 
 
-#ifdef PHONONS
+#if defined PHONONS && !defined NOELASTIC
 NumberList Driver::CalculateEpsilonsOverT()
 {
   if(TRACE) cout << "Starting CalculateEpsilonsOverT" << endl;
@@ -513,12 +513,12 @@ realtype Driver::CalculateFreeEnergy(realtype T)
 
 
 #if defined PHONONS 
-  //elastic modes
+
+#if !defined OMITELASTICCONT || !defined NOELASTIC
+  //elastic modes  
   realtype f_elastic = 0;
   for(int i=0; i<NELASTIC; i++){ f_elastic += 0.5*epsilon[i]*epsilon[i]*rule.elasticeigenvalues[i];}
 
-
-#if !defined OMITELASTICCONT
   if(TRACE) cout << "f_elastic  = " << f_elastic << endl;
   f += f_elastic;
 #endif
@@ -1427,7 +1427,7 @@ void Driver::ConstructKinvq()
   if(TRACE){SanityCheck(Kq,"Kq, after adding Sigmaq");}
 
   
-#ifdef PHONONS
+#if defined PHONONS && !defined NOELASTIC
   if(TRACE) cout << "Adding elastic modes " << endl;
   for(int j=0; j<NELASTIC; j++)
     {
@@ -1695,7 +1695,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
       oldabsTdev=absTdev;
 
             
-#ifdef PHONONS
+#if defined PHONONS && !defined NOELASTIC
       NumberList epsoverT=CalculateEpsilonsOverT();
 #endif
 
@@ -1723,7 +1723,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 	{
 	  cout << "iteration: " << iter << " T= " << newT << " oldT=" << oldT
 	       << " dev: " << absTdev;
-#ifdef PHONONS
+#if defined PHONONS && !defined NOELASTIC
 	  cout << " epsilon/T= " << epsoverT;
 #endif
 	  cout << endl;
@@ -1736,7 +1736,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 	  logfile << "iteration: " << iter << " T= "; 
 	  for(int i=0; i<NSUBL; i++) logfile << Ts[i] << " ";
 	  logfile << " oldT=" << oldT << " dev: " << absTdev << " ninc: " << nincreases;
-#ifdef PHONONS
+#if defined PHONONS && !defined NOELASTIC
 	  logfile << " epsilon/T= " << epsoverT;
 #endif
 	  logfile << endl;
@@ -1751,7 +1751,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 
       oldT=currT;
 
-#ifdef PHONONS      
+#if defined PHONONS && !defined NOELASTIC     
       for(int i=0; i<NELASTIC; i++){epsilon[i]= (1.-inertia)*currT*epsoverT[i]+inertia*epsilon[i];}
 #endif       
       
@@ -1778,7 +1778,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
   streamsize ss=logfile.precision();
   logfile.precision(17);
   for(int i=0; i<NSUBL; i++){logfile << Ts[i] << " ";}
-#ifdef PHONONS
+#if defined PHONONS && !defined NOELASTIC
   logfile << " epsilon: " << epsilon;
 #endif
   logfile << " converged: " << (converged ? "true": "false") << endl;
@@ -2226,7 +2226,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 	  outfile_b.close();
 	}
 
-#ifdef PHONONS
+#if defined PHONONS && !defined NOELASTIC
       for(int i=0; i<NELASTIC; i++)
 	{
 	  stringstream ss;
