@@ -47,6 +47,14 @@ RunParameters::RunParameters(string name):
       { ifile >> param[r][j]; 
       //       cout << " " << param[r][j] << " ";
       }
-  N = NPARAMS;   
+  N = NPARAMS;
+
+  ofstream outfile("headerstring.txt");
+  for(int j=0; j<NPARAMS; j++){ outfile << PARNAMES[j] << " ";}
+  outfile << endl;
+  outfile.close();
+  
+  
+  if(TRACE) cout << "Read " << NR << " lines with " << N << " parameters each" << endl;
   ifile.close();
 }
