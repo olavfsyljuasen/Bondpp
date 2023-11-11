@@ -333,7 +333,9 @@ void SanityCheck(VecMat<T,Nrows,Ncols>& M,string message,bool checkHermitian=tru
   if(!IsSpinSymmetric(M)){cout << "WARNING Matrix: " << message << " is not spin symmetric" << endl; cout << M << endl;} 
  
   if(checkHermitian && !IsHermitian(M)){cout << "Matrix: " << message << " is not Hermitian."<< endl; stop=true;}
+#ifdef FORCEINVERSIONSYMMETRY
   if(!IsInversionTransposedSymmetric(M)){cout << "Matrix: " << message << " is not inv trans symmetric" << endl; stop=true;}
+#endif
   if(stop){ cout << "Sanity check failed! \n" << "Matrix " << message << "\n" << M << "\n SanityCheck FAILED" << endl; exit(1);}
   else
     {cout << "Sanity check passed for " << message << endl;}

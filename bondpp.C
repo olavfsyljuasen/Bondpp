@@ -52,7 +52,7 @@ const bool TRACE= false;
 const bool TRACE2=false; // more debug info
 #else
 const bool TRACE= true; // debugging option
-const bool TRACE2=true; // more debug info
+const bool TRACE2=false; // more debug info
 //const bool TRACE= false; // debugging option
 #endif
 

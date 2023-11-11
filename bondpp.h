@@ -566,7 +566,10 @@ realtype Driver::CalculateFreeEnergy(realtype T)
   
   ComputeDq(false,true); // excludeqzero=false, preserveinput=true not to jeopardize Keff
   
-  realtype betaf_logD       = -0.5*invNq*SumLogDet(Dq) + 0.5*NMODE*log(T);
+  realtype betaf_logD       = -0.5*invNq*SumLogDet(Dq);
+#ifdef PHONONS
+  betaf_logD += 0.5*NMODE*log(T)
+#endif
   if(TRACE) cout << "betaf_logD       =  " << betaf_logD << endl;
   f += T*betaf_logD;
 
@@ -1716,6 +1719,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 	    }
 	  outfile << endl;
 	  outfile.close();
+	  if(TRACE) cout << "Written to monitor.dat" << endl;
 	}
 
 
@@ -1791,8 +1795,13 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 #endif
       
 
-  if(converged) logfile << "Convergence reached after " << iter << " steps." << endl;
-
+  if(converged)
+    {
+      logfile << "Convergence reached after " << iter << " steps." << endl;
+      if(TRACE) cout << "Convergence reached after " << iter << " steps." << endl;
+    }
+  
+  
   //Use MAXITER as convergence criterion itself
   if(par[TOLERANCE]==0.)
     {
@@ -1817,6 +1826,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 
       FindMaxVals(maxqs,maxvals);
 
+      if(TRACE) cout << "Write diagonal magnetization" << endl;
       //Writing diagonal magnetization for different spins and sublattices.
       for(int l1=0; l1<NSUBL; l1++)
 	for(int s1=0; s1<NSPIN; s1++)
@@ -1834,8 +1844,8 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 	  }
 
 
-
-
+      /*
+      if(TRACE) cout << "Write peakfile: " << PEAKREPORTNAME << endl;
       ofstream peakfile(PEAKREPORTNAME.c_str(),ios::app);
       
       peakfile << "Delta=" << Delta[0] << " T=" << newT << " Max K^-1  @ q:" << endl; 
@@ -1855,6 +1865,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 	  peakfile << endl;
 	}
 
+  
       for(int l1=0; l1<NSUBL; l1++)
 	{
 	  peakfile << "(l1=" << l1 << ",l2=" << l1 << ") ";
@@ -1908,6 +1919,8 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 
       peakfile << endl; // extra space in report
       peakfile.close();
+      if(TRACE) cout << "Done writing peakreport" << endl;
+      */
       //      lineid++;
 
 

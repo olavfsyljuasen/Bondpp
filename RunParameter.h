@@ -50,10 +50,9 @@ RunParameters::RunParameters(string name):
   N = NPARAMS;
 
   ofstream outfile("headerstring.txt");
-  for(int j=0; j<NPARAMS; j++){ outfile << PARNAMES[j] << " ";}
+  for(int j=0; j<NPARAMS; j++){outfile << PARNAMES[j] << " ";}
   outfile << endl;
   outfile.close();
-  
   
   if(TRACE) cout << "Read " << NR << " lines with " << N << " parameters each" << endl;
   ifile.close();
