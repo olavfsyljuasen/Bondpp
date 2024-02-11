@@ -568,7 +568,7 @@ realtype Driver::CalculateFreeEnergy(realtype T)
   
   realtype betaf_logD       = -0.5*invNq*SumLogDet(Dq);
 #ifdef PHONONS
-  betaf_logD += 0.5*NMODE*log(T)
+  betaf_logD += 0.5*NMODE*log(T);
 #endif
   if(TRACE) cout << "betaf_logD       =  " << betaf_logD << endl;
   f += T*betaf_logD;
