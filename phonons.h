@@ -436,7 +436,8 @@ Phonons::Phonons(): Nq(la.NqSites()),omega(Nq),normalmode(NSUBL),sumlogomegaover
 #endif
 	  */
 
-	  omega(j,n)=val;
+	  //	  omega(j,n)=val; // until version 1.52
+	  omega(j,n)=sqrt(val);   // new in version 1.53
 	  //	  if(TRACE) cout << "eigenvalue[" << n << "]=" << omega(j,n) << endl;
 	}
       
