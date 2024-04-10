@@ -2243,7 +2243,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
       if( lineid % PRINTPHONONSPECTRUMTICKLER == 0)
 	{
 	  MatrixInverse(Dq); // B=Dinvq
-	  rule.phonons.PrintPhononSpectrum("renormalizedphonons_"+int2string(lineid)+".dat",Dinvq,newT);
+	  rule.phonons.PrintPhononModes("renormalizedphonons_"+int2string(lineid)+".dat",Dinvq,newT);
 	  MatrixInverse(Dinvq); // B=Dq
 	}
 #endif

@@ -93,7 +93,7 @@ class Phonons
   VecMat<complex<realtype>,NC,NMODE>& Getf(){return flist;}
 
   realtype GetSumLogOmegaoverV(){return sumlogomegaoverv;}
-  void PrintPhononModes(string,VecMat<complex<realtype>,NSUBL+NMODE,NSUBL+NMODE>&);
+  void PrintPhononModes(string,VecMat<complex<realtype>,NSUBL+NMODE,NSUBL+NMODE>&,realtype);
  private:  
   const int Nq;
   
@@ -626,11 +626,11 @@ Phonons::Phonons(): Nq(la.NqSites()),omega(Nq),normalmode(NSUBL),sumlogomegaover
 // this routine print out renormalized phonon frequencies and corresponding eigenvectors (in the basis of the normal modes)
 // to a file. Format:
 // q w_1 w_2 ev_11 ev_12 ev_21 ev_22
-void Phonons::PrintPhononModes(string filename,VecMat<complex<realtype>,NSUBL+NMODE,NSUBL+NMODE>& Dinvq,realtype T);
+void Phonons::PrintPhononModes(string filename,VecMat<complex<realtype>,NSUBL+NMODE,NSUBL+NMODE>& Dinvq,realtype T)
 {
   if(TRACE) cout << "Starting PrintPhononModes()" << endl;
 
-  outfile ofstream(filename);
+  ofstream outfile(filename);
 
   outfile << "# T= " << T << endl;
 
@@ -639,7 +639,7 @@ void Phonons::PrintPhononModes(string filename,VecMat<complex<realtype>,NSUBL+NM
       Coord q=la.qPos(qi);
       outfile << q << " ";
       
-      Matrix<eigen_real_type,Dynamic,Dynamic> Dyn(NMODE,NMODE); // the dynamical matrix      
+      Matrix<eigen_complex_type,Dynamic,Dynamic> Dyn(NMODE,NMODE); // the dynamical matrix      
       Dyn.setZero(NMODE,NMODE);
       
       for(int m=0; m<NMODE; m++)
