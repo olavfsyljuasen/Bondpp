@@ -2239,6 +2239,15 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 	  outfile_b.close();
 	}
 
+#if defined PHONONS
+      if( lineid % PRINTPHONONSPECTRUMTICKLER == 0)
+	{
+	  MatrixInverse(Dq); // B=Dinvq
+	  rule.phonons.PrintPhononSpectrum("renormalizedphonons_"+int2string(lineid)+".dat",Dinvq,newT);
+	  MatrixInverse(Dinvq); // B=Dq
+	}
+#endif
+      
 #if defined PHONONS && !defined NOELASTIC
       for(int i=0; i<NELASTIC; i++)
 	{
@@ -2483,3 +2492,4 @@ void Simulation::Run()
 
 
 #endif //BOND_H
+

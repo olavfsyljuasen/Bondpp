@@ -93,6 +93,7 @@ class Phonons
   VecMat<complex<realtype>,NC,NMODE>& Getf(){return flist;}
 
   realtype GetSumLogOmegaoverV(){return sumlogomegaoverv;}
+  void PrintPhononModes(string,VecMat<complex<realtype>,NSUBL+NMODE,NSUBL+NMODE>&);
  private:  
   const int Nq;
   
@@ -620,6 +621,54 @@ Phonons::Phonons(): Nq(la.NqSites()),omega(Nq),normalmode(NSUBL),sumlogomegaover
 
 
 }
+
+
+// this routine print out renormalized phonon frequencies and corresponding eigenvectors (in the basis of the normal modes)
+// to a file. Format:
+// q w_1 w_2 ev_11 ev_12 ev_21 ev_22
+void Phonons::PrintPhononModes(string filename,VecMat<complex<realtype>,NSUBL+NMODE,NSUBL+NMODE>& Dinvq,realtype T);
+{
+  if(TRACE) cout << "Starting PrintPhononModes()" << endl;
+
+  outfile ofstream(filename);
+
+  outfile << "# T= " << T << endl;
+
+  for(int qi=0; qi<Nq; qi++)
+    {
+      Coord q=la.qPos(qi);
+      outfile << q << " ";
+      
+      Matrix<eigen_real_type,Dynamic,Dynamic> Dyn(NMODE,NMODE); // the dynamical matrix      
+      Dyn.setZero(NMODE,NMODE);
+      
+      for(int m=0; m<NMODE; m++)
+	for(int n=0; n<NMODE; n++)
+	{
+	  Dyn(m,n)=GetOmega(qi,m)*Dinvq(qi,m+1,n+1)*GetOmega(qi,n)*T;
+	}
+
+      SelfAdjointEigenSolver<Matrix<eigen_complex_type,Dynamic,Dynamic> > es(Dyn);
+
+      for(int n=0; n<NMODE; n++)
+	{
+	  eigen_real_type val= es.eigenvalues()[n]; //eigen sorts eigenvalues,least first 
+	  outfile << sqrt(val) << " "; // print eigenvalues
+	}
+      
+      for(int n=0; n<NMODE; n++)
+	{
+	  outfile << es.eigenvectors().col(n) << " ";
+	}
+      
+      outfile << endl;
+    }
+
+  outfile.close();
+  if(TRACE) cout << "Finished PrintPhononModes()" << endl;
+}
+
+
 
 
 
