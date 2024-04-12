@@ -653,12 +653,12 @@ void Phonons::PrintPhononModes(string filename,VecMat<complex<realtype>,NSUBL+NM
       for(int n=0; n<NMODE; n++)
 	{
 	  eigen_real_type val= es.eigenvalues()[n]; //eigen sorts eigenvalues,least first 
-	  outfile << sqrt(val) << " "; // print eigenvalues
+	  outfile << scientific << setprecision(12) << setw(18) << sqrt(abs(val)) << " "; // print eigenvalues
 	}
       outfile << " ";
       for(int n=0; n<NMODE; n++)
 	{
-	  for(int j=0; j<NMODE; j++){ outfile << es.eigenvectors().col(n)[j] << " ";}
+	  for(int j=0; j<NMODE; j++){ outfile << fixed << setprecision(4) << es.eigenvectors().col(n)[j] << " ";}
 	  outfile << " ";
 	}
       
