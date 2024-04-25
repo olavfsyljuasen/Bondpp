@@ -110,8 +110,8 @@ const bool PRINTQPTS=false;
 #endif
 
 
-const bool PRINTNORMALMODES=false;
-const bool PRINTPHONONENERGIES=false;
+const bool PRINTNORMALMODES=true;
+const bool PRINTPHONONENERGIES=true;
 
 const string CONVERGENCEMONITORNAME="monitor.dat";  
 const string RESULTSNAME= "res.dat";

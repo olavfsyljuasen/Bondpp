@@ -637,7 +637,7 @@ void Phonons::PrintPhononModes(string filename,VecMat<complex<realtype>,NSUBL+NM
   for(int qi=0; qi<Nq; qi++)
     {
       Coord q=la.qPos(qi);
-      outfile << q << " ";
+      outfile << fixed << setprecision(8) << q << " ";
       
       Matrix<eigen_complex_type,Dynamic,Dynamic> Dyn(NMODE,NMODE); // the dynamical matrix      
       Dyn.setZero(NMODE,NMODE);
