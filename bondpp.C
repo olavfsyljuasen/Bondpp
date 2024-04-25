@@ -71,6 +71,11 @@ const bool SHOWSUBTRACTED = true; // true to write subtractions to logfile when 
 const bool PRINTPROGRESS        = true; // true to write T and epsilons to logfile
 int  PRINTPROGRESSTICKLER = 10;   // print every TICKLER steps, can be modified
 
+#ifdef PRINTPHONONS
+const int PRINTPHONONSPECTRUM = true;
+#else
+const int PRINTPHONONSPECTRUM = false;
+#endif
 const int PRINTPHONONSPECTRUMTICKLER = 10; // print renormalized phonon spectrum for every ..TICKLER steps.
 
 const bool BINARYOUTFILES=false;
