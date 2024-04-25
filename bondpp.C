@@ -80,7 +80,11 @@ const int PRINTPHONONSPECTRUMTICKLER = 10; // print renormalized phonon spectrum
 
 const bool BINARYOUTFILES=false;
 
+#ifdef USELASTSIGMA
 const bool USEPREVIOUSEPSILONS = true; // use previous epsilon values whenever last run converged.
+#else
+const bool USEPREVIOUSEPSILONS = false;
+#endif
 
 const string RCORRSFILENAME="rcorrs.dat";
 const string QCORRSFILENAME="qcorrs";
