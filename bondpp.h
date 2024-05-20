@@ -1756,7 +1756,14 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
       oldT=currT;
 
 #if defined PHONONS && !defined NOELASTIC     
-      for(int i=0; i<NELASTIC; i++){epsilon[i]= (1.-inertia)*currT*epsoverT[i]+inertia*epsilon[i];}
+      for(int i=0; i<NELASTIC; i++)
+	{
+	  epsilon[i]= (1.-inertia)*currT*epsoverT[i]+inertia*epsilon[i];
+	}
+#if defined ONEEPSILONCOMPONENTCLAMPED
+      epsilon[EPSILONCOMPONENTCLAMPED] = 0.;
+#endif
+
 #endif       
       
       if(TRACE) cout << "converged= " << converged << " TOLERANCE:" << par[TOLERANCE] << endl;
@@ -2239,7 +2246,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 	  outfile_b.close();
 	}
 
-#if defined PHONONS
+#if defined PHONONS && !defined ELASTICONLY
       if( lineid % PRINTPHONONSPECTRUMTICKLER == 0 && PRINTPHONONSPECTRUM)
 	{
 	  MatrixInverse(Dq); // B=Dinvq
@@ -2428,6 +2435,11 @@ Simulation::Simulation(): couplings(par,NC),rule(couplings),mysolver(rule),Delta
       // set default starting values
       NumberList newepsilon(NELASTIC);
       for(int i=0; i<NELASTIC; i++) newepsilon[i]=(RAN()-0.5)*par[EPSILONNULL]; // small values
+
+#if defined ONEEPSILONCOMPONENTCLAMPED
+      newepsilon[EPSILONCOMPONENTCLAMPED] = 0.;
+#endif
+
       // put the same starting value for all entries:
       for(unsigned int i=0; i<Deltalist.size(); i++){epsilonlist.push_back(newepsilon);}
       
