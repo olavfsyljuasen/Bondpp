@@ -29,7 +29,7 @@ const bool TRACE2=false; // more debug info
 //const bool TRACE= false; // debugging option
 #endif
 
-
+const bool TRACEFREEENERGY = false; // print out individual terms to the free energy
 
 const bool dcheck=false; // check if D is 0 or negative and output warning
 

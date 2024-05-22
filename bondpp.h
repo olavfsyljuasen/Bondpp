@@ -1712,20 +1712,23 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
       //      const realtype inertia=0.5; // how much to resist changes: [0,1] 
       const realtype inertia=0.2; // how much to resist changes: [0,1] 
 
-      currT= (1.-inertia)*newT+inertia*oldT; 
-
-      oldT=currT;
-
 #if defined PHONONS && !defined NOELASTIC     
       for(int i=0; i<NELASTIC; i++)
 	{
-	  epsilon[i]= (1.-inertia)*currT*epsoverT[i]+inertia*epsilon[i];
+	  //	  epsilon[i]= (1.-inertia)*currT*epsoverT[i]+inertia*epsilon[i];
+	  epsilon[i]= (1.-inertia)*newT*epsoverT[i]+inertia*epsilon[i]; // maybe change to this
 	}
 #if defined ONEEPSILONCOMPONENTCLAMPED
       epsilon[EPSILONCOMPONENTCLAMPED] = 0.;
 #endif
 
 #endif       
+
+      currT= (1.-inertia)*newT+inertia*oldT; 
+
+      oldT=currT;
+
+
       
       if(TRACE) cout << "converged= " << converged << " TOLERANCE:" << par[TOLERANCE] << endl;
       
