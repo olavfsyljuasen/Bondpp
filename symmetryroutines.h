@@ -70,6 +70,7 @@ template<class T,int Nrows,int Ncols>
 template<class T,int Nrows,int Ncols>
   void EraseSpinOffdiagonals(VecMat<T,Nrows,Ncols>& M,bool warning=true)
 {
+  if(NSPIN ==1 ) return; // not interesting if only one spin component
   for(int q=0; q<M.Nvecs; q++)
     {
       for(int l1=0; l1<NSUBL; l1++)
@@ -123,6 +124,7 @@ template<class T,int Nrows,int Ncols>
 template<class T,int Nrows,int Ncols>
   bool IsSpinSymmetric(VecMat<T,Nrows,Ncols>& M)
 {
+  if(NSPIN == 1) return true;
   for(int q=0; q<M.Nvecs; q++)
     {
       for(int l=0; l<NSUBL; l++)

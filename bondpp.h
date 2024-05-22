@@ -85,14 +85,16 @@ class Driver
   void SetQsToZero(); // routine to set some q's to zero in self-energy
   void MakeRandomSigma();
 
-  void MakeSymmetric(VecMat<complex<realtype>,NMAT,NMAT>&);
+  void MakeSymmetric(VecMat<complextype,NMAT,NMAT>&);
   
   void SolveSelfConsistentEquation(NumberList Delta); 
 
   void Solve(NumberList delta,NumberList thisepsilon,const bool pinfo)
   {
     Delta = delta;
+    RenormalizedDelta = delta; //  just as starting value
 
+    
 #if defined PHONONS && !defined NOELASTIC
     if( USEPREVIOUSEPSILONS && converged && EpsilonInitialized)
       {
@@ -112,7 +114,7 @@ class Driver
     
     
     Printinfo=pinfo;
-    //    Sigma = rule.GetInitialState(); // copy the Initial guess for Sigma
+
     SolveSelfConsistentEquation(Delta);
     if(TRACE) cout << "Done Solve" << endl;
   }
@@ -131,6 +133,7 @@ class Driver
   bool converged; //  
   
   NumberList Delta; 
+  NumberList RenormalizedDelta;
   
 #ifdef PRESERVESYMMETRY
   int TransformationPeriod;
@@ -146,24 +149,24 @@ class Driver
   realtype mineigenvalue; // for storing the minimum SigmaE value
   realtype currT; // for storing the current value of the temperature 
 
-  VecMat<complex<realtype>,NMAT,NMAT>& Jq;
+  VecMat<complextype,NMAT,NMAT>& Jq;
   // The actual storage areas
-  VecMat<complex<realtype>,NMAT,NMAT> A1;  // holds Kq,Kinvq
-  VecMat<complex<realtype>,NMAT,NMAT> A2;  // holds Sigmaq,
-  VecMat<complex<realtype>,NDMAT,NDMAT> B;  // holds Dq,Dinvq
+  VecMat<complextype,NMAT,NMAT> A1;  // holds Kq,Kinvq
+  VecMat<complextype,NMAT,NMAT> A2;  // holds Sigmaq,
+  VecMat<complextype,NDMAT,NDMAT> B;  // holds Dq,Dinvq
 
 
-  vector<complex<realtype>>  F1 ; // holds inplace intermediate Fourier-transform
-  vector<complex<realtype>>  F2 ; // holds inplace intermediate Fourier-transform
+  vector<complextype>  F1 ; // holds inplace intermediate Fourier-transform
+  vector<complextype>  F2 ; // holds inplace intermediate Fourier-transform
 
 #ifdef FFTS_INPLACE
-  VecMat<complex<realtype>,NMAT,NMAT>& A1r; // holds Kinvr
-  VecMat<complex<realtype>,NMAT,NMAT>& A2r; // holds Sigmar
-  VecMat<complex<realtype>,NDMAT,NDMAT>& Br; // holds Dr
+  VecMat<complextype,NMAT,NMAT>& A1r; // holds Kinvr
+  VecMat<complextype,NMAT,NMAT>& A2r; // holds Sigmar
+  VecMat<complextype,NDMAT,NDMAT>& Br; // holds Dr
 #else   
-  VecMat<complex<realtype>,NMAT,NMAT> A1r;  // holds Kinvr
-  VecMat<complex<realtype>,NMAT,NMAT> A2r;  // holds Sigmar
-  VecMat<complex<realtype>,NDMAT,NDMAT> Br;  // holds Dr
+  VecMat<complextype,NMAT,NMAT> A1r;  // holds Kinvr
+  VecMat<complextype,NMAT,NMAT> A2r;  // holds Sigmar
+  VecMat<complextype,NDMAT,NDMAT> Br;  // holds Dr
 #endif
 
 
@@ -185,22 +188,22 @@ class Driver
   // the following references are used for readability of the code
 
 
-  VecMat<complex<realtype>,NMAT,NMAT>& Kq;     // points to the A1 array
-  VecMat<complex<realtype>,NMAT,NMAT>& Kinvq;  // points to the A1 array
-  VecMat<complex<realtype>,NMAT,NMAT>& Kinvr;  // points to the A1 array
+  VecMat<complextype,NMAT,NMAT>& Kq;     // points to the A1 array
+  VecMat<complextype,NMAT,NMAT>& Kinvq;  // points to the A1 array
+  VecMat<complextype,NMAT,NMAT>& Kinvr;  // points to the A1 array
 
-  VecMat<complex<realtype>,NMAT,NMAT>& Sigmar; // points to the A2 array
-  VecMat<complex<realtype>,NMAT,NMAT>& Sigmaq; // points to the A2 array
+  VecMat<complextype,NMAT,NMAT>& Sigmar; // points to the A2 array
+  VecMat<complextype,NMAT,NMAT>& Sigmaq; // points to the A2 array
 
-  VecMat<complex<realtype>,NDMAT,NDMAT>& Dq;     // points to the B array
-  VecMat<complex<realtype>,NDMAT,NDMAT>& Dinvq;  // points to the B array
-  VecMat<complex<realtype>,NDMAT,NDMAT>& Dr;     // points to the B array
+  VecMat<complextype,NDMAT,NDMAT>& Dq;     // points to the B array
+  VecMat<complextype,NDMAT,NDMAT>& Dinvq;  // points to the B array
+  VecMat<complextype,NDMAT,NDMAT>& Dr;     // points to the B array
 
 #ifdef PHONONS
-  VecMat<complex<realtype>,NC,NMODE>& f; // holds the vertex information
-  VecMat<complex<realtype>,NMAT,NMAT>& g; // points to rule
+  VecMat<complextype,NC,NMODE>& f; // holds the vertex information
+  VecMat<complextype,NMAT,NMAT>& g; // points to rule
   
-  vector<VecMat<complex<realtype>,NMAT,NMAT>* > gel;
+  vector<VecMat<complextype,NMAT,NMAT>* > gel;
 #endif
   NumberList epsilon;  // amplitude of elastic modes
 
@@ -209,7 +212,7 @@ class Driver
 };
 
 
-Driver::Driver(Rule& r):rule(r),dim(la.D()),dims(la.SiteqDims()),Nq(la.NqSites()),invNq(static_cast<realtype>(1.)/Nq),invSqrtNq(1./sqrt(Nq)),converged(false),Delta(NSUBL),Printinfo(false),lineid(0),SigmaInitialized(false),EpsilonInitialized(false),MaxIterMultiplier(1),Jq(r.Jq),  
+Driver::Driver(Rule& r):rule(r),dim(la.D()),dims(la.SiteqDims()),Nq(la.NqSites()),invNq(static_cast<realtype>(1.)/Nq),invSqrtNq(1./sqrt(Nq)),converged(false),Delta(NSUBL),RenormalizedDelta(NSUBL),Printinfo(false),lineid(0),SigmaInitialized(false),EpsilonInitialized(false),MaxIterMultiplier(1),Jq(r.Jq),  
   A1(Nq),A2(Nq),B(Nq),F1(Nq),F2(Nq),
 #ifdef FFTS_INPLACE
   A1r(A1),A2r(A2),Br(B),
@@ -355,7 +358,7 @@ NumberList Driver::CalculateEpsilonsOverT()
 	{
 	  for(int qi=0; qi<Nq; qi++)
 	    {
-	      SMatrix<complex<realtype>,NMAT,NMAT> tmp;
+	      SMatrix<complextype,NMAT,NMAT> tmp;
 	      tmp=Kinvq[qi];
 	      tmp *= (*rule.gelptrs[i])[qi];
 	      sum += NFAKESPINTRACE*real(tr(tmp));
@@ -382,7 +385,7 @@ void Driver::FindMaxVals(SMatrix<int,NMAT,NMAT>& maxqs,SMatrix<realtype,NMAT,NMA
 	realtype maxv(0.);
 	for(int qi=0; qi<Nq; qi++)
 	  {
-	    complex<realtype> val=(m1==m2 ? Kinvq(qi,m1,m2): 0.5*(Kinvq(qi,m1,m2)+Kinvq(qi,m2,m1)));
+	    complextype val=(m1==m2 ? Kinvq(qi,m1,m2): 0.5*(Kinvq(qi,m1,m2)+Kinvq(qi,m2,m1)));
 	    if( val.real() > maxv){ maxv=val.real(); maxq=qi;}
 	  }
 	maxvals(m1,m2) = maxv;
@@ -441,17 +444,17 @@ vector<obstype> Driver::CalculateOrderPars(realtype T,int m1,int m2)
 }
 
 #ifdef PRESERVESYMMETRY
-void Driver::MakeSymmetric(VecMat<complex<realtype>,NMAT,NMAT>& m)
+void Driver::MakeSymmetric(VecMat<complextype,NMAT,NMAT>& m)
 {
   if(TRACE) cout << "Starting MakeSymmetric" << endl;
   if( NSUBL !=1){ cout << "MakeSymmetric works only for NSUBL=1" << endl; exit(1);}
   
-  complex<realtype>* mstart=m.start(); // This only works for NSUBL=1 
+  complextype* mstart=m.start(); // This only works for NSUBL=1 
   
   //  cout << "m=" << m << endl;
 
-  VecMat<complex<realtype>> temp(m);
-  complex<realtype>* tempstart=temp.start(); // This only works for NSUBL=1 
+  VecMat<complextype> temp(m);
+  complextype* tempstart=temp.start(); // This only works for NSUBL=1 
   
   //  cout << "temp=" << temp << endl;
 
@@ -555,9 +558,10 @@ realtype Driver::CalculateFreeEnergy(realtype T)
 #endif  
   
   //Must correct the Delta values for the subtraction of the minimum from SigmaE
-  for(int i=0; i<NSUBL; i++) f += -(Delta[i]-mineigenvalue);
+  //  for(int i=0; i<NSUBL; i++) f += -(Delta[i]-mineigenvalue);
+  for(int i=0; i<NSUBL; i++) f += -RenormalizedDelta[i];
 
-  if(TRACE) cout << "betaf_delta      = " << -(Delta[0]-mineigenvalue)/T << " (Delta= " << Delta[0] << " mineig: " << mineigenvalue << ")" << endl;
+  if(TRACE) cout << "betaf_delta      = " << -RenormalizedDelta[0]/T << " (Delta= " << Delta[0] << " mineig: " << mineigenvalue << ") RenormalizedDelta[0]:" << RenormalizedDelta[0] << endl;
   
   realtype betaf_logKinvq   = -0.5*invNq*NFAKESPINTRACE*SumLogDet(Kinvq);
 
@@ -669,14 +673,14 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 
   // first compute the constraint block
 
-  complex<realtype> tmp(0);
+  complextype tmp(0);
   
   for(int m1=0; m1<NSUBL; m1++)
     for(int m2=m1; m2<NSUBL; m2++)
       {
 	for(int r=0; r<Nq; r++)
 	  {
-	    complex<realtype> tt(0.);
+	    complextype tt(0.);
 	    for(int s1=0; s1<NSPIN; s1++)
 	      for(int s2=0; s2<NSPIN; s2++)
 		{
@@ -717,7 +721,7 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
       {
 	for(int r=0; r<Nq; r++)
 	  {
-	    SMatrix<complex<realtype>,NMAT,NMAT> my;
+	    SMatrix<complextype,NMAT,NMAT> my;
 	    my  = g[c];
 	    my *= Kinvr[r];
 	    int mrpc = la.rAdd(la.GetInversionIndx(r),clist[c]); // index of -r+c	    
@@ -772,7 +776,7 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 	  
 	  for(int r=0; r<Nq; r++)
 	    {
-	      SMatrix<complex<realtype>> my(NMAT,NMAT);
+	      SMatrix<complextype> my(NMAT,NMAT);
 	      
 	      int mrpc4=la.rAdd(r,clist[c4]);
 	      
@@ -798,7 +802,7 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 		
 		for(int qi=0; qi<Nq; qi++)
 		  {
-		    const complex<realtype> myF1 =( qi> la.qlimit ? F1[la.GetInversionIndx(qi)].conj():F1[qi]);
+		    const complextype myF1 =( qi> la.qlimit ? F1[la.GetInversionIndx(qi)].conj():F1[qi]);
 		    
 		    //		    Dinvq(qi,m1,m2)+=-F1[qi]*conj(f(qi,c2,n1))*f(qi,c4,n2);
 		    Dinvq(qi,m1,m2)+=-myF1*conj(f(qi,c2,n1))*f(qi,c4,n2);
@@ -829,7 +833,7 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 	  
 	  for(int r=0; r<Nq; r++)
 	    {
-	      SMatrix<complex<realtype>> my(NMAT,NMAT);
+	      SMatrix<complextype> my(NMAT,NMAT);
 	      
 	      my  = g[c4];
 	      my.Transpose();
@@ -890,7 +894,7 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 	  
 	  for(int r=0; r<Nq; r++)
 	    {
-	      SMatrix<complex<realtype>,NMAT,NMAT> my;
+	      SMatrix<complextype,NMAT,NMAT> my;
 	      
 	      my  = g[c4];
 	      my *= Kinvr[r];
@@ -945,7 +949,7 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 	  
 	  for(int r=0; r<Nq; r++)
 	    {
-	      SMatrix<complex<realtype>,NMAT,NMAT> my;
+	      SMatrix<complextype,NMAT,NMAT> my;
 	      
 	      my  = g[c4];
 	      my.Transpose();
@@ -1001,7 +1005,7 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 	
 	for(int i=0; i<Nq; i++)
 	  {
-	    SMatrix<complex<realtype>> my(NMAT,NMAT);
+	    SMatrix<complextype> my(NMAT,NMAT);
 	    
 	    my  = g[c4];
 	    my *= Kinvr[i];
@@ -1434,17 +1438,18 @@ void Driver::ConstructKinvq()
   if(TRACE) cout << "Adding elastic modes " << endl;
   for(int j=0; j<NELASTIC; j++)
     {
-      VecMat<complex<realtype>,NMAT,NMAT> temp(*rule.gelptrs[j]);
+      VecMat<complextype,NMAT,NMAT> temp(*rule.gelptrs[j]);
       temp *= epsilon[j];
       Kq += temp;
     }
 #endif
 
-  
-
+ 
   if(TRACE){SanityCheck(Kq,"Kq, after adding Elastic modes");}
   
   mineigenvalue=SubtractMinimumEigenvalue(Kq);
+
+  for(int i=0; i<NSUBL; i++){ RenormalizedDelta[i] = Delta[i]-mineigenvalue;}
   
   if(TRACE){SanityCheck(Kq,"Kq, after subtracting eigenvalues");}
 
@@ -1452,13 +1457,12 @@ void Driver::ConstructKinvq()
 
   if(TRACE){SanityCheck(Kq,"Kq, after adding Delta");}
   
-  // construct K1inv
+  // construct Kinvq
   MatrixInverse(Kq); // K = Kinv_q 
 
   // Force correct properties on the matrix
   MakeHermitian(Kinvq); 
   MakeInversionTransposedSymmetric(Kinvq); 
-  // TRY
   MakeSpinDiagonal(Kinvq);
 
   if(TRACE){SanityCheck(Kinvq,"Kinvq, after inverting");}
@@ -1480,7 +1484,7 @@ void Driver::MakeRandomSigma()
     {
       for(int i=0; i<Nq; i++)
 	{
-	  complex<realtype> c=da*de*complex<realtype>(RAN(),0.); // real positive value 
+	  complextype c=da*de*complextype(RAN(),0.); // real positive value 
 	  Sigmaq(i,m,m)=c;
 	}
     }
@@ -1492,41 +1496,23 @@ void Driver::MakeRandomSigma()
 	  {
 	    for(int i=0; i<Nq; i++)
 	      {
-		complex<realtype> c=da*de*complex<realtype>(RAN(),RAN());
+		complextype c=da*de*complextype(RAN(),RAN());
 		Sigmaq(i,m1,m2)=c;
 	      }
 	  }
     }
 
-
   MakeHermitian(Sigmaq,false); // no warnings
-  //MakeHermitian(Sigmaq);
 
-  //  cout << "Sigmaq after MakeHermitian..." << endl;
-  // cout << Sigmaq << endl;
-
-  //  MakeSpinSymmetric(Sigmaq,false);
-  // TRY
   MakeSpinDiagonal(Sigmaq,false);
-  //  MakeSpinDiagonalEqual(Sigmaq,false);
 
 #ifdef FORCEINVERSIONSYMMETRY
   MakeInversionTransposedSymmetric(Sigmaq);
-  /*
-  FFTWEXECUTE(A2q_to_A2r);
-  MakeReal(Sigmar);
-  FFTWEXECUTE(A2r_to_A2q);
-  Sigmaq*=invNq;  // do not change magnitude
-  */
 #endif
-
-  //  cout << "Sigmaq after MakeInversionTrans..." << endl;
-  //  cout << Sigmaq << endl;
 
 #ifdef PRESERVESYMMETRY
   MakeSymmetric(Sigmaq);
 #endif
-
 
   
   if(TRACE) SanityCheck(Sigmaq,"Sigmaq, at end of MakeRandomSigma");
@@ -1536,9 +1522,9 @@ void Driver::MakeRandomSigma()
 
 void Driver::SetQsToZero()
 {
-  logfile << "Setting the following qpts to zero in the self-energy" << endl;
+  logfile << "Setting the following qpts entries to zero in the self-energy:" << endl;
 
-  bool found=false;
+  bool found = false;
   ifstream ifile("qstozero.in");
   
   while(ifile)
@@ -1550,10 +1536,12 @@ void Driver::SetQsToZero()
 	  found=true;
 	  Coord thisq=la.qPos(qindx);
 	  logfile << "(" << thisq << ")" << endl;
-	  Sigmaq(qindx,0,0)=complex<realtype>(0.,0.);
+	  for(int i1=0; i1<NMAT; i1++)
+	    for(int i2=0; i2<NMAT; i2++)
+	      Sigmaq(qindx,i1,i2)=complextype(0.,0.);
 	}        
     }
-  if(!found) logfile << "None" << endl;
+  if(!found){logfile << "None" << endl;}
 }
 
 
@@ -1563,14 +1551,11 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 {
   if(TRACE) cout << "Starting SolveSelfConsistentEquation " << endl;
 
-  //  lineid++;
-
-
 #ifdef RANDOMINITIALIZATION
   MakeRandomSigma();
 #elif defined USELASTSIGMA
-  if(!SigmaInitialized){MakeRandomSigma(); SigmaInitialized=true; MaxIterMultiplier=100;}
-  else{MaxIterMultiplier=1;}
+  if(!SigmaInitialized){MakeRandomSigma(); SigmaInitialized=true; MaxIterMultiplier=100;} // MaxIterMultiplier>1 allow for more iterations to find a solution
+  else{MaxIterMultiplier=1;} 
 #else
   rule.InitializeSigma(Sigmaq); // Get initial values of Sigmaq
 #endif
@@ -1580,16 +1565,10 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
   MakeSymmetric(Sigmaq);
 #endif
 
-#ifdef BIASQS  // set some q's to zero in 
-
-#endif
 
   Chomp(Jq); // set very small entries to 0
 
   if(TRACE) SanityCheck(Jq,"Jq, input to SolveSelfConsistentEquation");
-
-  
-  //  if(TRACE) cout << "Min eigenvalue: " << FindMinimumEigenvalue(Jq) << endl;
 
   SubtractMinimumEigenvalue(Jq);
 
@@ -1597,29 +1576,11 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 
   if(TRACE) SanityCheck(Jq,"Jq, after subtracting minimum");
 
-  /*
-#ifdef PRINTTCONVERGENCE
-  ostringstream sstrs; sstrs << "DELTA" << Delta << ".s.dat";
-  ostringstream tstrs; tstrs << "DELTA" << Delta << ".t.dat";
-  ostringstream ustrs; ustrs << "DELTA" << Delta << ".u.dat";
-  string tfilename = tstrs.str();
-  string sfilename = sstrs.str();
-  string ufilename = ustrs.str();
-  ofstream tfile(tfilename.c_str());
-  ofstream sfile(sfilename.c_str());
-  ofstream ufile(ufilename.c_str());
-#endif
-  */
-
-  // Put together K 
-
   
   realtype newT=-1.;
   realtype m2=0.; // magnetic order parameter squared.
   vector<obstype> nobs(NOBSERVABLES); // nematic order parameters
   vector<obstype> nspinobs(NSPINOBSERVABLES); // different types of spin order parameters
-
-  //  vector<obstype> nalphas(NOBSERVABLES); // alpha
 
 
   // construct Kinvq:
@@ -1968,7 +1929,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 	      ofstream qcorrfile(ss.str().c_str());
 
 	      realtype factor=newT*NSPIN*0.5;
-	      complex<realtype>* start=Kinvq(0,0);
+	      complextype* start=Kinvq(0,0);
 	      
 	      if(BINARYOUTFILES)
 		{
@@ -1976,7 +1937,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 		  qcorrfile.write((char*) &la.nindx_q,sizeof(la.nindx_q));
 		  for(int i=0; i<la.nindx_q; i++)
 		    {
-		      complex<realtype> value=factor*start[la.indx_site_q[i]];
+		      complextype value=factor*start[la.indx_site_q[i]];
 		      qcorrfile.write((char*) &value,sizeof(value));
 		    }
 		}
@@ -1985,7 +1946,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 		  //		  qcorrfile << setprecision(16) << lineid << " ";
 		  for(int i=0; i<la.nindx_q; i++)
 		    {
-		      complex<realtype> value=factor*start[la.indx_site_q[i]];
+		      complextype value=factor*start[la.indx_site_q[i]];
 		      qcorrfile << real(value) << " " << imag(value) << endl;;}
 		}
 	      qcorrfile.close();
@@ -2330,7 +2291,7 @@ Simulation::Simulation(): couplings(par,NC),rule(couplings),mysolver(rule),Delta
       for(int i=0; i<NDeltas; i++)
         {
           realtype this_Delta=(logscale ? exp(D1+dDelta*i): D1+dDelta*i);
-          NumberList myval(NSUBL,this_Delta);
+          NumberList myval(NSUBL,this_Delta); // set them all equal
           Deltalist.push_back(myval); 
           Printinfolist.push_back(true);
         }

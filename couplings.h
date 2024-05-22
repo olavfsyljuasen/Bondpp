@@ -13,9 +13,9 @@ class Couplings
   void Initializeg();
 #endif
  public:
-  VecMat<complex<realtype>,NMAT,NMAT> J;
+  VecMat<complextype ,NMAT,NMAT> J;
 #ifdef PHONONS
-  VecMat<complex<realtype>,NMAT,NMAT> g;
+  VecMat<complextype ,NMAT,NMAT> g;
 #endif
 };
 

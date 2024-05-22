@@ -9,41 +9,14 @@
 #include<stdlib.h>
 using namespace std;
 
+#include "mynumbertypes.h"
 
-
-#ifdef LONGDOUBLE
-typedef long double realtype;
-#elif defined FLOAT
-typedef float realtype;
-#else
-typedef double realtype;
-#endif
+#define _USE_MATH_DEFINES
+#include<cmath>
 
 #include "overload.h"
 
-
 #define watch(x) cout << (#x) << " is " << (x) << endl
-
-
-#ifndef M_PI
-#define M_PI 3.14159265358979323846264338328
-#define M_PIl 3.141592653589793238462643383279502884L 
-#endif
-
-#ifdef LONGDOUBLE
-const realtype PI=M_PIl;
-#else
-const realtype PI=M_PI;
-#endif
-const realtype TWOPI=2.*PI;
-
-
-#ifdef LONGDOUBLE
-const realtype SQRTTHREEOVERTWO=0.8660254037844386467637231707529362L;
-#else
-const realtype SQRTTHREEOVERTWO= 0.866025403784438646763723170753;
-#endif
-
 
 
 // Options for this run
@@ -91,7 +64,6 @@ const string QCORRSFILENAME="qcorrs";
 const string SIGMAEFILENAME="sigmaEq.dat";
 
 const string RCORRMOSTREMOTE="rcorr_L2.dat";
-
 
 const string SITERPTS="siteRpts.dat";
 const string SITEQPTS="siteQpts.dat";
@@ -167,10 +139,6 @@ BravaisLattice la(par); // declare lattice globally
 #include "couplings.h" // generic coupling class
 
 #include "modelcouplings.h" // set couplings, modify for new models
-
-
-
-
 
 
 

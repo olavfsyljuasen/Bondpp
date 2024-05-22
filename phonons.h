@@ -21,7 +21,7 @@ typedef boost::multiprecision::cpp_complex_quad eigen_complex_type;
 
 #else
 typedef realtype   eigen_real_type;
-typedef complex<realtype> eigen_complex_type;
+typedef complextype eigen_complex_type;
 #endif
 
 #include<Eigen/Dense>
@@ -38,7 +38,7 @@ enum voigt{epsxx,epsyy,epszz,epsyz,epsxz,epsxy};
 
 
 
-typedef std::array<complex<realtype>,3> cmplxcoord;
+
 
 ostream& operator<<(ostream& os,cmplxcoord& cmplx){ for(int i=0; i<3; i++) os << cmplx[i] << " "; return os;}
 
@@ -48,8 +48,8 @@ const auto NDISP  =1; // the dimension of the displacements
 const auto NELASTIC=1; // the number of elastic constants.
 typedef std::array<realtype,1> voigtstring;
 // voigt:                   xx
-vector<double> voigt1indx{  0 };
-vector<double> voigt2indx{   0};
+vector<realtype> voigt1indx{0 };
+vector<realtype> voigt2indx{ 0};
 vector<string> voigtnames{"Exx"};
 
 
@@ -59,8 +59,8 @@ const auto NDISP  =2; // the dimension of the displacements
 const auto NELASTIC=3; // the number of elastic constants.
 typedef std::array<realtype,3> voigtstring;
 // voigt:                   xx,   yy,   xy
-vector<double> voigt1indx{  0 ,   1 ,   0 };
-vector<double> voigt2indx{   0,    1,    1};
+vector<realtype> voigt1indx{0 ,   1 ,   0  };
+vector<realtype> voigt2indx{ 0,    1,    1 };
 vector<string> voigtnames{"Exx","Eyy","Exy"};
 
 #elif defined XYZDISPLACEMENTS
@@ -68,9 +68,9 @@ vector<string> voigtnames{"Exx","Eyy","Exy"};
 const auto NDISP  =3; // the dimension of the displacements 
 const auto NELASTIC=6; // the number of elastic constants.
 typedef std::array<realtype,6> voigtstring;
-// voigt:                   xx,   yy,   zz,   yz,   xz,   xy
-vector<double> voigt1indx{  0 ,   1 ,   2 ,   1 ,   0 ,   0 };
-vector<double> voigt2indx{   0,    1,    2,    2,    2,    1};
+// voigt:                     xx,   yy,   zz,   yz,   xz,   xy
+vector<realtype> voigt1indx{  0 ,   1 ,   2 ,   1 ,   0 ,   0 };
+vector<realtype> voigt2indx{   0,    1,    2,    2,    2,    1};
 vector<string> voigtnames{"Exx","Eyy","Ezz","Eyz","Exz","Exy"};
 #endif
 
@@ -84,16 +84,16 @@ class Phonons
   Phonons();
   ~Phonons(){for(int i=0; i<NSUBL; i++){delete normalmode[i]; }}
     
-  double GetOmega(const int q,const int n){return omega(q,n);}
+  realtype GetOmega(const int q,const int n){return omega(q,n);}
   cmplxcoord GetNormalMode(const int q,const int n,const int i=0){return (*normalmode[i])(q,n);}
   
   voigtstring GetElasticMode(int i){return elasticmode[i];}
   realtype GetElasticeigenvalue(int i){return elasticeigenvalue[i];}
 
-  VecMat<complex<realtype>,NC,NMODE>& Getf(){return flist;}
+  VecMat<complextype,NC,NMODE>& Getf(){return flist;}
 
   realtype GetSumLogOmegaoverV(){return sumlogomegaoverv;}
-  void PrintPhononModes(string,VecMat<complex<realtype>,NSUBL+NMODE,NSUBL+NMODE>&,realtype);
+  void PrintPhononModes(string,VecMat<complextype,NSUBL+NMODE,NSUBL+NMODE>&,realtype);
  private:  
   const int Nq;
   
@@ -102,12 +102,12 @@ class Phonons
   vector<VecMat<cmplxcoord,NMODE,1>* > normalmode;
 
   vector<voigtstring> elasticmode;
-  vector<double> elasticeigenvalue;
+  vector<realtype> elasticeigenvalue;
 
   realtype sumlogomegaoverv;
   
   void Initializef();
-  VecMat<complex<realtype>,NC,NMODE> flist;
+  VecMat<complextype,NC,NMODE> flist;
 };
 
 
@@ -126,7 +126,7 @@ Phonons::Phonons(): Nq(la.NqSites()),omega(Nq),normalmode(NSUBL),sumlogomegaover
   springs[2]=Triplet{1,1,0};
   springs[3]=Triplet{1,-1,0};
   
-  vector<double> couplings(Nsprings);
+  vector<realtype> couplings(Nsprings);
   couplings[0]=par[ALPHA1];
   couplings[1]=par[ALPHA1];
   couplings[2]=par[ALPHA2];
@@ -141,7 +141,7 @@ Phonons::Phonons(): Nq(la.NqSites()),omega(Nq),normalmode(NSUBL),sumlogomegaover
   springs[3]=Triplet{1,-1,0};
   springs[4]=Triplet{0, 0, 1};
   
-  vector<double> couplings(Nsprings);
+  vector<realtype> couplings(Nsprings);
   couplings[0]=par[ALPHA1];
   couplings[1]=par[ALPHA1];
   couplings[2]=par[ALPHA2];
@@ -158,7 +158,7 @@ Phonons::Phonons(): Nq(la.NqSites()),omega(Nq),normalmode(NSUBL),sumlogomegaover
   springs[4]=Triplet{-1, 2, 0};
   springs[5]=Triplet{-2, 1, 0};
  
-  vector<double> couplings(Nsprings);
+  vector<realtype> couplings(Nsprings);
   couplings[0]=par[ALPHA1];
   couplings[1]=par[ALPHA1];
   couplings[2]=par[ALPHA1];
@@ -177,7 +177,7 @@ Phonons::Phonons(): Nq(la.NqSites()),omega(Nq),normalmode(NSUBL),sumlogomegaover
   springs[5]=Triplet{-2, 1, 0};
   springs[6]=Triplet{ 0, 0, 1};
  
-  vector<double> couplings(Nsprings);
+  vector<realtype> couplings(Nsprings);
   couplings[0]=par[ALPHA1];
   couplings[1]=par[ALPHA1];
   couplings[2]=par[ALPHA1];
@@ -199,7 +199,7 @@ Phonons::Phonons(): Nq(la.NqSites()),omega(Nq),normalmode(NSUBL),sumlogomegaover
   springs[7]=Triplet{ 1, 1, 0};
   springs[8]=Triplet{ 1,-1, 0};
  
-  vector<double> couplings(Nsprings);
+  vector<realtype> couplings(Nsprings);
   couplings[0]=par[ALPHA1];
   couplings[1]=par[ALPHA1];
   couplings[2]=par[ALPHA1];
@@ -222,7 +222,7 @@ Phonons::Phonons(): Nq(la.NqSites()),omega(Nq),normalmode(NSUBL),sumlogomegaover
   springs[7]=Triplet{ 1,-1, 1};
   springs[8]=Triplet{ 1, 1,-1};
  
-  vector<double> couplings(Nsprings);
+  vector<realtype> couplings(Nsprings);
   couplings[0]=par[ALPHA1];
   couplings[1]=par[ALPHA1];
   couplings[2]=par[ALPHA1];
@@ -243,7 +243,7 @@ Phonons::Phonons(): Nq(la.NqSites()),omega(Nq),normalmode(NSUBL),sumlogomegaover
   springs[5]=Triplet{ 1, 0, 1};
   springs[6]=Triplet{ 1, 1, 0};
  
-  vector<double> couplings(Nsprings);
+  vector<realtype> couplings(Nsprings);
   couplings[0]=par[ALPHA1];
   couplings[1]=par[ALPHA1];
   couplings[2]=par[ALPHA1];
@@ -262,12 +262,12 @@ Phonons::Phonons(): Nq(la.NqSites()),omega(Nq),normalmode(NSUBL),sumlogomegaover
 
   for(int s=0; s<Nsprings; s++)
     {
-      double c=couplings[s]/la.UnitCellVolume();
+      realtype c=couplings[s]/la.UnitCellVolume();
       Coord  sp=la.rPos(springs[s]);
-      double n2=sp.Norm()*sp.Norm();
+      realtype n2=sp.Norm()*sp.Norm();
       
-      double spx=sp.x;
-      double spy=sp.y;
+      realtype spx=sp.x;
+      realtype spy=sp.y;
 
 
 #if defined XDISPLACEMENTS
@@ -287,7 +287,7 @@ Phonons::Phonons(): Nq(la.NqSites()),omega(Nq),normalmode(NSUBL),sumlogomegaover
       El(2,2) += c * spx*spy * spx*spy / n2;
       
 #elif defined XYZDISPLACEMENTS            
-      double spz=sp.z;
+      realtype spz=sp.z;
       El(0,0) += c * spx*spx * spx*spx / n2;
       El(0,1) += c * spx*spx * spy*spy / n2;
       El(0,2) += c * spx*spx * spz*spz / n2;
@@ -682,7 +682,7 @@ void Phonons::Initializef()
     {
       for(int n=0; n<NMODE; n++)
 	{
-	  double omega=GetOmega(qi,n);
+	  realtype omega=GetOmega(qi,n);
 	  cmplxcoord w=GetNormalMode(qi,n,0);
 
 	  //	  if(TRACE) cout << "qi=" << qi << " n=" << n << " omega=" << omega << endl; 
@@ -695,7 +695,7 @@ void Phonons::Initializef()
 	      complex<realtype> tempf = 0;
 
 	      for(int k=0; k<3; k++){tempf += crr[k]*w[k];}
-	      tempf *= complex<realtype>(0,-0.5)*(expi(la.qr(qi,clist[ci]))-1.);
+	      tempf *= complextype(0,-0.5)*(expi(la.qr(qi,clist[ci]))-1.);
 	      tempf *= invsqrtmasses[0]*(1./omega);
 
 	      flist(qi,ci,n)=(qi==0 ? 0: tempf);

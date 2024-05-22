@@ -4,7 +4,7 @@
 #include <functional>
 using namespace std;
 
-typedef std::function<complex<realtype>(int)> qfunc;
+typedef std::function<complextype(int)> qfunc;
 
 // a function for use in calculating observables 
 class KernelFunction

@@ -30,10 +30,10 @@ class Rule
 #endif
     }
   
-  void MakeSigma(VecMat<complex<realtype>,NMAT,NMAT>& A);
+  void MakeSigma(VecMat<complextype,NMAT,NMAT>& A);
   
   void InitializeJq();
-  void InitializeSigma(VecMat<complex<realtype>,NMAT,NMAT>& A)
+  void InitializeSigma(VecMat<complextype,NMAT,NMAT>& A)
   {
     MakeSigma(A);
   }
@@ -43,9 +43,9 @@ class Rule
 #ifdef PHONONS
   //  void Initializeg();
   
-  void InitializeElasticMode(int i,VecMat<complex<realtype>,NMAT,NMAT>& gel);
+  void InitializeElasticMode(int i,VecMat<complextype,NMAT,NMAT>& gel);
 
-  VecMat<complex<realtype>,NC,NMODE>& Getf(){return phonons.Getf();}
+  VecMat<complextype,NC,NMODE>& Getf(){return phonons.Getf();}
 #endif
 
   
@@ -56,20 +56,20 @@ class Rule
   istream& Read(istream& is);
   realtype* GetPars(){return par;}
 
-  VecMat<complex<realtype>,NMAT,NMAT>& Jr; // defined in couplings.h 
+  VecMat<complextype,NMAT,NMAT>& Jr; // defined in couplings.h 
   
   int Nq;
   
   vector<vector<obstype> > irrep;
 
-  VecMat<complex<realtype>,NMAT,NMAT> Jq;
+  VecMat<complextype,NMAT,NMAT> Jq;
 
 #ifdef PHONONS
   Phonons phonons;
-  VecMat<complex<realtype>,NMAT,NMAT>& g; // defined in couplings.h
+  VecMat<complextype,NMAT,NMAT>& g; // defined in couplings.h
 
   vector<realtype> elasticeigenvalues;
-  vector<VecMat<complex<realtype>,NMAT,NMAT>* > gelptrs;
+  vector<VecMat<complextype,NMAT,NMAT>* > gelptrs;
 
   realtype GetSumLogOmegaoverV(){return phonons.GetSumLogOmegaoverV();}
 #endif
@@ -100,7 +100,7 @@ Rule::Rule(Couplings& realspacecouplings):Jr(realspacecouplings.J),Nq(la.NqSites
 
   for(int i=0; i<NELASTIC; i++)
     {
-      VecMat<complex<realtype>,NMAT,NMAT>* gel_ptr=new VecMat<complex<realtype>,NMAT,NMAT>(Nq);
+      VecMat<complextype,NMAT,NMAT>* gel_ptr=new VecMat<complextype,NMAT,NMAT>(Nq);
       gel_ptr->SetToZero();
       InitializeElasticMode(i,*gel_ptr);
       gelptrs[i]=gel_ptr;
@@ -154,7 +154,7 @@ void Rule::InitializeJq()
 // called with eps={1,-1,0,0,0,0} gives xx-yy, etc.
 
 #ifdef CPOSITIVE
-void Rule::InitializeElasticMode(int i,VecMat<complex<realtype>,NMAT,NMAT>& gel)
+void Rule::InitializeElasticMode(int i,VecMat<complextype,NMAT,NMAT>& gel)
 {
   if(TRACE) cout << "Starting InitializeElasticMode " << i << endl;
   const int Nq=la.NqSites();
@@ -173,7 +173,7 @@ void Rule::InitializeElasticMode(int i,VecMat<complex<realtype>,NMAT,NMAT>& gel)
 		for(int i2=0; i2<NSUBL; i2++)
 		  {
 		    Coord crr=c+roffset[i2]-roffset[i1];
-		    //		    realtype crr2=crr[voigt1indx[vi]]*crr[voigt2indx[vi]]*(voigt1indx[vi] != voigt2indx[vi] ? 2:1);
+
 		    realtype crr2=crr[voigt1indx[vi]]*crr[voigt2indx[vi]];
 	      
 		    for(int s1=0; s1<NSPIN; s1++)
@@ -190,7 +190,7 @@ void Rule::InitializeElasticMode(int i,VecMat<complex<realtype>,NMAT,NMAT>& gel)
 		for(int i2=0; i2<NSUBL; i2++)
 		  {
 		    Coord crr=c+roffset[i1]-roffset[i2];
-		    //		    realtype crr2=crr[voigt1indx[vi]]*crr[voigt2indx[vi]]*(voigt1indx[vi] != voigt2indx[vi] ? 2:1);
+
 		    realtype crr2=crr[voigt1indx[vi]]*crr[voigt2indx[vi]];
 		    for(int s1=0; s1<NSPIN; s1++)
 		      for(int s2=0; s2<NSPIN; s2++)
@@ -208,7 +208,7 @@ void Rule::InitializeElasticMode(int i,VecMat<complex<realtype>,NMAT,NMAT>& gel)
   if(TRACE) cout << "Finished InitializeElasticMode" << endl;
 }
 #else
-void Rule::InitializeElasticMode(int i,VecMat<complex<realtype>>& gel)
+void Rule::InitializeElasticMode(int i,VecMat<complextype>& gel)
 {
   if(TRACE) cout << "Starting InitializeElasticMode " << i << endl;
   const int Nq=la.NqSites();
