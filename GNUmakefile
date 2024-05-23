@@ -39,11 +39,13 @@ OSXDIR = $(HOME)
 
 force : ;
 
-phonons_x64 : squareHeisenberg.x64 cubicHeisenberg.x64 triangularHeisenberg.x64
+phonons_x64 : squareHeisenberg.x64 squareHeisenbergnoelastic.x64 squareHeisenbergelastic.x64 squareHeisenbergelasticclamped0.x64 squareHeisenbergelasticclamped1.x64 squareHeisenbergelasticclamped2.x64 
 
-phonons_saga : squareHeisenberg.saga cubicHeisenberg.saga triangularHeisenberg.saga
+phonons_fox : squareHeisenberg.fox squareHeisenbergnoelastic.fox squareHeisenbergelastic.fox squareHeisenbergelasticclamped0.fox squareHeisenbergelasticclamped1.fox squareHeisenbergelasticclamped2.fox 
 
-phonons_fox : squareHeisenberg.fox cubicHeisenberg.fox triangularHeisenberg.fox
+phonons_saga : squareHeisenberg.saga squareHeisenbergnoelastic.saga squareHeisenbergelastic.saga squareHeisenbergelasticclamped0.saga squareHeisenbergelasticclamped1.saga squareHeisenbergelasticclamped2.saga 
+
+
 
 CrI3_x64: CrI3iso.x64 CrI3ssym.x64 CrI3nooffd.x64 CrI3.x64
 
