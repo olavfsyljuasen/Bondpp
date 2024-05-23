@@ -88,7 +88,9 @@ class Driver
   void MakeSymmetric(VecMat<complextype,NMAT,NMAT>&);
   
   void SolveSelfConsistentEquation(NumberList Delta); 
+  void SolveSaddlePointEquations(realtype&,NumberList&);
 
+  
   void Solve(NumberList delta,NumberList thisepsilon,const bool pinfo)
   {
     Delta = delta;
@@ -501,7 +503,8 @@ realtype Driver::CalculateFreeEnergy(realtype T)
   // constants:
   //realtype betaf_constants= -( 0.5*NSUBL*log(2.*Nq) + 0.5*NSUBL*(NS-1)*log(PI));
   realtype betaf_constants = -0.5*NSUBL*log(Nq) -0.5*NSUBL*(Ns-2)*log(PI) - 0.5*NSUBL*log(TWOPI);
-    
+
+  if(TRACEFREEENERGY) cout << scientific << setprecision(6) << "T=" << T << " bf_const=" << betaf_constants;
     
   if(TRACE) cout << "betaf_constants  = " << betaf_constants << endl;
   
@@ -513,7 +516,7 @@ realtype Driver::CalculateFreeEnergy(realtype T)
   
   f += T*betaf_Tdep;
 
-
+  if(TRACEFREEENERGY) cout << " bf_Tdep=" << betaf_Tdep;
 
 #if defined PHONONS 
 
@@ -523,33 +526,37 @@ realtype Driver::CalculateFreeEnergy(realtype T)
   for(int i=0; i<NELASTIC; i++){ f_elastic += 0.5*epsilon[i]*epsilon[i]*rule.elasticeigenvalues[i];}
 
   if(TRACE) cout << "f_elastic  = " << f_elastic << endl;
+  if(TRACEFREEENERGY) cout << " f_elastic=" << f_elastic;
   f += f_elastic;
 #endif
 
-  //#if !defined(ELASTICONLY)  || !defined(OMITPHONONCONT)
-#ifndef OMITPHONONCONT
+  //  #if !defined(ELASTICONLY)  || !defined(OMITPHONONCONT)
+  #ifndef OMITPHONONCONT
 
   // the following term is subtracted from D, but added here, so as to count phonon
-  // contrubutions to the free energy where it is appropriate. Remember,
+  // contributions to the free energy where it is appropriate. Remember,
   // the Dinv in this code contains a term beta on the phonon diagonal part, also
   // when the coupling to phonons g=0. Thus in order to count this as a contribution to
   // the phonons part of the free energy, we subtract it from D and add it here.    
   realtype betaf_phononTdep = -0.5*NMODE*log(T); 
-  if(TRACE) cout << "betaf_phononTdep  = " << betaf_Tdep << endl;
+  if(TRACE) cout << "betaf_phononTdep  = " << betaf_phononTdep << endl;
+
+  if(TRACEFREEENERGY) cout << " bf_phononTdep=" << betaf_phononTdep;
   
   f += T*betaf_phononTdep;
-
 
   // constants:
   realtype betaf_phononconst = -0.5*2.*NMODE*log(TWOPI);
   if(TRACE) cout << "betaf_phononconst  = " << betaf_phononconst << endl;
-
+  if(TRACEFREEENERGY) cout << " bf_phononconst=" << betaf_phononconst;
+  
   f += T*betaf_phononconst;
 
   //the phonon spectrum
   realtype betaf_phonons = 2.*rule.GetSumLogOmegaoverV(); // 2 both X^2 and P^2
 
   if(TRACE) cout << "betaf_phonons  = " << betaf_phonons << endl;
+  if(TRACEFREEENERGY) cout << " bf_phonons=" << betaf_phonons;
   
   f += T*betaf_phonons;
 
@@ -559,30 +566,40 @@ realtype Driver::CalculateFreeEnergy(realtype T)
   
   //Must correct the Delta values for the subtraction of the minimum from SigmaE
   //  for(int i=0; i<NSUBL; i++) f += -(Delta[i]-mineigenvalue);
-  for(int i=0; i<NSUBL; i++) f += -RenormalizedDelta[i];
+  realtype f_delta(0.);
+  for(int i=0; i<NSUBL; i++) f_delta += -RenormalizedDelta[i];
 
-  if(TRACE) cout << "betaf_delta      = " << -RenormalizedDelta[0]/T << " (Delta= " << Delta[0] << " mineig: " << mineigenvalue << ") RenormalizedDelta[0]:" << RenormalizedDelta[0] << endl;
+  if(TRACE) cout << "betaf_delta      = " << f_delta/T << endl;
+  if(TRACEFREEENERGY) cout << " f_delta=" << f_delta;
+
+  f += f_delta;
   
   realtype betaf_logKinvq   = -0.5*invNq*NFAKESPINTRACE*SumLogDet(Kinvq);
 
   if(TRACE) cout << "betaf_logKinvq   =  " << betaf_logKinvq << endl;
+  if(TRACEFREEENERGY) cout << " betaf_logKinvq=" << betaf_logKinvq;
   f += T*betaf_logKinvq;
   
   ComputeDq(false,true); // excludeqzero=false, preserveinput=true not to jeopardize Keff
   
   realtype betaf_logD       = -0.5*invNq*SumLogDet(Dq);
-#ifdef PHONONS
-  betaf_logD += 0.5*NMODE*log(T);
+  if(TRACEFREEENERGY) cout << " betaf_logD1=" << betaf_logD;
+#if defined PHONONS && !defined ELASTICONLY 
+  betaf_logD += 0.5*NMODE*log(T); //  -0.5*NMODE*log(1/T) 
 #endif
   if(TRACE) cout << "betaf_logD       =  " << betaf_logD << endl;
+  if(TRACEFREEENERGY) cout << " betaf_logD2=" << betaf_logD;
+  
   f += T*betaf_logD;
 
   ComputeSelfEnergy(true); // ensure that Kinvq is the same.
 
   realtype betaf_KinvqSigma = -0.5*invNq*NFAKESPINTRACE*SumTr(Kinvq,Sigmaq);
   if(TRACE) cout << "betaf_KinvqSigma = " << betaf_KinvqSigma << endl;
+  if(TRACEFREEENERGY) cout << " betaf_KinvqSigma=" << betaf_KinvqSigma;
   f += T*betaf_KinvqSigma;
 
+  if(TRACEFREEENERGY) cout << " f=" << f << endl;
   // the correction to the saddle-point are already taken into account
   return f;
 }
@@ -1545,6 +1562,59 @@ void Driver::SetQsToZero()
 }
 
 
+void Driver::SolveSaddlePointEquations(realtype& thisT,NumberList& thisepsilon)
+{
+  if(TRACE) cout << "Starting SolveSaddlePointEquations() " << endl;
+
+  realtype myoldT(thisT);
+  NumberList myoldeps(thisepsilon);
+  
+  realtype myT=CalculateT(0);  // only valid for one sublattice here
+  NumberList myeps(thisepsilon); // initial value
+  
+#if defined PHONONS && !defined NOELASTIC
+  NumberList epsoverT=CalculateEpsilonsOverT();
+  myeps=epsoverT*myT;
+#endif
+  int counter = 0;
+  bool TooManyIter=false;
+  NumberList epsdiff = myeps - myoldeps;
+  while( (abs(myT - myoldT) > par[TOLERANCE] || maxabs(epsdiff) > par[TOLERANCE] ) && !TooManyIter)
+    {
+      myoldT   = myT;
+      myoldeps = myeps;
+      
+      epsilon = myeps; // set Kinvq using the new value of epsilon
+      ConstructKinvq(); // also subtract minimal value and renormalize Delta
+      myT=CalculateT(0);  // only valid for one sublattice here
+#if defined PHONONS && !defined NOELASTIC
+      epsoverT=CalculateEpsilonsOverT();
+      myeps=epsoverT*myT;
+#endif
+      epsdiff = myeps - myoldeps;
+      /*
+      if(counter > 10) // write log output
+	{
+	  logfile << "T and eps: " << myT << " " << myeps << endl;
+	}
+      */
+      TooManyIter = ( ++counter >= 10000);
+    }
+
+  if(counter > 100){ logfile << "used " << counter << " steps in getting saddlepoint eqs. to converge" << endl;}
+  
+  if(TooManyIter)
+    {
+      logfile << "Too many iterations in solving saddlepoint equations" << endl;
+      exit(1);
+    }
+
+  thisT = myT;
+  thisepsilon = myeps;
+  
+  if(TRACE) cout << "Finished SolveSaddlePointEquations() " << endl;
+}
+
 
 // assumes initialized Sigma and mu
 void Driver::SolveSelfConsistentEquation(NumberList Delta)
@@ -1643,6 +1713,72 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 
       if(TRACE) SanityCheck(Kinvq,"Kinvq, in iteration loop after making sigmaq");
 
+      // This is where to solve the saddlepointequations
+      //-------------------------------------------------------------
+
+      NumberList neweps(epsilon);
+      SolveSaddlePointEquations(newT,neweps);
+
+      absTdev=fabs((newT-oldT)/oldT);
+      if(absTdev > oldabsTdev)
+	{
+	  if(iter>40) nincreases++; // only increment this after 40 iterations.
+	  if(nincreases > 0)
+	    PRINTPROGRESSTICKLER=1; // monitor every step.
+	  else
+	    PRINTPROGRESSTICKLER=10;
+	}
+      oldabsTdev=absTdev;
+
+
+      if(TRACE)
+	{
+	  cout << "iteration: " << iter << " T= " << newT << " oldT=" << oldT
+	       << " dev: " << absTdev;
+#if defined PHONONS && !defined NOELASTIC
+	  cout << " epsilon= " << neweps;
+#endif
+	  cout << endl;
+	}
+      
+      // write progress to logfile
+      if(PRINTPROGRESS && iter%PRINTPROGRESSTICKLER==0)
+	{
+	  logfile.precision(9);
+	  logfile << "iteration: " << iter << " T= "; 
+	  for(int i=0; i<NSUBL; i++) logfile << Ts[i] << " ";
+	  logfile << " oldT=" << oldT << " dev: " << absTdev << " ninc: " << nincreases;
+#if defined PHONONS && !defined NOELASTIC
+	  logfile << " epsilon= " << neweps;
+#endif
+	  logfile << endl;
+	}
+      
+      if( absTdev < par[TOLERANCE]) converged=true;
+
+      //      const realtype inertia=0.5; // how much to resist changes: [0,1] 
+      const realtype inertia=0.2; // how much to resist changes: [0,1] 
+
+#if defined PHONONS && !defined NOELASTIC     
+      for(int i=0; i<NELASTIC; i++)
+	{
+	  //	  epsilon[i]= (1.-inertia)*currT*epsoverT[i]+inertia*epsilon[i];
+	  epsilon[i]= (1.-inertia)*neweps[i]+inertia*epsilon[i]; // maybe change to this
+	}
+#if defined ONEEPSILONCOMPONENTCLAMPED
+      epsilon[EPSILONCOMPONENTCLAMPED] = 0.;
+#endif
+
+#endif       
+
+      currT= (1.-inertia)*newT+inertia*oldT; 
+
+      oldT=currT;
+
+      
+      /*
+     
+
       // convergence checks
       CalculateTs(Ts); // calculate all the temperatures      
       newT=Ts[0];
@@ -1662,7 +1798,8 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 #if defined PHONONS && !defined NOELASTIC
       NumberList epsoverT=CalculateEpsilonsOverT();
 #endif
-
+      //-----------------------------------------------------------
+      
       // monitor maximum values of Kinv
       if(NSPIN>1)
 	{
@@ -1728,7 +1865,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 
       oldT=currT;
 
-
+      */
       
       if(TRACE) cout << "converged= " << converged << " TOLERANCE:" << par[TOLERANCE] << endl;
       

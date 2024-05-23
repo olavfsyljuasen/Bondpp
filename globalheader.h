@@ -166,12 +166,16 @@ ostream& operator<<(ostream& os,vector<realtype >& M)
 
 struct NumberList
 {
-NumberList(int n=0,realtype a=0.):v(n,a){}
+  NumberList(int n=0,realtype a=0.):v(n,a){}
+  //  NumberList(NumberList r):v(r.size(),0){for(unsigned int i=0; i<r.size(); i++){v[i]=r[i];}}
   friend ostream& operator<<(ostream& os,NumberList& d){for(unsigned int i=0; i<d.size(); i++){ os << d[i] << " ";} return os;}
   unsigned int size(){return v.size();}
   realtype& operator[](const int i){return v[i];}
 
-  NumberList& operator=(NumberList& r){ for(unsigned int i=0; i<r.size(); i++){v[i]=r[i];} return *this;}
+  //  NumberList& operator=(NumberList& r) { for(unsigned int i=0; i<v.size(); i++){v[i]=r[i];} return *this;}
+  NumberList& operator=(NumberList r) { for(unsigned int i=0; i<v.size(); i++){v[i]=r[i];} return *this;}
+  NumberList& operator+=(NumberList& r){ for(unsigned int i=0; i<v.size(); i++){v[i]+=r[i];} return *this;}
+  NumberList& operator*=(realtype& k)  { for(unsigned int i=0; i<v.size(); i++){v[i]*=k;} return *this;}
 private:
   vector<realtype> v;
 }; 
@@ -183,6 +187,47 @@ bool operator==(NumberList& l,NumberList& r)
   return isequal;
 }
 
+NumberList operator-(NumberList& l,NumberList& r)
+{
+  NumberList a=l;
+  for(unsigned int i=0; i<a.size(); i++){ a[i] -= r[i];}
+  return a;
+}
 
+NumberList operator+(NumberList& l,NumberList& r)
+{
+  NumberList a=l;
+  for(unsigned int i=0; i<a.size(); i++){ a[i] += r[i];}
+  return a;
+}
+
+NumberList operator*(realtype& k,NumberList& r)
+{
+  NumberList a=r;
+  for(unsigned int i=0; i<a.size(); i++){ a[i] *= k;}
+  return a;
+}
+
+NumberList operator*(NumberList& l, realtype& k)
+{
+  NumberList a=l;
+  for(unsigned int i=0; i<a.size(); i++){ a[i] *= k;}
+  return a;
+}
+
+
+realtype maxabs(NumberList& a)
+{
+  realtype maxval=abs(a[0]);
+  if(a.size() >1)
+    {
+      for(unsigned int i=1; i<a.size(); i++)
+	{
+	  realtype thisabs = abs(a[i]);
+	  if( thisabs > maxval){maxval = thisabs;}
+	}
+    }
+  return maxval;
+}
 
 #endif
