@@ -88,7 +88,7 @@ class Driver
   void MakeSymmetric(VecMat<complextype,NMAT,NMAT>&);
   
   void SolveSelfConsistentEquation(NumberList Delta); 
-  void SolveSaddlePointEquations(realtype&,NumberList&);
+  bool SolveSaddlePointEquations(realtype&,NumberList&);
 
   
   void Solve(NumberList delta,NumberList thisepsilon,const bool pinfo)
@@ -1562,7 +1562,7 @@ void Driver::SetQsToZero()
 }
 
 
-void Driver::SolveSaddlePointEquations(realtype& thisT,NumberList& thisepsilon)
+bool Driver::SolveSaddlePointEquations(realtype& thisT,NumberList& thisepsilon)
 {
   if(TRACE) cout << "Starting SolveSaddlePointEquations() " << endl;
 
@@ -1606,13 +1606,14 @@ void Driver::SolveSaddlePointEquations(realtype& thisT,NumberList& thisepsilon)
   if(TooManyIter)
     {
       logfile << "Too many iterations in solving saddlepoint equations" << endl;
-      exit(1);
+      return false;
     }
 
   thisT = myT;
   thisepsilon = myeps;
   
   if(TRACE) cout << "Finished SolveSaddlePointEquations() " << endl;
+  return true;
 }
 
 
@@ -1690,9 +1691,9 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
   bool done=false;
 
   bool reachedMAXITER=false;
-
+  bool saddlepts_ok=true; // an indicator to flag whether iterations of saddlept eqs are succesful or not.
  
-  while(!done && !reachedMAXITER)  
+  while(!done && !reachedMAXITER && saddlepts_ok)  
     {
       if(TRACE) cout << "New iteration: " << iter << endl;
       iter++;
@@ -1717,7 +1718,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
       //-------------------------------------------------------------
 
       NumberList neweps(epsilon);
-      SolveSaddlePointEquations(newT,neweps);
+      saddlepts_ok=SolveSaddlePointEquations(newT,neweps); // return true if converged, false if not
 
       absTdev=fabs((newT-oldT)/oldT);
       if(absTdev > oldabsTdev)
