@@ -1575,6 +1575,9 @@ bool Driver::SolveSaddlePointEquations(realtype& thisT,NumberList& thisepsilon)
 #if defined PHONONS && !defined NOELASTIC
   NumberList epsoverT=CalculateEpsilonsOverT();
   myeps=epsoverT*myT;
+#if defined ONEEPSILONCOMPONENTCLAMPED
+      myeps[EPSILONCOMPONENTCLAMPED] = 0.;
+#endif
 #endif
   int counter = 0;
   bool TooManyIter=false;
@@ -1590,6 +1593,9 @@ bool Driver::SolveSaddlePointEquations(realtype& thisT,NumberList& thisepsilon)
 #if defined PHONONS && !defined NOELASTIC
       epsoverT=CalculateEpsilonsOverT();
       myeps=epsoverT*myT;
+#if defined ONEEPSILONCOMPONENTCLAMPED
+      myeps[EPSILONCOMPONENTCLAMPED] = 0.;
+#endif
 #endif
       epsdiff = myeps - myoldeps;
       /*
