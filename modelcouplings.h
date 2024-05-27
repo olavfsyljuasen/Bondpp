@@ -54,6 +54,9 @@ vector<Triplet> clist{{ 1,  0,  0 }, {-1,  0,  0 }, { 0,  1,  0 }, { 0, -1,  0 }
 #endif  // NBRRANGE
 
 
+
+
+
 vector<Coord> roffset={Coord(0,0,0)};
 vector<double> invsqrtmasses={1.};
 
