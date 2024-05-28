@@ -734,8 +734,9 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 #endif  
     
   for(int m1=0; m1<NSUBL; m1++) // m1 must be 0 here because phonons NSUBL=1
-    for(int c=0; c<NC; c++)
+    for(unsigned int cc=0; cc<nonzeroclist.size(); cc++)
       {
+	int c = nonzeroclist[cc]; // loop thru only c values for which gc is non-zero
 	for(int r=0; r<Nq; r++)
 	  {
 	    SMatrix<complextype,NMAT,NMAT> my;
@@ -786,9 +787,12 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
   // finally the phonon-phonon part
 #ifdef CPOSITIVE
   /*
-    for(int c2=0; c2<NC; c2++)
-      for(int c4=0; c4<NC; c4++)
+    for(unsigned int cc2=0; cc2< nonzeroclist.size(); cc2++)
+      for(unsigned int cc4=0; cc4< nonzeroclist.size(); cc4++)
 	{	    
+	  int c2 = nonzeroclist[cc2];
+	  int c4 = nonzeroclist[cc4];
+
 	  if(TRACE2)
 	    cout << "EXPERIMENTAL code: c2=" << c2 << " c4=" << c4 << endl;
 	  
@@ -901,9 +905,12 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 	    }
 
   */
-    for(int c2=0; c2<NC; c2++)
-      for(int c4=0; c4<NC; c4++)
-	{	    
+  for(unsigned int cc2=0; cc2<nonzeroclist.size(); cc2++)
+    for(unsigned int cc4=0; cc4<nonzeroclist.size(); cc4++)
+      {
+	int c2 = nonzeroclist[cc2];
+	int c4 = nonzeroclist[cc4];
+	
 	  if(TRACE2)
 	    cout << "c2=" << c2 << " c4=" << c4 << endl;
 
@@ -1015,10 +1022,13 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 	      cout << "C: Dinvq[4]=" << Dinvq.qcomp(4) << endl;
 	    }
 	}
-#else  
-  for(int c2=0; c2<NC; c2++)
-    for(int c4=0; c4<NC; c4++)
-      {	    
+#else
+  for(unsigned int cc2=0; cc2<nonzeroclist.size(); cc2++)
+    for(unsigned int cc4=0; cc4<nonzeroclist.size(); cc4++)
+      {
+	int c2 = nonzeroclist[cc2];
+	int c4 = nonzeroclist[cc4];
+
 	Triplet myivec=clist[c2]+clist[c4];
 	
 	for(int i=0; i<Nq; i++)
@@ -1177,8 +1187,9 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 
 #ifdef CPOSITIVE
 	// Term 2
-	for(int c=0; c<NC; c++)
+	for(unsigned int cc=0; cc<nonzeroclist.size(); cc++)
 	  {
+	    int c=nonzeroclist[cc];
  	    for(int q=0; q<Nq; q++)
 	      {
 		F1[q]=0;
@@ -1215,8 +1226,9 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 	  }
 
 	// Term 3 (as term 2, but switch alpha and delta and take complex conj)
-	for(int c=0; c<NC; c++)
+	for(unsigned int cc=0; cc<nonzeroclist.size(); cc++)
 	  {
+	    int c=nonzeroclist[cc];
  	    for(int q=0; q<Nq; q++)
 	      {
 		F1[q]=0;
@@ -1253,9 +1265,12 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 	  }
 
 	// Term4:
-	for(int c1=0; c1<NC; c1++)
-	  for(int c2=0; c2<NC; c2++)
+	for(unsigned int cc1=0; cc1<nonzeroclist.size(); cc1++)
+	  for(unsigned int cc2=0; cc2<nonzeroclist.size(); cc2++)
 	    {
+	      int c1 = nonzeroclist[cc1];
+	      int c2 = nonzeroclist[cc2];
+	      
 	      for(int q=0; q<Nq; q++)
 		{
 		  F1[q]=0;
@@ -1330,8 +1345,10 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 	    }
 #else	
 	// Term 2
-	for(int c=0; c<NC; c++)
+	for(unsigned int cc=0; cc< nonzeroclist.size(); cc++)
 	  {
+	    int c = nonzeroclist[cc];
+	    
  	    for(int q=0; q<Nq; q++)
 	      {
 		F1[q]=0;
@@ -1355,8 +1372,9 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 	  }
 
 	// Term 3 (as term 2, but switch alpha and delta and take complex conj)
-	for(int c=0; c<NC; c++)
+	for(unsigned int cc=0; cc<nonzeroclist.size(); cc++)
 	  {
+	    int c = nonzeroclist[cc];
  	    for(int q=0; q<Nq; q++)
 	      {
 		F1[q]=0;
@@ -1377,9 +1395,12 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 	  }
 	
 	// Term 4:	
-	for(int c1=0; c1<NC; c1++)
-	  for(int c2=0; c2<NC; c2++)
+	for(unsigned int cc1=0; cc1 < nonzeroclist.size(); cc1++)
+	  for(unsigned int cc2=0; cc2 < nonzeroclist.size(); cc2++)
 	    {
+	      int c1 = nonzeroclist[cc1];
+	      int c2 = nonzeroclist[cc2];
+	      
 	      for(int q=0; q<Nq; q++)
 		{
 		  F1[q]=0;

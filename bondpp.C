@@ -174,7 +174,11 @@ int main()
   
   logfile << "Starting calculation " << endl;
 
+
+
   Simulation sim;
+
+  logfile << "# of nonzero gc's= " << nonzeroclist.size() << endl;
   sim.Run();
 
             
