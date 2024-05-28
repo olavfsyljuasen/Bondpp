@@ -1879,7 +1879,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
       
       if(converged && pconverged){ done=true; continue;} // two iterations must fulfill conv. crit.
 
-      if(nincreases > 4){ done =true; logfile << "Too many nincr=" << nincreases << ", Not converging, exiting" << endl; continue;} // to many increases in Tdiff, so exiting without converging.
+      if(nincreases > MAXNINCREASES){ done =true; logfile << "Too many nincr=" << nincreases << ", Not converging, exiting" << endl; continue;} // to many increases in Tdiff, so exiting without converging.
 
 
       reachedMAXITER=(iter >= MaxIterMultiplier*par[MAXITER]);

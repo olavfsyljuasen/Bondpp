@@ -90,6 +90,7 @@ const bool PRINTRPTS=false;
 const bool PRINTQPTS=false;
 #endif
 
+const int MAXNINCREASES = 10000; // used to be very small = 5.
 
 const bool PRINTNORMALMODES=true;
 const bool PRINTPHONONENERGIES=true;
