@@ -688,7 +688,7 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
   // Initialize Dinvq:
   Dinvq.SetToZero();
 
-  // first compute the constraint block
+  // first compute the constraint block (this implementation is valid also for NSUBL >1)
 
   complextype tmp(0);
   
@@ -767,7 +767,8 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
     for(int m1=0; m1<NSUBL; m1++)
       for(int m2=NSUBL; m2<NDMAT; m2++)
 	{
-	  Dinvq(la.GetInversionIndx(qi),m2,m1)=Dinvq(qi,m1,m2);
+	  //	  Dinvq(la.GetInversionIndx(qi),m2,m1)=Dinvq(qi,m1,m2);
+	  Dinvq(qi,m2,m1)=-conj(Dinvq(qi,m1,m2));  // should be the same as the above, but probably faster, changed from v1.67
 	}
 
   if(TRACE2)
