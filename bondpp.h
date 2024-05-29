@@ -1953,6 +1953,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 	logfile << "reached MAXITER=" << par[MAXITER] << " iterations without converging, increase MAXITER!" << endl;
       else
 	logfile << "no uniform convergence of iterations, exiting!" << endl;
+      SigmaInitialized = false;
     }
   else
     {      
