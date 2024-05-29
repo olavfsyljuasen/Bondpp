@@ -98,7 +98,8 @@ class Driver
 
     
 #if defined PHONONS && !defined NOELASTIC
-    if( USEPREVIOUSEPSILONS && converged && EpsilonInitialized)
+    //    if( USEPREVIOUSEPSILONS && converged && EpsilonInitialized)
+    if( USEPREVIOUSEPSILONS && EpsilonInitialized)
       {
 	// use the old epsilons if previous step converged, do not do anything
 	logfile << "Use previous converged epsilons" << endl;
@@ -1653,7 +1654,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 #ifdef RANDOMINITIALIZATION
   MakeRandomSigma();
 #elif defined USELASTSIGMA
-  if(!SigmaInitialized){MakeRandomSigma(); SigmaInitialized=true; MaxIterMultiplier=100;} // MaxIterMultiplier>1 allow for more iterations to find a solution
+  if(!SigmaInitialized){MakeRandomSigma(); SigmaInitialized=true; MaxIterMultiplier=ITERMULTIPLIER;} // MaxIterMultiplier>1 allow for more iterations to find a solution
   else{MaxIterMultiplier=1;} 
 #else
   rule.InitializeSigma(Sigmaq); // Get initial values of Sigmaq

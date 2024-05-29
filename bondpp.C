@@ -90,7 +90,8 @@ const bool PRINTRPTS=false;
 const bool PRINTQPTS=false;
 #endif
 
-const int MAXNINCREASES = 20; // used to be very small = 5.
+const int MAXNINCREASES = 10; // used to be very small = 5.
+const int ITERMULTIPLIER = 10; // used to increase the number of iterations if convergence fails.
 
 const bool PRINTNORMALMODES=true;
 const bool PRINTPHONONENERGIES=true;
