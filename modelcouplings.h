@@ -164,11 +164,43 @@ void Couplings::Initializeg()
 
 #elif defined TRIANGULARPHONONS
 
+#if NBRRANGE==1
+
+#ifdef CPOSITIVE
+const auto NC=3;
+const auto NN=3;
+const auto NNN=3;
+vector<Triplet> clist{{ 1,  0,  0 }, { 0,  1,  0 }, {-1, 1,  0 }};
+#else
+const auto NC=6;
+const auto NN=6;
+const auto NNN=6;
+ vector<Triplet> clist{{ 1,  0,  0 }, {-1, 0, 0},{ 0,  1,  0 }, {0, -1, 0}, {-1, 1,  0 },{ 1,-1, 0}};
+#endif //CPOSITIVE
+
+#elif NBRRANGE==2
+
+#ifdef CPOSITIVE
+const auto NC=6;
+const auto NN=3;
+const auto NNN=6;
+vector<Triplet> clist{{ 1,  0,  0 }, { 0,  1,  0 }, {-1, 1,  0 }, { 1,  1,  0 }, { -1, 2, 0}, { -2, 1, 0}, { 2, 0, 0}, { 0, 2, 0}, { -2, 2, 0}};
+#else
+const auto NC=12;
+const auto NN=6;
+const auto NNN=12;
+vector<Triplet> clist{
+{ 1,  0,  0 }, {-1,  0, 0 }, { 0, 1, 0 }, { 0, -1, 0 }, { -1, 1, 0 }, { 1, -1, 0 }, 
+{ 1,  1,  0 }, {-1, -1, 0 }, {-1, 2, 0 }, { 1, -2, 0 }, { -2, 1, 0 }, { 2, -1, 0 }};
+#endif //CPOSITIVE
+
+#elif NBRRANGE==3
+
 #ifdef CPOSITIVE
 const auto NC=9;
 const auto NN=3;
 const auto NNN=6;
-vector<Triplet> clist{{ 1,  0,  0 }, { 0,  1,  0 }, {-1, 1,  0 }, { 1,  1,  0 }, { -1, 2, 0}, { -2, 1, 0}, { 2, 0, 0}, { 0, 2, 0}, { -2, 2, 0}};
+ vector<Triplet> clist{{ 1,  0,  0 }, { 0,  1,  0 }, {-1, 1,  0 }, { 1,  1,  0 }, { -1, 2, 0}, { -2, 1, 0}, { 2, 0, 0}, { 0, 2, 0}, { -2, 2, 0}};
 #else
 const auto NC=18;
 const auto NN=6;
@@ -178,6 +210,8 @@ vector<Triplet> clist{
 { 1,  1,  0 }, {-1, -1, 0 }, {-1, 2, 0 }, { 1, -2, 0 }, { -2, 1, 0 }, { 2, -1, 0 }, 
 { 2,  0,  0 }, {-2,  0, 0 }, { 0, 2, 0 }, { 0, -2, 0 }, { -2, 2, 0 }, { 2, -2, 0 }};
 #endif // CPOSITIVE
+
+#endif // NBRRANGE
 vector<Coord> roffset={Coord(0,0,0)};
 vector<double> invsqrtmasses={1.};
 
@@ -246,6 +280,12 @@ void Couplings::Initializeg()
     {
       g(c,mindx(SX,0),mindx(SX,0)) = par[g2X]/norm(clist[c]); // use g = dJ/dr;
       if( g(c,mindx(SX,0),mindx(SX,0)) != 0.){ nonzeroclist.push_back(c);} // make a list of non-zero c's to loop around
+    }
+
+  for(int c=NNN; c<NC; c++)
+    {
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g3X]/norm(clist[c]); // use g = dJ/dr;
+      if( g(c,mindx(SX,0),mindx(SX,0)) != 0.){ nonzeroclist.push_back(c);} // make a list of non-zero c's to loop around
     } 
 #else  
   for(int c=0; c<NN; c++)
@@ -261,6 +301,14 @@ void Couplings::Initializeg()
       g(c,mindx(SX,0),mindx(SX,0)) = par[g2X]/norm(clist[c]); // use g = dJ/dr;
       g(c,mindx(SY,0),mindx(SY,0)) = par[g2Y]/norm(clist[c]); // use g = dJ/dr;
       g(c,mindx(SZ,0),mindx(SZ,0)) = par[g2Z]/norm(clist[c]); // use g = dJ/dr;
+      if( g(c,mindx(SX,0),mindx(SX,0)) != 0. || g(c,mindx(SY,0),mindx(SY,0) != 0. || g(c,mindx(SZ,0),mindx(SZ,0) != 0. ){ nonzeroclist.push_back(c);} 
+    }
+
+    for(int c=NNN; c<NC; c++)
+    {
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g3X]/norm(clist[c]); // use g = dJ/dr;
+      g(c,mindx(SY,0),mindx(SY,0)) = par[g3Y]/norm(clist[c]); // use g = dJ/dr;
+      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g3Z]/norm(clist[c]); // use g = dJ/dr;
       if( g(c,mindx(SX,0),mindx(SX,0)) != 0. || g(c,mindx(SY,0),mindx(SY,0) != 0. || g(c,mindx(SZ,0),mindx(SZ,0) != 0. ){ nonzeroclist.push_back(c);} 
     }
 #endif //FAKEHEISENBERG 
