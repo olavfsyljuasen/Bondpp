@@ -366,7 +366,8 @@ NumberList Driver::CalculateEpsilonsOverT()
 	      tmp *= (*rule.gelptrs[i])[qi];
 	      sum += NFAKESPINTRACE*real(tr(tmp));
 	    }
-	  sum *= -1./(2.*mui*Nq*la.UnitCellVolume());
+	  //	  sum *= -1./(2.*mui*Nq*la.UnitCellVolume());
+	  sum *= -1./(2.*mui*Nq); // define elastic moduli tensor per site instead of per unit volume, then no UnitCellVolume is necessary.
 	}
       epsoverT[i]= sum;
     }

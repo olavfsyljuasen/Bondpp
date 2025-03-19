@@ -262,7 +262,8 @@ Phonons::Phonons(): Nq(la.NqSites()),omega(Nq),normalmode(NSUBL),sumlogomegaover
 
   for(int s=0; s<Nsprings; s++)
     {
-      realtype c=couplings[s]/la.UnitCellVolume();
+      //      realtype c=couplings[s]/la.UnitCellVolume();
+      realtype c=couplings[s];  // define the elastic moduli tensor (matrix) per site, and not per unit area
       Coord  sp=la.rPos(springs[s]);
       realtype n2=sp.Norm()*sp.Norm();
       
