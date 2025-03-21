@@ -2313,7 +2313,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 	    outfile_a.close();
 	    
 	    ss.str("");
-	    ss << NAMESOFSPINOBSERVABLES[j] << ".abs.dat";
+	    ss << NAMESOFSPINOBSERVABLES[j] << "1.dat";
 	    
 	    ofstream outfile_b(ss.str().c_str(),ios::app);
 	    outfile_b << setprecision(16) << newT << " "
@@ -2321,7 +2321,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 	    outfile_b.close();
 	    
 	    ss.str("");
-	    ss << NAMESOFSPINOBSERVABLES[j] << ".norm.dat";
+	    ss << NAMESOFSPINOBSERVABLES[j] << "2.dat";
 	    
 	    ofstream outfile_c(ss.str().c_str(),ios::app);
 	    outfile_c << setprecision(16) << newT << " "
