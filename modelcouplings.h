@@ -125,7 +125,7 @@ void Couplings::InitializeJ()
 #endif // FAKEHEISENBERG 
 }
 
-#ifdef PHONONS
+#ifdef LATTICEDISTORTIONS
 void Couplings::Initializeg()
 {
 #ifdef FAKEHEISENBERG
@@ -159,7 +159,7 @@ void Couplings::Initializeg()
     }
 #endif  // FAKEHEISENBERG
 }
-#endif //PHONONS
+#endif //LATTICEDISTORTIONS
 
 
 #elif defined TRIANGULARPHONONS
@@ -264,7 +264,7 @@ void Couplings::InitializeJ()
 #endif //FAKEHEISENBERG
 }
 
-#ifdef PHONONS
+#ifdef LATTICEDISTORTIONS
 void Couplings::Initializeg()
 {
 #ifdef FAKEHEISENBERG
@@ -313,7 +313,7 @@ void Couplings::Initializeg()
     }
 #endif //FAKEHEISENBERG 
 }
-#endif //PHONONS
+#endif //LATTICEDISTORTIONS
 
 
 #elif defined CUBICPHONONS
@@ -368,7 +368,7 @@ void Couplings::InitializeJ()
 #endif //FAKEHEISENBERG
 }
 
-#ifdef PHONONS
+#ifdef LATTICEDISTORTIONS
 void Couplings::Initializeg()
 {
 #ifdef FAKEHEISENBERG
@@ -401,7 +401,7 @@ void Couplings::Initializeg()
     }
 #endif //FAKEHEISENBERG
 }
-#endif //PHONONS
+#endif //LATTICEDISTORTIONS
 
 #elif defined FCCPHONONS
 
@@ -456,7 +456,7 @@ void Couplings::InitializeJ()
 #endif //FAKEHEISENBERG 
 }
 
-#ifdef PHONONS
+#ifdef LATTICEDISTORTIONS
 void Couplings::Initializeg()
 {
 #ifdef FAKEHEISENBERG
@@ -489,7 +489,7 @@ void Couplings::Initializeg()
     }
 #endif  //FAKEHEISENBERG
 }
-#endif //PHONONS
+#endif //LATTICEDISTORTIONS
 
 #elif defined BCCPHONONS
 
@@ -544,7 +544,7 @@ void Couplings::InitializeJ()
 #endif  //FAKEHEISENBERG
 }
 
-#ifdef PHONONS
+#ifdef LATTICEDISTORTIONS
 void Couplings::Initializeg()
 {
 #ifdef FAKEHEISENBERG
@@ -577,7 +577,7 @@ void Couplings::Initializeg()
     }
 #endif  //FAKEHEISENBERG
 }
-#endif //PHONONS
+#endif //LATTICEDISTORTIONS
 
 
 #elif defined CrI3

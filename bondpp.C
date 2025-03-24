@@ -144,7 +144,7 @@ BravaisLattice la(par); // declare lattice globally
 
 
 
-#ifdef PHONONS
+#ifdef LATTICEDISTORTIONS
 #include "phonons.h" // must set the springs, modify for different phonons
 #endif
 

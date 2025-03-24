@@ -25,7 +25,7 @@ class Rule
   Rule(Couplings&);
   ~Rule()
     {
-#ifdef PHONONS
+#ifdef LATTICEDISTORTIONS
       for(unsigned int i=0; i<gelptrs.size(); i++){ delete gelptrs[i];}
 #endif
     }
@@ -40,7 +40,7 @@ class Rule
   void InitializeObservables(){};
   
   void InitializeJ();
-#ifdef PHONONS
+#ifdef LATTICEDISTORTIONS
   //  void Initializeg();
   
   void InitializeElasticMode(int i,VecMat<complextype,NMAT,NMAT>& gel);
@@ -64,7 +64,7 @@ class Rule
 
   VecMat<complextype,NMAT,NMAT> Jq;
 
-#ifdef PHONONS
+#ifdef LATTICEDISTORTIONS
   Phonons phonons;
   VecMat<complextype,NMAT,NMAT>& g; // defined in couplings.h
 
@@ -87,7 +87,7 @@ class Rule
 
 
 Rule::Rule(Couplings& realspacecouplings):Jr(realspacecouplings.J),Nq(la.NqSites()),irrep(NOBSERVABLES,vector<obstype>(Nq)), Jq(Nq)
-#ifdef PHONONS
+#ifdef LATTICEDISTORTIONS
   ,phonons()
   ,g(realspacecouplings.g)
   ,gelptrs(NELASTIC)
@@ -96,7 +96,7 @@ Rule::Rule(Couplings& realspacecouplings):Jr(realspacecouplings.J),Nq(la.NqSites
   InitializeObservables();
   if(TRACE) cout << "Initializing Rule " << endl; 
 
-#ifdef PHONONS
+#ifdef LATTICEDISTORTIONS
 
   for(int i=0; i<NELASTIC; i++)
     {
@@ -149,7 +149,7 @@ void Rule::InitializeJq()
 
 
 
-#ifdef PHONONS
+#ifdef LATTICEDISTORTIONS
 
 // called with eps={1,-1,0,0,0,0} gives xx-yy, etc.
 

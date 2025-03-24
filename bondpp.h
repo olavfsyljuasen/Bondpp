@@ -8,7 +8,7 @@
 #include<algorithm>
 #include<sstream>
 
-#if defined PHONONS && !defined ELASTICONLY 
+#if defined LATTICEDISTORTIONS && defined PHONONS 
 const auto NDMAT=NSUBL+NMODE;
 #else
 const auto NDMAT=NSUBL;
@@ -64,7 +64,7 @@ class Driver
   void CalculateTs(vector<realtype>&);
 
 
-#if defined PHONONS && !defined NOELASTIC
+#if defined LATTICEDISTORTIONS && defined ELASTIC
   NumberList CalculateEpsilonsOverT();
 #endif
 
@@ -97,7 +97,7 @@ class Driver
     RenormalizedDelta = delta; //  just as starting value
 
     
-#if defined PHONONS && !defined NOELASTIC
+#if defined LATTICEDISTORTIONS && defined ELASTIC
     //    if( USEPREVIOUSEPSILONS && converged && EpsilonInitialized)
     if( USEPREVIOUSEPSILONS && EpsilonInitialized)
       {
@@ -202,7 +202,7 @@ class Driver
   VecMat<complextype,NDMAT,NDMAT>& Dinvq;  // points to the B array
   VecMat<complextype,NDMAT,NDMAT>& Dr;     // points to the B array
 
-#ifdef PHONONS
+#ifdef LATTICEDISTORTIONS
   VecMat<complextype,NC,NMODE>& f; // holds the vertex information
   VecMat<complextype,NMAT,NMAT>& g; // points to rule
   
@@ -225,7 +225,7 @@ Driver::Driver(Rule& r):rule(r),dim(la.D()),dims(la.SiteqDims()),Nq(la.NqSites()
   Kq(A1),
   Kinvq(A1),Kinvr(A1r),Sigmar(A2r),Sigmaq(A2),
   Dq(B),Dinvq(B),Dr(Br)
-#ifdef PHONONS
+#ifdef LATTICEDISTORTIONS
   ,f(r.Getf()),g(r.g)
   ,epsilon(NELASTIC)
 #else
@@ -347,7 +347,7 @@ void Driver::CalculateTs(vector<realtype>& Ts)
 }
 
 
-#if defined PHONONS && !defined NOELASTIC
+#if defined LATTICEDISTORTIONS && defined ELASTIC
 NumberList Driver::CalculateEpsilonsOverT()
 {
   if(TRACE) cout << "Starting CalculateEpsilonsOverT" << endl;
@@ -520,9 +520,10 @@ realtype Driver::CalculateFreeEnergy(realtype T)
 
   if(TRACEFREEENERGY) cout << " bf_Tdep=" << betaf_Tdep;
 
-#if defined PHONONS 
+#if defined LATTICEDISTORTIONS
 
-#if !(defined OMITELASTICCONT || defined NOELASTIC)
+#if defined ELASTIC
+  //#if !(defined OMITELASTICCONT || defined NOELASTIC)
   //elastic modes  
   realtype f_elastic = 0;
   for(int i=0; i<NELASTIC; i++){ f_elastic += 0.5*epsilon[i]*epsilon[i]*rule.elasticeigenvalues[i];}
@@ -533,8 +534,8 @@ realtype Driver::CalculateFreeEnergy(realtype T)
 #endif
 
   //  #if !defined(ELASTICONLY)  || !defined(OMITPHONONCONT)
-  #ifndef OMITPHONONCONT
-
+#ifndef OMITPHONONCONT
+  
   // the following term is subtracted from D, but added here, so as to count phonon
   // contributions to the free energy where it is appropriate. Remember,
   // the Dinv in this code contains a term beta on the phonon diagonal part, also
@@ -586,7 +587,8 @@ realtype Driver::CalculateFreeEnergy(realtype T)
   
   realtype betaf_logD       = -0.5*invNq*SumLogDet(Dq);
   if(TRACEFREEENERGY) cout << " betaf_logD1=" << betaf_logD;
-#if defined PHONONS && !defined ELASTICONLY 
+  //#if defined LATTICEDISTORTIONS && !defined ELASTICONLY
+#if defined LATTICEDISTORTIONS && defined PHONONS 
   betaf_logD += 0.5*NMODE*log(T); //  -0.5*NMODE*log(1/T) 
 #endif
   if(TRACE) cout << "betaf_logD       =  " << betaf_logD << endl;
@@ -669,7 +671,7 @@ realtype Driver::CalculateFreeEnergy(realtype T)
 // This means that using FFTW for transforming q->r->q, one should divide the result by Nq. 
 void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=false)
 {
-#ifdef PHONONS
+#ifdef LATTICEDISTORTIONS
   if(NSUBL !=1){ cout << "Error:ComputeDq is not implemented for NSUBL !=1, exiting." << endl; exit(1);}
 #endif
 
@@ -727,7 +729,7 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
       cout << Dinvq << endl;
     }
 
-#if defined PHONONS && !defined ELASTICONLY
+#if defined LATTICEDISTORTIONS && defined PHONONS
   // the offdiagonal phonon-constraint part
 #ifdef CPOSITIVE
   realtype multiplier=2.;
@@ -1183,8 +1185,8 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 	//cout << Sigmaq << endl;
 
 	
-#if defined PHONONS && !defined ELASTICONLY
-	if(NSUBL != 1){cout << "Error: PHONONS are not implemented for NSUBL!=1, exiting" << endl; exit(1);}
+#if defined LATTICEDISTORTIONS && defined PHONONS
+	if(NSUBL != 1){cout << "Error: LATTICEDISTORTIONS are not implemented for NSUBL!=1, exiting" << endl; exit(1);}
 
 
 #ifdef CPOSITIVE
@@ -1475,7 +1477,7 @@ void Driver::ConstructKinvq()
   if(TRACE){SanityCheck(Kq,"Kq, after adding Sigmaq");}
 
   
-#if defined PHONONS && !defined NOELASTIC
+#if defined LATTICEDISTORTIONS && defined ELASTIC
   if(TRACE) cout << "Adding elastic modes " << endl;
   for(int j=0; j<NELASTIC; j++)
     {
@@ -1596,7 +1598,7 @@ bool Driver::SolveSaddlePointEquations(realtype& thisT,NumberList& thisepsilon)
   realtype myT=CalculateT(0);  // only valid for one sublattice here
   NumberList myeps(thisepsilon); // initial value
   
-#if defined PHONONS && !defined NOELASTIC
+#if defined LATTICEDISTORTIONS && defined ELASTIC
   NumberList epsoverT=CalculateEpsilonsOverT();
   myeps=epsoverT*myT;
 #if defined ONEEPSILONCOMPONENTCLAMPED
@@ -1614,7 +1616,7 @@ bool Driver::SolveSaddlePointEquations(realtype& thisT,NumberList& thisepsilon)
       epsilon = myeps; // set Kinvq using the new value of epsilon
       ConstructKinvq(); // also subtract minimal value and renormalize Delta
       myT=CalculateT(0);  // only valid for one sublattice here
-#if defined PHONONS && !defined NOELASTIC
+#if defined LATTICEDISTORTIONS && defined ELASTIC
       epsoverT=CalculateEpsilonsOverT();
       myeps=epsoverT*myT;
 #if defined ONEEPSILONCOMPONENTCLAMPED
@@ -1766,7 +1768,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 	{
 	  cout << "iteration: " << iter << " T= " << newT << " oldT=" << oldT
 	       << " dev: " << absTdev;
-#if defined PHONONS && !defined NOELASTIC
+#if defined LATTICEDISTORTIONS && defined ELASTIC
 	  cout << " epsilon= " << neweps;
 #endif
 	  cout << endl;
@@ -1779,7 +1781,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 	  logfile << "iteration: " << iter << " T= "; 
 	  for(int i=0; i<NSUBL; i++) logfile << Ts[i] << " ";
 	  logfile << " oldT=" << oldT << " dev: " << absTdev << " ninc: " << nincreases;
-#if defined PHONONS && !defined NOELASTIC
+#if defined LATTICEDISTORTIONS && defined ELASTIC
 	  logfile << " epsilon= " << neweps;
 #endif
 	  logfile << endl;
@@ -1790,7 +1792,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
       //      const realtype inertia=0.5; // how much to resist changes: [0,1] 
       const realtype inertia=0.2; // how much to resist changes: [0,1] 
 
-#if defined PHONONS && !defined NOELASTIC     
+#if defined LATTICEDISTORTIONS && defined ELASTIC     
       for(int i=0; i<NELASTIC; i++)
 	{
 	  //	  epsilon[i]= (1.-inertia)*currT*epsoverT[i]+inertia*epsilon[i];
@@ -1826,7 +1828,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
       oldabsTdev=absTdev;
 
             
-#if defined PHONONS && !defined NOELASTIC
+#if defined LATTICEDISTORTIONS && defined ELASTIC
       NumberList epsoverT=CalculateEpsilonsOverT();
 #endif
       //-----------------------------------------------------------
@@ -1856,7 +1858,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 	{
 	  cout << "iteration: " << iter << " T= " << newT << " oldT=" << oldT
 	       << " dev: " << absTdev;
-#if defined PHONONS && !defined NOELASTIC
+#if defined LATTICEDISTORTIONS && defined ELASTIC
 	  cout << " epsilon/T= " << epsoverT;
 #endif
 	  cout << endl;
@@ -1869,7 +1871,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 	  logfile << "iteration: " << iter << " T= "; 
 	  for(int i=0; i<NSUBL; i++) logfile << Ts[i] << " ";
 	  logfile << " oldT=" << oldT << " dev: " << absTdev << " ninc: " << nincreases;
-#if defined PHONONS && !defined NOELASTIC
+#if defined LATTICEDISTORTIONS && defined ELASTIC
 	  logfile << " epsilon/T= " << epsoverT;
 #endif
 	  logfile << endl;
@@ -1880,7 +1882,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
       //      const realtype inertia=0.5; // how much to resist changes: [0,1] 
       const realtype inertia=0.2; // how much to resist changes: [0,1] 
 
-#if defined PHONONS && !defined NOELASTIC     
+#if defined LATTICEDISTORTIONS && defined ELASTIC     
       for(int i=0; i<NELASTIC; i++)
 	{
 	  //	  epsilon[i]= (1.-inertia)*currT*epsoverT[i]+inertia*epsilon[i];
@@ -1921,7 +1923,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
   streamsize ss=logfile.precision();
   logfile.precision(17);
   for(int i=0; i<NSUBL; i++){logfile << Ts[i] << " ";}
-#if defined PHONONS && !defined NOELASTIC
+#if defined LATTICEDISTORTIONS && defined ELASTIC
   logfile << " epsilon: " << epsilon;
 #endif
   logfile << " converged: " << (converged ? "true": "false") << endl;
@@ -2379,7 +2381,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 	  outfile_b.close();
 	}
 
-#if defined PHONONS && !defined ELASTICONLY
+#if defined LATTICEDISTORTIONS && defined PHONONS
       if( lineid % PRINTPHONONSPECTRUMTICKLER == 0 && PRINTPHONONSPECTRUM)
 	{
 	  MatrixInverse(Dq); // B=Dinvq
@@ -2388,7 +2390,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 	}
 #endif
       
-#if defined PHONONS && !defined NOELASTIC
+#if defined LATTICEDISTORTIONS && defined ELASTIC
       for(int i=0; i<NELASTIC; i++)
 	{
 	  stringstream ss;

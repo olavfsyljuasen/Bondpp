@@ -9,18 +9,18 @@ class Couplings
   double* par;
   const int nc;
   void InitializeJ();
-#ifdef PHONONS
+#ifdef LATTICEDISTORTIONS
   void Initializeg();
 #endif
  public:
   VecMat<complextype ,NMAT,NMAT> J;
-#ifdef PHONONS
+#ifdef LATTICEDISTORTIONS
   VecMat<complextype ,NMAT,NMAT> g;
 #endif
 };
 
 Couplings::Couplings(double* in_par,const int in_nc):par(in_par),nc(in_nc),J(in_nc)
-#ifdef PHONONS
+#ifdef LATTICEDISTORTIONS
 ,g(in_nc)
 #endif
 {
@@ -33,7 +33,7 @@ Couplings::Couplings(double* in_par,const int in_nc):par(in_par),nc(in_nc),J(in_
 	cout << "i=" << i << "\n" << J[i] << endl;
     }
 
-#ifdef PHONONS
+#ifdef LATTICEDISTORTIONS
   if(TRACE){cout << "Initializing g" << endl;}
   Initializeg();
   if(TRACE)
