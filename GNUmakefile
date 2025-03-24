@@ -57,9 +57,9 @@ square_saga : square.saga squareiso.saga squarenooffd.saga
 squareXY_x64 : squareXY.x64 squareXYiso.x64 squareXYnooffd.x64
 squareXY_saga : squareXY.saga squareXYiso.saga squareXYnooffd.saga
 
-triangular_fox:		triangularHeisenberg.fox triangularHeisenbergelasticonly.fox triangularHeisenbergnoelastic.fox triangularHeisenberg_print.fox
-triangular_x64:		triangularHeisenberg.x64 triangularHeisenbergelasticonly.x64 triangularHeisenbergnoelastic.x64 triangularHeisenberg_print.x64
-triangular_saga:	triangularHeisenberg.saga triangularHeisenbergelasticonly.saga triangularHeisenbergnoelastic.saga triangularHeisenberg_print.saga
+triangular_fox:		triangularHeisenberg.fox triangularHeisenbergelasticonly.fox triangularHeisenbergphononsonly.fox triangularHeisenberg_print.fox
+triangular_x64:		triangularHeisenberg.x64 triangularHeisenbergelasticonly.x64 triangularHeisenbergphononsonly.x64 triangularHeisenberg_print.x64
+triangular_saga:	triangularHeisenberg.saga triangularHeisenbergelasticonly.saga triangularHeisenbergphononsonly.saga triangularHeisenberg_print.saga
 
 
 
