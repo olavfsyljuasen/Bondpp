@@ -114,11 +114,11 @@ class Driver
 
   void MakeSymmetric(VecMat<complextype,NMAT,NMAT>&);
   
-  void SolveSelfConsistentEquation(NumberList Delta); 
+  bool SolveSelfConsistentEquation(NumberList Delta); 
   bool SolveSaddlePointEquations(realtype&,NumberList&);
 
   
-  void Solve(NumberList delta,NumberList thisepsilon,const bool pinfo)
+  bool Solve(NumberList delta,NumberList thisepsilon,const bool pinfo)
   {
     Delta = delta;
     RenormalizedDelta = delta; //  just as starting value
@@ -144,8 +144,9 @@ class Driver
     
     Printinfo=pinfo;
 
-    SolveSelfConsistentEquation(Delta);
+    bool go_on=SolveSelfConsistentEquation(Delta);
     if(TRACE) cout << "Done Solve" << endl;
+    return go_on;
   }
   
   
@@ -1882,13 +1883,15 @@ bool Driver::SolveSaddlePointEquations(realtype& thisT,NumberList& thisepsilon)
 
 
 // assumes initialized Sigma and mu
-void Driver::SolveSelfConsistentEquation(NumberList Delta)
+bool Driver::SolveSelfConsistentEquation(NumberList Delta)
 {
   if(TRACE) cout << "Starting SolveSelfConsistentEquation " << endl;
 
   //  if(TRACE) cout << "Starting Solve with Delta= " << Delta << " epsilon=" << epsilon << endl;
   //  logfile << "Starting Solver with Delta= " << Delta << " epsilon=" << epsilon << endl;
-  
+
+
+  bool go_on=true; // set the return variable to true by default, it becomes false when converged if EXITWHENCONVERGED is set
   failed=false;
 
   Chomp(Jq); // set very small entries to 0
@@ -2766,15 +2769,14 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 
 
 
-
-
-
-
-
-
+     
+#if defined EXITWHENCONVERGED
+      go_on = false;
+#endif     
     }
   
   if(TRACE) cout << "Done SolveSelfConsistentEquation " << endl;
+  return go_on;
 }
 
 
@@ -3000,7 +3002,8 @@ void Simulation::Run()
   if(TRACE) cout << "Starting Run" << endl;
   for(unsigned int i=0; i<Deltalist.size(); i++)
     {
-      mysolver.Solve(Deltalist[i],epsilonlist[i],Printinfolist[i]);
+      bool go_on = mysolver.Solve(Deltalist[i],epsilonlist[i],Printinfolist[i]);
+      if(!go_on){logfile << "Stopping run because go_on=false" << endl; break;}
     }
   if(TRACE) cout << "Done Run" << endl;
 }
