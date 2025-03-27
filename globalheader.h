@@ -57,6 +57,8 @@ class Coord
   realtype operator[](int i) const {return (i==0 ? x: (i==1 ? y: z));}
   void clear(){x=0.;y=0.;z=0.;}
   realtype Norm(){return sqrt(x*x+y*y+z*z);}
+  realtype Norm2(){return x*x+y*y+z*z;}
+  void Normalize(){realtype g=mysqrt(x*x+y*y+z*z); x /= g; y /= g; z /= g;}
   int size() const {return 3;}
 };
 

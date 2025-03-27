@@ -38,6 +38,8 @@ class Rule
     MakeSigma(A);
   }
   void InitializeObservables(){};
+
+  complextype GetCorrFactor(const int s1,const int s2,const Coord& q); //uses sublattice vectors
   
   void InitializeJ();
 #ifdef LATTICEDISTORTIONS
@@ -146,6 +148,14 @@ void Rule::InitializeJq()
 }
 
 #endif
+
+
+complextype Rule::GetCorrFactor(const int s0,const int s1,const Coord& q)
+{
+  return 1; // not implemented, only true for bravaislattices
+  /*  realtype qdelta=scalarproduct(sublatticevector[s0]-sublatticevector[s1],q);
+      return expi(-qdelta);*/
+}
 
 
 

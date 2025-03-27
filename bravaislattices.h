@@ -6,8 +6,12 @@
 #include<iomanip>
 #include<iostream>
 #include<array>
+#include<limits>
 
 using namespace std;
+
+#include "qpointidentifier.h"
+
 
 typedef std::array<int,3> Triplet; // vector of integers that specify positions on lattice in units of lattice vectors
 
@@ -139,8 +143,20 @@ class BravaisLattice
 #endif
 
   Coord GetLatticeVector(int i){return ( i==1 ? a1 : i==2 ? a2: a3);}
+
+
   
- private:
+  Coord TranslateToFirstBZ(Coord);
+  Coord TranslateToFundamentalDomain(Coord); // find equivalent u,v,w's all between 0 1, but return the q value
+  Coord GetUVW(Coord q); // for a given q=u b1+v b2 +w b3, compute u,v,w 
+  
+  bool  FindQid(Coord q,string& qid){return myQids.Findid(TranslateToFirstBZ(q),qid);}
+  
+  int   FindMatchingqindx(Coord); // gives the q indx of the q that is closest to the argument
+  
+  
+
+private:
   const Coord a1;
   const Coord a2;
   const Coord a3;
@@ -180,12 +196,17 @@ class BravaisLattice
   vector<int> indx_site_q;
 #endif
 
+  int Nextendedzones;
+  vector<Coord> extendedzonesorigin;
+  
   int nselectedqpts;
   vector<int> selectedqpts;
 
   int indx_most_remote;
 
   vector<int> ConstructTransformationTable(Coord,Coord,Coord);
+
+  Qids myQids;
 };
 
 
@@ -243,6 +264,9 @@ N1(static_cast<int>(par[NX])),
   ,indx_site_r(Nr)
   ,indx_site_q(Nq)
 #endif
+
+  ,Nextendedzones(0)
+  ,extendedzonesorigin(0)
 
   ,nselectedqpts(0)
   ,selectedqpts(MAXNSELECTEDQPTS)
@@ -385,6 +409,36 @@ N1(static_cast<int>(par[NX])),
     }
 #endif
 
+   // contains a list of integer vectors in b1 b2 and b3 basis that points to origins
+  // of selected BZ zones around thoese reciprocal lattice vectors 
+  ifstream outputzonesfile( ZONEORIGINSFILENAME.c_str());
+  
+  while(outputzonesfile)
+    {
+      int i1,i2,i3;
+      outputzonesfile >> i1 >> i2 >> i3;
+      if(outputzonesfile)
+	{
+	  Coord q= i1*b1+i2*b2+i3*b3;
+	  logfile << "Reading in zone origin: " << q.x << " " << q.y << " " << q.z << endl;
+	  extendedzonesorigin.push_back(q);
+	}
+    }
+  // insert origin if no ZONEORIGINSFILENAME
+  if(extendedzonesorigin.size()==0)
+    {
+      logfile << "No file " << ZONEORIGINSFILENAME << " found: Susc is written for q in 1BZ" << endl;
+      extendedzonesorigin.push_back(Coord(0.,0.,0.));
+    }
+
+  Nextendedzones = extendedzonesorigin.size();
+
+  if(extendedzonesorigin.size()!=0)
+    {
+      logfile << "Susc will be written for q in " << Nextendedzones << " extended zones" << endl;
+    }
+
+  
 
   ifstream selectedqptsfile( SELECTEDQPTSFILENAME.c_str());
   
@@ -632,6 +686,82 @@ inline int BravaisLattice::qSub(const int ka,const int kb)
 
   return GetIndx(UsePBC(va-vb));
 }
+
+
+Coord BravaisLattice::TranslateToFirstBZ(Coord qin)
+{
+  Coord q=TranslateToFundamentalDomain(qin);
+
+  vector<Coord> d(8);
+  
+  d[0] = q;
+  d[1] = q-b1;
+  d[2] = q-b2;
+  d[3] = q-b3;
+  d[4] = q-b1-b2;
+  d[5] = q-b2-b3;
+  d[6] = q-b3-b1;
+  d[7] = q-b1-b2-b3;
+  
+  realtype mindist=numeric_limits<realtype>::max();
+  int minindx=0;
+
+  //  cout << endl;
+  for(int i=0; i<8; i++)
+    {
+      realtype dist=d[i].Norm2(); // use without sqrt here to save time.
+      if(dist < mindist){mindist=dist; minindx=i;}
+    }
+  
+  return d[minindx];
+}
+
+Coord BravaisLattice::GetUVW(Coord q) // find  q in the reciprocal lattice basis.
+{
+  realtype u=scalarproduct(q,a1)/TWOPI;
+  realtype v=scalarproduct(q,a2)/TWOPI;
+  realtype w=scalarproduct(q,a3)/TWOPI;
+
+  return Coord(u,v,w);
+}
+
+Coord BravaisLattice::TranslateToFundamentalDomain(Coord q) 
+{
+  Coord uvw=GetUVW(q); // get q in the basis b1, b2, b3
+
+  realtype u=uvw.x;
+  realtype v=uvw.y;
+  realtype w=uvw.z;
+  
+  u += (int(u)+1.) ; // translate by b1 so that u is positive.
+  v += (int(v)+1.) ; // translate by b2 so that v is positive.
+  w += (int(w)+1.) ; // translate by b3 so that w is positive.
+
+  u -= int(u); // subtract so that only fractional part [0,1> remains.
+  v -= int(v); // subtract so that only fractional part [0,1> remains.
+  w -= int(w); // subtract so that only fractional part [0,1> remains.
+
+  Coord newq = u*b1 + v*b2 + w*b3;
+  
+  return newq;
+}
+
+
+int BravaisLattice::FindMatchingqindx(Coord qval)
+{
+  int qindx=0;
+  int bestqindx=-1;
+  realtype bestqdev=numeric_limits<realtype>::max();
+  while(qindx < Nq) // go thru all and record best match.
+    {
+      Coord qdiff=qPos(qindx)-qval;
+      realtype qdev= qdiff.Norm();
+      if(qdev < bestqdev){bestqindx=qindx; bestqdev=qdev;}
+      qindx++;
+    }
+  return bestqindx;
+}
+
 
 
 vector<int> BravaisLattice::ConstructTransformationTable(Coord ap1,Coord ap2,Coord ap3)

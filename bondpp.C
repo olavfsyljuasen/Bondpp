@@ -25,11 +25,22 @@ const bool TRACE= false;
 const bool TRACE2=false; // more debug info
 #else
 const bool TRACE= true; // debugging option
-const bool TRACE2=false; // more debug info
+const bool TRACE2=true; // more debug info
 //const bool TRACE= false; // debugging option
 #endif
 
 const bool TRACEFREEENERGY = false; // print out individual terms to the free energy
+
+// options regarding formatting in logfile, debugging and outputfiles
+#if defined SETLOGPRECISION
+const int LOGPRECISION  = SETLOGPRECISION; // number of digits in logfile info
+#else
+const int LOGPRECISION  = 2; // number of digits in logfile info
+#endif
+
+const int DEBUGPRECISION=6; // number of digits to use in debug-info
+const int OUTPUTPRECISION=12; // number of digits to use in outfiles
+
 
 const bool dcheck=false; // check if D is 0 or negative and output warning
 
@@ -63,6 +74,12 @@ const string RCORRSFILENAME="rcorrs.dat";
 const string QCORRSFILENAME="qcorrs";
 const string SIGMAEFILENAME="sigmaEq.dat";
 
+const string LARGESTQCORRSFILENAME="qcorrs_sparse";
+
+const string KINVQFILENAME="Kinvq.dat"; // the last converged Kinvq
+const string INPUTKINVQFILENAME="Kinvq.in"; // initializing Kinvq
+
+
 const string RCORRMOSTREMOTE="rcorr_L2.dat";
 
 const string SITERPTS="siteRpts.dat";
@@ -73,22 +90,39 @@ const int MAXNSELECTEDQPTS=20;
 const string SELECTEDQPTSFILENAME="selectedqpts.in";
 
 const string DELTASTOSHOWFILENAME="Deltastoshow.in";
+const string INPUTEPSILONFILENAME="epsilons.in";
+const string EPSILONFILENAME="epsilons.dat";
 
-const string EPSILONFILENAME="epsilons.in";
+
+const bool PRINTMAXQS=true; // print out the q values of the NMAXQS largest susceptibility peaks 
+const int  NMAXQS = 32;
+const int  NMAXQSINFIRSTBZ=16;
+const realtype QTOL         = 1.e-7; // if two q-values are closer than this, they are regarded equal.
 
 #ifdef SHOWCORRELATIONFUNCTIONS
 const bool PRINTRCORRS=true;
 const bool PRINTQCORRS=true;
 const bool PRINTSIGMAE=false;
-const bool PRINTRPTS=true;
+const bool PRINTRPTS=false;
 const bool PRINTQPTS=true;
+const bool PRINTLARGESTQCORRS=true;
+const realtype QCORRSTHRESHOLD=realtype(0.0); // print QCORRS that are above maxval*QCORRSTHRESHOLD
+#if defined SETPRINTTICKLER
+const int PRINTTICKLER=SETPRINTTICKLER;
+#else
+const int PRINTTICKLER=10;
+#endif
 #else
 const bool PRINTRCORRS=false;
 const bool PRINTQCORRS=false;
 const bool PRINTSIGMAE=false;
 const bool PRINTRPTS=false;
 const bool PRINTQPTS=false;
+const bool PRINTLARGESTQCORRS=false;
+const realtype QCORRSTHRESHOLD=1.;
+const int PRINTTICKLER=1; 
 #endif
+
 
 const int MAXNINCREASES = 10; // used to be very small = 5.
 const int ITERMULTIPLIER = 10; // used to increase the number of iterations if convergence fails.
@@ -107,10 +141,11 @@ const string RESULTS4NAME= "m2.dat";
 const string RESULTS5NAME= "chiq.dat";
 
 const string MAXQNAME="maxq.dat";
+const string MAXQSINFIRSTBZNAME="maxq1bz.dat";
 const string PEAKREPORTNAME= "peaks.dat";
 
 const string PARAMETERFILENAME = "Deltas.in";
-
+const string ZONEORIGINSFILENAME= "zoneorigins.in"; // center of zones in units of reciprocal lattice vectors b1,b2,b3
 const string READIN   = "read.in";
 
 #include <fstream>

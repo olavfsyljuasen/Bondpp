@@ -42,6 +42,26 @@ typedef fftw_complex FFTWCOMPLEX;
 #endif
 
 
+struct Qandvals
+{
+  Qandvals(Coord qin=Coord(0,0,0),realtype vin=0):q(qin),v(vin){}
+  Coord q;
+  realtype v;
+};
+
+bool operator<(const Qandvals& l,Qandvals r){return l.v > r.v;} // gives the sorted order, true if correct
+
+
+struct IndxVal
+{
+  IndxVal(int in_indx=0,realtype in_val=0):indx(in_indx),val(in_val){}
+  int indx;
+  realtype val;
+};
+
+bool operator<(const IndxVal& l,IndxVal r){return l.val > r.val;} // gives the sorted order, true if correct
+
+
 
 class Driver
 {
@@ -60,8 +80,14 @@ class Driver
       FFTWDESTROYPLAN(F2pluss);
       FFTWDESTROYPLAN(F2minus);
     }
+  vector<IndxVal> FindMatrixMaxVals(VecMat<complextype,NMAT,NMAT>& A,const int nmax); // output the maxvalue and q indx of the nmax max values
+
+
   realtype CalculateT(int);
   void CalculateTs(vector<realtype>&);
+  
+
+
 
 
 #if defined LATTICEDISTORTIONS && defined ELASTIC
@@ -78,11 +104,12 @@ class Driver
   //void Convolve(const bool);
   //  realtype CalculateSecondDerivative(const realtype T,const int k);
 
-  void ConstructKinvq();
+  void ConstructKinvq(const bool);
   void ComputeDq(const bool,const bool);  
   void ComputeSelfEnergy(const bool);
   
   void SetQsToZero(); // routine to set some q's to zero in self-energy
+  void BiasSigma(); // routine to bias sigma by specifying Kinvq
   void MakeRandomSigma();
 
   void MakeSymmetric(VecMat<complextype,NMAT,NMAT>&);
@@ -95,14 +122,12 @@ class Driver
   {
     Delta = delta;
     RenormalizedDelta = delta; //  just as starting value
-
     
 #if defined LATTICEDISTORTIONS && defined ELASTIC
-    //    if( USEPREVIOUSEPSILONS && converged && EpsilonInitialized)
     if( USEPREVIOUSEPSILONS && EpsilonInitialized)
       {
 	// use the old epsilons if previous step converged, do not do anything
-	logfile << "Use previous converged epsilons" << endl;
+	logfile << "Use previous converged epsilons:" << epsilon << endl;
       }
     else
       {
@@ -111,10 +136,11 @@ class Driver
 	EpsilonInitialized=true;
       }
 #endif
-    
-    if(TRACE) cout << "Starting Solve with Delta= " << delta << " epsilon=" << epsilon << " Printinfo= " << pinfo << endl;
-    logfile << "Starting Solver with Delta= " << delta << " epsilon=" << epsilon << " Printinfo= " << pinfo << endl;
-    
+
+    if(TRACE) cout << "Starting Solve with Delta= " << scientific << setprecision(LOGPRECISION) << delta << " epsilon=" << epsilon << " Printinfo= " << pinfo << endl;
+
+    logfile << "Starting Solver with Delta= " << scientific << delta << " epsilon=" << epsilon << endl;
+
     
     Printinfo=pinfo;
 
@@ -137,16 +163,24 @@ class Driver
   
   NumberList Delta; 
   NumberList RenormalizedDelta;
+
+  vector<realtype> Ts; // holding the temperatures
   
 #ifdef PRESERVESYMMETRY
   int TransformationPeriod;
   vector<int> TransformationTable;
 #endif
+
+  void WriteEpsilon(string filename);
+  void WriteKinvq(string filename);
+  void ReadKinvq(string filename);
   
   bool Printinfo; // set this to print out correlation functions
   int lineid; 
   bool SigmaInitialized; // flag to indicate whether Sigma is initialized.  
-  bool EpsilonInitialized; // flag to indicate whether Epsilonlist is initialized.  
+  bool EpsilonInitialized; // flag to indicate whether Epsilonlist is initialized.
+  bool InitializeKinvqFromFile; // flag to indicate that one should try to initialize Kinvq from file if it exists.
+  bool failed;           // flag to indicate failure to converge
   int MaxIterMultiplier; // multiplier for MaxIter, usually only used in the first step
 
   realtype mineigenvalue; // for storing the minimum SigmaE value
@@ -215,7 +249,7 @@ class Driver
 };
 
 
-Driver::Driver(Rule& r):rule(r),dim(la.D()),dims(la.SiteqDims()),Nq(la.NqSites()),invNq(static_cast<realtype>(1.)/Nq),invSqrtNq(1./sqrt(Nq)),converged(false),Delta(NSUBL),RenormalizedDelta(NSUBL),Printinfo(false),lineid(0),SigmaInitialized(false),EpsilonInitialized(false),MaxIterMultiplier(1),Jq(r.Jq),  
+Driver::Driver(Rule& r):rule(r),dim(la.D()),dims(la.SiteqDims()),Nq(la.NqSites()),invNq(static_cast<realtype>(1.)/Nq),invSqrtNq(1./sqrt(Nq)),converged(false),Delta(NSUBL),RenormalizedDelta(NSUBL),Ts(NSUBL),Printinfo(false),lineid(0),SigmaInitialized(false),EpsilonInitialized(false),InitializeKinvqFromFile(true),failed(false),MaxIterMultiplier(1),Jq(r.Jq),  
   A1(Nq),A2(Nq),B(Nq),F1(Nq),F2(Nq),
 #ifdef FFTS_INPLACE
   A1r(A1),A2r(A2),Br(B),
@@ -311,6 +345,36 @@ Driver::Driver(Rule& r):rule(r),dim(la.D()),dims(la.SiteqDims()),Nq(la.NqSites()
 };
 
 
+// find the nmax largest values of the matrix mymatrix and output its q-indx
+vector<IndxVal> Driver::FindMatrixMaxVals(VecMat<complextype,NMAT,NMAT>& mymatrix,const int nmax)
+{
+      // look for max among all matrix elements in first brillouinzone
+      vector<IndxVal> maxlist(nmax); // sorted list of qs and their values, biggest first
+      
+      for(int qi=0; qi<la.NqSites(); qi++) 
+	{
+	  realtype matrixmaxval(0.);
+
+	  for(int s1=0; s1<NSUBL; s1++)
+	    for(int s2=0; s2<NSUBL; s2++)
+	      {
+		realtype val = abs(mymatrix(qi,s1,s2));
+		if(val > matrixmaxval){ matrixmaxval=val;}
+	      }
+	  
+	  if(matrixmaxval > maxlist[nmax-1].val) // compare with last element, insert if true
+	    {
+	      IndxVal newelem(qi,matrixmaxval);
+	      vector<IndxVal>::iterator iter; // an iterator to the insertion point
+	      iter=upper_bound(maxlist.begin(),maxlist.begin()+nmax,newelem);
+	      maxlist.insert(iter,newelem); // insert and keep it sorted
+	      maxlist.resize(nmax); 
+	    }
+	}
+      return maxlist;
+}
+
+
 realtype Driver::CalculateT(int sl)
 {
   if(TRACE) cout << "Starting CalculateT for sublattice: " << sl << endl;
@@ -376,6 +440,45 @@ NumberList Driver::CalculateEpsilonsOverT()
   return epsoverT;
 }
 #endif
+
+
+void Driver::WriteEpsilon(string filename)
+{
+  ofstream outfile(filename);
+  outfile << scientific << setprecision(OUTPUTPRECISION);
+  outfile << setw(OUTPUTPRECISION+8) << epsilon << endl;
+  outfile.close();
+}
+
+void Driver::WriteKinvq(string filename)
+{
+  ofstream outfile(filename);
+  outfile << scientific << setprecision(OUTPUTPRECISION);
+  for(int q=0; q<la.NqSites(); q++)
+    {
+      for(int i=0; i<NMAT; i++)
+	for(int j=0; j<NMAT; j++)
+	  outfile << setw(OUTPUTPRECISION+8) << Kinvq(q,i,j) << " ";
+      outfile << endl;
+    }
+  outfile.close();
+}
+
+void Driver::ReadKinvq(string filename)
+{
+  ifstream infile(filename);
+  if(infile)
+    {
+      logfile << "Reading in Kinvq from " << filename << endl;
+      for(int q=0; q<la.NqSites(); q++)
+	{
+	  for(int i=0; i<NMAT; i++)
+	    for(int j=0; j<NMAT; j++)
+	      infile >> Kinvq(q,i,j);
+	}
+      infile.close();
+    }
+}
 
 
 void Driver::FindMaxVals(SMatrix<int,NMAT,NMAT>& maxqs,SMatrix<realtype,NMAT,NMAT>& maxvals)
@@ -1160,6 +1263,7 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 
   ComputeDq(true,false); // exclude zero mode, do not preserve input here, Ar must contain Kinvr for ComputeSelfEnergy to work.
 
+
   
   Sigmaq.SetToZero();
 
@@ -1462,7 +1566,7 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 // Routine to build Kinq from Jq and Sigmaq
 //
 //
-void Driver::ConstructKinvq()
+void Driver::ConstructKinvq(bool firsttime=false)
 {
   if(TRACE) cout << "Starting ConstructKinvq" << endl;
   
@@ -1508,6 +1612,27 @@ void Driver::ConstructKinvq()
   MakeInversionTransposedSymmetric(Kinvq); 
   MakeSpinDiagonal(Kinvq);
 
+  if(firsttime)
+    {
+      if(InitializeKinvqFromFile){ ReadKinvq(INPUTKINVQFILENAME); }
+      
+      InitializeKinvqFromFile=false;
+
+      
+      CalculateTs(Ts);
+
+      currT=Ts[0];
+      
+      logfile << "initial Deltas and Ts:";
+      logfile << scientific << setprecision(LOGPRECISION);
+      for(int i=0; i<NSUBL; i++)
+	{
+	  logfile << setw(LOGPRECISION+8) << Delta[i] << setw(LOGPRECISION+8) << Ts[i] << "  ";
+	}
+      logfile << endl;
+      //      logfile << scientific << setprecision(0) << setw(7) << FindSpread(Delta) << setw(7) << FindSpread(Ts) << endl;
+    }
+  
   if(TRACE){SanityCheck(Kinvq,"Kinvq, after inverting");}
   
   if(TRACE) cout << "Done with ConstructKinvq" << endl;
@@ -1563,6 +1688,112 @@ void Driver::MakeRandomSigma()
 }
 
 
+
+void Driver::SetQsToZero()
+{
+  if(TRACE) cout << "Starting SetQsToZero()" << endl;
+  logfile << "Setting the following qpts to zero in the self-energy" << endl;
+
+  bool found=false;
+  ifstream ifile("qstozero.in");
+  
+  while(ifile)
+    {
+      realtype qx_val;
+      realtype qy_val;
+      realtype qz_val;
+      ifile >> qx_val;
+      ifile >> qy_val;
+      ifile >> qz_val;
+      Coord qval(qx_val,qy_val,qz_val);
+
+      if(ifile)
+	{
+	  Coord fqval=la.TranslateToFundamentalDomain(qval);
+	  int bestqindx=la.FindMatchingqindx(fqval);
+
+	  found=true;
+	  Coord matchingq=la.qPos(bestqindx);
+	  logfile << bestqindx << " (" << matchingq << ")" << endl;
+	  for(int i=0; i<NMAT; i++)
+	    for(int j=0; j<NMAT; j++)
+	      Sigmaq(bestqindx,i,j)=complextype(0.,0.);
+	}        
+    }
+  if(!found) logfile << "None" << endl;
+  if(TRACE) cout << "Finished SetQsToZero()" << endl;
+}
+
+
+// a routine to bias Sigma so as to select a particular Keff 
+void Driver::BiasSigma()
+{
+  // read in q's to bias. and which matrix elements to bias
+  if(TRACE) cout << "Starting BiasSigma()" << endl;
+  logfile << "Biasing the self-energy.";
+  
+  ifstream ifile("qbias.in");
+
+  if(!ifile)
+    {
+      logfile << " No bias file found. Returning." << endl;
+      if(TRACE) cout << "No bias file found. Finishing BiasSigma()" << endl;
+      return;
+    }
+  logfile << endl;
+
+  
+  ConstructKinvq(true);
+
+  
+  while(ifile)
+    {
+      realtype qx_val;
+      realtype qy_val;
+      realtype qz_val;
+      ifile >> qx_val;
+      ifile >> qy_val;
+      ifile >> qz_val;
+      Coord qval(qx_val,qy_val,qz_val);
+
+      
+      if(ifile)
+	{
+	  Coord fqval=la.TranslateToFundamentalDomain(qval);
+	  int bestqindx=la.FindMatchingqindx(fqval);
+	  //	  qslots.push_back(bestqindx); // so that one can monitor a q slot
+	  Coord matchingq=la.qPos(bestqindx);
+	  logfile << "Biasing q=(" << qval << ")" << " q#=" <<  bestqindx << " (" << matchingq << ")" << endl;
+	  if(TRACE) cout << "Biasing q=(" << qval << ") funddomainq=(" << fqval << ") q#=" <<  bestqindx << " (" << matchingq << ")" << endl;
+	  for(int i=0; i<NMAT; i++)
+	    for(int j=0; j<NMAT; j++)
+	      {
+		realtype realpart; ifile >> realpart;
+		realtype imagpart; ifile >> imagpart;
+		
+		Kinvq(bestqindx,i,j)=complextype(realpart,imagpart);
+	      }
+	}         
+    }
+
+  MakeHermitian(Kinvq); // force the inverse to be Hermitian
+
+  cout << "Kinvq=" << endl;
+  cout << Kinvq << endl;
+  
+  ComputeSelfEnergy(); // this is then the new self-energy to use
+
+  cout << "Sigmaq:" << endl;
+  cout << Sigmaq << endl;
+  
+  if(TRACE) cout << "Finished BiasSigma()" << endl;
+}
+
+
+
+
+
+/*
 void Driver::SetQsToZero()
 {
   logfile << "Setting the following qpts entries to zero in the self-energy:" << endl;
@@ -1586,7 +1817,7 @@ void Driver::SetQsToZero()
     }
   if(!found){logfile << "None" << endl;}
 }
-
+*/
 
 bool Driver::SolveSaddlePointEquations(realtype& thisT,NumberList& thisepsilon)
 {
@@ -1594,8 +1825,9 @@ bool Driver::SolveSaddlePointEquations(realtype& thisT,NumberList& thisepsilon)
 
   realtype myoldT(thisT);
   NumberList myoldeps(thisepsilon);
-  
-  realtype myT=CalculateT(0);  // only valid for one sublattice here
+
+  CalculateTs(Ts);
+  realtype myT=Ts[0];  
   NumberList myeps(thisepsilon); // initial value
   
 #if defined LATTICEDISTORTIONS && defined ELASTIC
@@ -1654,20 +1886,10 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 {
   if(TRACE) cout << "Starting SolveSelfConsistentEquation " << endl;
 
-#ifdef RANDOMINITIALIZATION
-  MakeRandomSigma();
-#elif defined USELASTSIGMA
-  if(!SigmaInitialized){MakeRandomSigma(); SigmaInitialized=true; MaxIterMultiplier=ITERMULTIPLIER;} // MaxIterMultiplier>1 allow for more iterations to find a solution
-  else{MaxIterMultiplier=1;} 
-#else
-  rule.InitializeSigma(Sigmaq); // Get initial values of Sigmaq
-#endif
-  SetQsToZero();
-
-#ifdef PRESERVESYMMETRY
-  MakeSymmetric(Sigmaq);
-#endif
-
+  //  if(TRACE) cout << "Starting Solve with Delta= " << Delta << " epsilon=" << epsilon << endl;
+  //  logfile << "Starting Solver with Delta= " << Delta << " epsilon=" << epsilon << endl;
+  
+  failed=false;
 
   Chomp(Jq); // set very small entries to 0
 
@@ -1678,19 +1900,41 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
   Chomp(Jq); // set very small entries to 0
 
   if(TRACE) SanityCheck(Jq,"Jq, after subtracting minimum");
-
   
+  realtype T=-1;
   realtype newT=-1.;
   realtype m2=0.; // magnetic order parameter squared.
   vector<obstype> nobs(NOBSERVABLES); // nematic order parameters
   vector<obstype> nspinobs(NSPINOBSERVABLES); // different types of spin order parameters
 
 
+  
+#ifdef RANDOMINITIALIZATION
+  MakeRandomSigma();
+  SetQsToZero();
+  BiasSigma();
+  InitializeKinvqFromFile=true;
+#elif defined USELASTSIGMA
+  if(!SigmaInitialized || failed){MakeRandomSigma(); SetQsToZero(); BiasSigma(); SigmaInitialized=true; InitializeKinvqFromFile=true; MaxIterMultiplier=10;}
+  else{MaxIterMultiplier=1; InitializeKinvqFromFile=false;}
+#else
+  logfile << "Initializing Sigma from rules-file" << endl;
+  rule.InitializeSigma(Sigmaq); // Get initial values of Sigmaq
+  SetQsToZero();
+  BiasSigma();
+  InitializeKinvqFromFile=true;
+#endif
+
+  
+#ifdef PRESERVESYMMETRY
+  MakeSymmetric(Sigmaq);
+#endif
+
   // construct Kinvq:
   
-  ConstructKinvq();
+  ConstructKinvq(true);
 
-  realtype oldT=CalculateT(0); 
+  realtype oldT=Ts[0]; 
 
   currT=oldT; // set the current operating temperature
 
@@ -1699,8 +1943,6 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
   int nincreases(0); // number of times that a new iteration gets a T that deviates more from the oldT than the previous iteration. Sign of no convergence.
 
 
-  vector<realtype> Ts(NSUBL); // A list of Ts
-  
   if(TRACE)
     {
       cout << "Initial temperatures: " << endl;
@@ -1719,18 +1961,20 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
  
   int iter=0;
   converged=false;
-  bool pconverged=true; // convergence in the previous iteration,
+  bool pconverged=false; // convergence in the previous iteration,
   bool done=false;
 
   bool reachedMAXITER=false;
   bool saddlepts_ok=true; // an indicator to flag whether iterations of saddlept eqs are succesful or not.
- 
-  while(!done && !reachedMAXITER && saddlepts_ok)  
+
+
+  while(!done && !reachedMAXITER && saddlepts_ok && !failed)  
     {
       if(TRACE) cout << "New iteration: " << iter << endl;
       iter++;
-      if(converged) pconverged=true; // record if the previous iteration had converged
-
+      if(converged){pconverged=true;} // record if the previous iteration had converged
+      else{ pconverged=false;}
+      
       if(TRACE) SanityCheck(Kinvq,"Kinvq, at start of new iteration");
 
       
@@ -1767,7 +2011,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
       if(TRACE)
 	{
 	  cout << "iteration: " << iter << " T= " << newT << " oldT=" << oldT
-	       << " dev: " << absTdev;
+	       << " dev=" << absTdev;
 #if defined LATTICEDISTORTIONS && defined ELASTIC
 	  cout << " epsilon= " << neweps;
 #endif
@@ -1777,12 +2021,14 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
       // write progress to logfile
       if(PRINTPROGRESS && iter%PRINTPROGRESSTICKLER==0)
 	{
-	  logfile.precision(9);
-	  logfile << "iteration: " << iter << " T= "; 
-	  for(int i=0; i<NSUBL; i++) logfile << Ts[i] << " ";
-	  logfile << " oldT=" << oldT << " dev: " << absTdev << " ninc: " << nincreases;
+	  
+	  logfile << "iteration: " << iter << " T=";
+	  logfile << scientific << setprecision(LOGPRECISION);
+	  for(int i=0; i<NSUBL; i++)
+	    logfile << setw(LOGPRECISION+7) << Ts[i] << " ";
+	  logfile << "oldT=" << setw(LOGPRECISION+7) << oldT << " dev=" << setw(LOGPRECISION+7) << absTdev << " ninc=" << setw(2) << nincreases;
 #if defined LATTICEDISTORTIONS && defined ELASTIC
-	  logfile << " epsilon= " << neweps;
+	  logfile << " epsilon=" << setw(LOGPRECISION+8) << neweps;
 #endif
 	  logfile << endl;
 	}
@@ -1808,97 +2054,6 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 
       oldT=currT;
 
-      
-      /*
-     
-
-      // convergence checks
-      CalculateTs(Ts); // calculate all the temperatures      
-      newT=Ts[0];
-
-      absTdev=fabs((newT-oldT)/oldT);
-      if(absTdev > oldabsTdev)
-	{
-	  if(iter>40) nincreases++; // only increment this after 40 iterations.
-	  if(nincreases > 0)
-	    PRINTPROGRESSTICKLER=1; // monitor every step.
-	  else
-	    PRINTPROGRESSTICKLER=10;
-	}
-      oldabsTdev=absTdev;
-
-            
-#if defined LATTICEDISTORTIONS && defined ELASTIC
-      NumberList epsoverT=CalculateEpsilonsOverT();
-#endif
-      //-----------------------------------------------------------
-      
-      // monitor maximum values of Kinv
-      if(NSPIN>1)
-	{
-	  SMatrix<realtype,NMAT,NMAT> maxvals;
-	  SMatrix<int,NMAT,NMAT> maxqs;
-	  
-	  FindMaxVals(maxqs,maxvals);
-
-	  ofstream outfile(CONVERGENCEMONITORNAME,ios::app);
-	  outfile << iter << " ";
-	  for(int s=0; s<NSPIN; s++)
-	    {
-	      realtype outmax = maxvals(mindx(s,0),mindx(s,0));
-	      outfile << outmax << " ";
-	    }
-	  outfile << endl;
-	  outfile.close();
-	  if(TRACE) cout << "Written to monitor.dat" << endl;
-	}
-
-
-      if(TRACE)
-	{
-	  cout << "iteration: " << iter << " T= " << newT << " oldT=" << oldT
-	       << " dev: " << absTdev;
-#if defined LATTICEDISTORTIONS && defined ELASTIC
-	  cout << " epsilon/T= " << epsoverT;
-#endif
-	  cout << endl;
-	}
-      
-      // write progress to logfile
-      if(PRINTPROGRESS && iter%PRINTPROGRESSTICKLER==0)
-	{
-	  logfile.precision(9);
-	  logfile << "iteration: " << iter << " T= "; 
-	  for(int i=0; i<NSUBL; i++) logfile << Ts[i] << " ";
-	  logfile << " oldT=" << oldT << " dev: " << absTdev << " ninc: " << nincreases;
-#if defined LATTICEDISTORTIONS && defined ELASTIC
-	  logfile << " epsilon/T= " << epsoverT;
-#endif
-	  logfile << endl;
-	}
-      
-      if( absTdev < par[TOLERANCE]) converged=true;
-
-      //      const realtype inertia=0.5; // how much to resist changes: [0,1] 
-      const realtype inertia=0.2; // how much to resist changes: [0,1] 
-
-#if defined LATTICEDISTORTIONS && defined ELASTIC     
-      for(int i=0; i<NELASTIC; i++)
-	{
-	  //	  epsilon[i]= (1.-inertia)*currT*epsoverT[i]+inertia*epsilon[i];
-	  epsilon[i]= (1.-inertia)*newT*epsoverT[i]+inertia*epsilon[i]; // maybe change to this
-	}
-#if defined ONEEPSILONCOMPONENTCLAMPED
-      epsilon[EPSILONCOMPONENTCLAMPED] = 0.;
-#endif
-
-#endif       
-
-      currT= (1.-inertia)*newT+inertia*oldT; 
-
-      oldT=currT;
-
-      */
       
       if(TRACE) cout << "converged= " << converged << " TOLERANCE:" << par[TOLERANCE] << endl;
       
@@ -1957,17 +2112,216 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 	logfile << "reached MAXITER=" << par[MAXITER] << " iterations without converging, increase MAXITER!" << endl;
       else
 	logfile << "no uniform convergence of iterations, exiting!" << endl;
-      SigmaInitialized = false;
+      SigmaInitialized   = false;
+      EpsilonInitialized = false;
+      InitializeKinvqFromFile= true;
     }
   else
     {      
       lineid++; 
 
+      T = Ts[0];
+
+      WriteEpsilon(EPSILONFILENAME);
+      WriteKinvq(KINVQFILENAME);
+      
+
+      realtype factor=T*NSPIN*NFAKESPINTRACE*realtype(0.5); // conversion factor from Kinvq to Spin-corr  
+      
+      vector<Qandvals> maxqs(NMAXQS); // sorted list of qs and their values, biggest first
+      
+      for(int qi=0; qi<la.NqSites(); qi++) 
+	{
+	  Coord q1bz=la.qPos(qi);
+	  for(int Z=0; Z<la.Nextendedzones; Z++)
+	    {
+	      Coord bzorigin=la.extendedzonesorigin[Z];
+	      
+	      realtype val(0.);
+	      Coord q=q1bz+bzorigin;
+	      
+	      for(int s1=0; s1<NSUBL; s1++)
+		for(int s2=0; s2<NSUBL; s2++)
+		  {
+		    val+= real(Kinvq(qi,s1,s2)*rule.GetCorrFactor(s1,s2,q)); 
+		  }
+	      val *=factor;
+	      
+	      if(val > maxqs[NMAXQS-1].v) // compare with last element, insert if true
+		{
+		  Qandvals newelem(q,val);
+		  vector<Qandvals>::iterator iter; // an iterator to the insertion point
+		  iter=upper_bound(maxqs.begin(),maxqs.begin()+NMAXQS,newelem);
+		  maxqs.insert(iter,newelem); // insert and keep it sorted
+		  maxqs.resize(NMAXQS); 
+		}
+	    }
+	}
+      
+      realtype maxval=maxqs[0].v; // the overall maximum value. To be used for picking the largest corrs.
+      
+      const int OUTTP = 6; // T digits in printout
+      const int OUTVP = 3; // val digits in printout
+      const int OUTQP = 2; // q digits in printout
+      
+      
+      ofstream outfile_maxqs(MAXQNAME.c_str(),ios::app);
+      outfile_maxqs << lineid << " T= " << scientific << setprecision(OUTTP) << setw(OUTTP+6) << Ts[0]
+		    << " Delta: " << scientific << setprecision(OUTTP) << setw(OUTTP+6) << Delta[0] << endl;
+      int colsperline=2;
+      int colcounter= 0;
+      realtype oldval=0;
+      for(int i=0; i<NMAXQS; i++)
+	{
+	  realtype v=maxqs[i].v;
+	  Coord    q=maxqs[i].q;
+	  Coord    qb=la.GetUVW(q);
+	  string   qid="";
+	  Coord    qBz=la.TranslateToFirstBZ(q);
+	  bool idfound=la.FindQid(q,qid);
+	  if( (colcounter%colsperline == 0 || v != oldval) && i != 0 ){outfile_maxqs << "\n"; colcounter=0;} 
+	  outfile_maxqs << scientific << setprecision(OUTVP) << setw(OUTVP+6) << v;
+	  outfile_maxqs << fixed << setprecision(OUTQP)
+			<< " (" << setw(OUTQP+4) <<  q.x  << "," << setw(OUTQP+4) <<  q.y   << "," << setw(OUTQP+4) <<  q.z << ")"
+			<< " [" << setw(OUTQP+3) << qb.x  << "," << setw(OUTQP+3) <<  qb.y  << "," << setw(OUTQP+3) <<  qb.z << "]"
+			<< " (" << setw(OUTQP+4) << qBz.x << "," << setw(OUTQP+4) <<  qBz.y << "," << setw(OUTQP+4) <<  qBz.z << ")"
+			<< setw(5) << qid << "  ";
+	  colcounter++;
+	  oldval=v;
+	  
+	  if(i==0) // also write to logfile
+	    {
+	      logfile << "maxQ:" << fixed << setprecision(OUTQP)
+		      << " (" << setw(OUTQP+4) <<  q.x  << "," << setw(OUTQP+4) << q.y   << "," << setw(OUTQP+4) << q.z << ")"
+		      << " [" << setw(OUTQP+2) << qb.x  << "," << setw(OUTQP+2) << qb.y  << "," << setw(OUTQP+2) << qb.z << "]"
+		      << " (" << setw(OUTQP+4) << qBz.x << "," << setw(OUTQP+4) << qBz.y << "," << setw(OUTQP+4) << qBz.z << ")";
+	      if(idfound){ logfile << setw(4) << qid << endl;}
+	      else{ logfile << " not identified" << endl;}
+	    }
+	}
+      outfile_maxqs << endl;
+      outfile_maxqs << endl;
+      
+      outfile_maxqs.close();
+      
+
+      // look for max among all matrix elements in first brillouinzone
+      // ONLY OUTPUT Kinvq values, do not multiply by factor=T*NS*realtype(0.5)
+      vector<IndxVal> maxlist = FindMatrixMaxVals(Kinvq,NMAXQSINFIRSTBZ);
+
+
+      ofstream mfile(MAXQSINFIRSTBZNAME.c_str(),ios::app);
+      mfile << lineid << " T= " << scientific << setprecision(OUTTP) << setw(OUTTP+6) << Ts[0]
+	    << " Delta: " << scientific << setprecision(OUTTP) << setw(OUTTP+6) << Delta[0] << endl;
+
+      mfile << "  epsilons:";
+      for(int i=0; i<NELASTIC; i++) mfile << scientific << setprecision(OUTTP) << setw(OUTTP+6) << epsilon[i] << " ";
+      mfile << endl;
+      
+      realtype absmax=maxlist[0].val; // the absolute biggest element
+      
+      const int OUTMP=2; // precision of matrix elements
+      for(int i=0; i<NMAXQSINFIRSTBZ; i++)
+	{
+	  realtype v=maxlist[i].val;
+
+	  if(v < absmax/10.) break; // do not write out matrix if max is less than 10% of absolute max
+	  
+	  int      qi=maxlist[i].indx;
+	  Coord    q=la.qPos(qi);
+	  Coord    qb=la.GetUVW(q);
+	  string   qid="";
+	  Coord    qfd=la.TranslateToFundamentalDomain(q);
+	  Coord    qBz=la.TranslateToFirstBZ(q);
+
+	  la.FindQid(q,qid);
+
+	  mfile << scientific << setprecision(OUTVP) << setw(OUTVP+6) << v;
+	  mfile << fixed << setprecision(OUTQP)
+		<< " (" << setw(OUTQP+4) <<  q.x  << "," << setw(OUTQP+4) <<  q.y   << "," << setw(OUTQP+4) <<  q.z << ")"
+		<< " [" << setw(OUTQP+3) << qb.x  << "," << setw(OUTQP+3) <<  qb.y  << "," << setw(OUTQP+3) <<  qb.z << "]"
+		<< " (" << setw(OUTQP+4) << qBz.x << "," << setw(OUTQP+4) <<  qBz.y << "," << setw(OUTQP+4) <<  qBz.z << ")"
+		<< setw(5) << qid << endl;
+
+	  mfile << setprecision(10) << fixed
+		<< setw(14) << qfd.x << " " << setw(14) <<  qfd.y << " " << setw(14) <<  qfd.z << endl;
+	  
+	  mfile << scientific << setprecision(OUTMP);
+	  for(int s1=0; s1<NMAT; s1++)
+	    {
+	      for(int s2=0; s2<NMAT; s2++)
+		{
+		  complex<realtype> mval(Kinvq(qi,s1,s2));
+		  realtype mval_real= (abs(real(mval)) < 1.e-6 ? 0.: real(mval));
+		  realtype mval_imag= (abs(imag(mval)) < 1.e-6 ? 0.: imag(mval)); 
+	      
+		  mfile << setw(OUTMP+8) << mval_real << setw(OUTMP+8) << mval_imag << "   ";
+
+
+		}
+	      mfile << endl;
+	    }
+	  mfile << endl;	  
+	}
+      mfile << endl;	  
+      mfile << endl;
+      
+      mfile.close();
+
+
+      if(PRINTQCORRS && PRINTLARGESTQCORRS && lineid%PRINTTICKLER==0)
+	{
+#ifndef SEPARATEZONEFILES
+	  stringstream ss;
+	  ss << LARGESTQCORRSFILENAME << "_" << lineid << ".dat";
+	  //	  cout << "Opening " << ss.str() << endl;
+	  ofstream qcorrfile(ss.str().c_str());
+#endif	  
+	  for(int Z=0; Z<la.Nextendedzones; Z++)
+	    {	      
+#ifdef SEPARATEZONEFILES
+	      stringstream ss;
+	      ss << LARGESTQCORRSFILENAME << "_Z" << Z << "_" << lineid << ".dat";
+	      ofstream qcorrfile(ss.str().c_str());
+#endif
+	      Coord bzorigin=la.extendedzonesorigin[Z];
+	      
+	      for(int qi=0; qi<la.NqSites(); qi++) 
+		{
+		  Coord q1bz=la.TranslateToFirstBZ(la.qPos(qi));
+		  
+		  realtype val(0.);
+		  Coord q=q1bz+bzorigin;
+#ifdef REDUCEDOUTPUT
+		  if(!InRegionOfInterest(q)){ continue;}
+#endif
+		  
+		  for(int s1=0; s1<NMAT; s1++)
+		    for(int s2=0; s2<NMAT; s2++)
+		      {
+			val+= real(Kinvq(qi,s1,s2)*rule.GetCorrFactor(s1,s2,q)); 
+		      }
+		  val *= factor;
+
+		  //		  cout << val << " " << QCORRSTHRESHOLD*maxval;
+		  if(val >= QCORRSTHRESHOLD*maxval)
+		    {
+		      qcorrfile << setprecision(10) << q << " " << val << endl;
+		    }
+		}
+	    }
+	}     
+
+
+
+
+
+      /*      
       SMatrix<realtype,NMAT,NMAT> maxvals;
       SMatrix<int,NMAT,NMAT> maxqs;
 
       FindMaxVals(maxqs,maxvals);
-
+      
       if(TRACE) cout << "Write diagonal magnetization" << endl;
       //Writing diagonal magnetization for different spins and sublattices.
       for(int l1=0; l1<NSUBL; l1++)
@@ -1984,7 +2338,7 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 	    outfile << setprecision(16) << newT << " " << mm << endl;
 	    outfile.close();
 	  }
-
+      */
 
       /*
       if(TRACE) cout << "Write peakfile: " << PEAKREPORTNAME << endl;
@@ -2310,24 +2664,28 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 	    ss << NAMESOFSPINOBSERVABLES[j] << ".dat";
 	    
 	    ofstream outfile_a(ss.str().c_str(),ios::app);
-	    outfile_a << setprecision(16) << newT << " "
-		      << real(nspinobs[j]) << " " << imag(nspinobs[j]) << endl;
+	    outfile_a << scientific << setprecision(OUTPUTPRECISION)
+		      << setw(OUTPUTPRECISION+8) << newT << " "
+		      << setw(OUTPUTPRECISION+8) << real(nspinobs[j]) << " "
+ 		      << setw(OUTPUTPRECISION+8) << imag(nspinobs[j]) << endl;
 	    outfile_a.close();
 	    
 	    ss.str("");
 	    ss << NAMESOFSPINOBSERVABLES[j] << "1.dat";
 	    
 	    ofstream outfile_b(ss.str().c_str(),ios::app);
-	    outfile_b << setprecision(16) << newT << " "
-		      << abs(nspinobs[j]) << endl;
+	    outfile_b << scientific << setprecision(OUTPUTPRECISION)
+		      << setw(OUTPUTPRECISION+8) << newT << " "
+		      << setw(OUTPUTPRECISION+8) << abs(nspinobs[j]) << endl;
 	    outfile_b.close();
 	    
 	    ss.str("");
 	    ss << NAMESOFSPINOBSERVABLES[j] << "2.dat";
 	    
 	    ofstream outfile_c(ss.str().c_str(),ios::app);
-	    outfile_c << setprecision(16) << newT << " "
-		      << norm(nspinobs[j]) << endl;
+	    outfile_c << scientific << setprecision(OUTPUTPRECISION)
+		      << setw(OUTPUTPRECISION+8) << newT << " "
+		      << setw(OUTPUTPRECISION+8) << norm(nspinobs[j]) << endl;
 	    outfile_c.close();
 	  }
       }
@@ -2342,25 +2700,28 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
       ss << "m2" << ".dat";
       
       ofstream outfilem(ss.str().c_str(),ios::app);
-      outfilem << setprecision(16) << newT << " " << m2 << endl;
+      outfilem << scientific << setprecision(OUTPUTPRECISION)
+	       << setw(OUTPUTPRECISION+8) << newT << " " << setw(OUTPUTPRECISION+8) << m2 << endl;
       outfilem.close();
       
       
       realtype f=CalculateFreeEnergy(newT);
-      logfile << "Free energy: " << f << endl;
+      logfile << "Free energy: " << scientific << setprecision(LOGPRECISION) << setw(LOGPRECISION+8) << f << endl;
       
       ss.str("");
       ss << "tf" << ".dat";
       
       ofstream outfile(ss.str().c_str(),ios::app);
-      outfile << setprecision(16) << newT << " " << f << endl;
+      outfile << scientific << setprecision(OUTPUTPRECISION)
+	      << setw(OUTPUTPRECISION+8) << newT << " " << setw(OUTPUTPRECISION+8) << f << endl;
       outfile.close();
       
       ss.str("");
       ss << "df" << ".dat";
       
       ofstream outfile2(ss.str().c_str(),ios::app);
-      outfile2 << setprecision(16) << Delta[0] << " " << f << endl;
+      outfile2 << scientific << setprecision(OUTPUTPRECISION)
+	       << setw(OUTPUTPRECISION+8) << Delta[0] << " " << setw(OUTPUTPRECISION+8) << f << endl;
       outfile2.close();
 
 
@@ -2370,14 +2731,16 @@ void Driver::SolveSelfConsistentEquation(NumberList Delta)
 	  ss << "td" << "_" << s << ".dat";
 	  
 	  ofstream outfile_a(ss.str().c_str(),ios::app);
-	  outfile_a << setprecision(16) << Ts[s] << " " << Delta[s] << endl;
+	  outfile_a << scientific << setprecision(OUTPUTPRECISION)
+		    << setw(OUTPUTPRECISION+8) << Ts[s] << " " << setw(OUTPUTPRECISION+8) << Delta[s] << endl;
 	  outfile_a.close();
 	  
 	  ss.str("");
 	  ss << "dt" << "_" << s << ".dat";
 	  
 	  ofstream outfile_b(ss.str().c_str(),ios::app);
-	  outfile_b << setprecision(16) << Delta[s] << " " << Ts[s] << endl;
+	  outfile_b << scientific << setprecision(OUTPUTPRECISION)
+		    << setw(OUTPUTPRECISION+8) << Delta[s] << " " << setw(OUTPUTPRECISION+8) << Ts[s] << endl;
 	  outfile_b.close();
 	}
 
@@ -2564,7 +2927,7 @@ Simulation::Simulation(): couplings(par,NC),rule(couplings),mysolver(rule),Delta
 
 
   // Then seek initial value file for epsilons
-  ifstream epsilonfile(EPSILONFILENAME.c_str());
+  ifstream epsilonfile(INPUTEPSILONFILENAME.c_str());
   if(!epsilonfile)
     {
       // set default starting values
@@ -2621,6 +2984,12 @@ Simulation::Simulation(): couplings(par,NC),rule(couplings),mysolver(rule),Delta
     }
   if(TRACE) cout << "epsilonlist has " << epsilonlist.size() << " entries" << endl;
   logfile << "epsilonlist has " << epsilonlist.size() << " entries" << endl; 
+
+
+  
+
+
+
   
   if(TRACE) cout << "Done Initializing Simulation" << endl;
 }
