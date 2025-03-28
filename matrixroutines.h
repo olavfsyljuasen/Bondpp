@@ -6,52 +6,15 @@
 #include<iostream>
 #include<limits>
 
+#include "lowlevelmatrixroutines.h"
+
 const bool Checkevals=true;
-
-//#define EIGENBOOST // use both EIGEN and BOOST
-
-#ifdef EIGENBOOST
-
-// Different types of multiprecision backends:
-
-#include <boost/multiprecision/cpp_complex.hpp> // complex numbers
-typedef boost::multiprecision::cpp_bin_float_quad   eigen_real_type;
-typedef boost::multiprecision::cpp_complex_quad eigen_complex_type;
-
-
-/*
-#include <boost/multiprecision/gmp.hpp> // must download gmp.h
-#include <boost/multiprecision/mpc.hpp>
-typedef boost::multiprecision::mpfr_float_100   eigen_real_type;
-typedef boost::multiprecision::mpc_complex_100 eigen_complex_type;
-*/
-
-/* // cannot get this to work yet
-#include <boost/multiprecision/float128.hpp> // real numbers
-#include <boost/multiprecision/complex128.hpp> // complex numbers
-typedef boost::multiprecision::float128   eigen_real_type;
-typedef boost::multiprecision::complex128 eigen_complex_type;
-*/
-
-#include <boost/multiprecision/eigen.hpp>
-
-#else
-typedef realtype   eigen_real_type;
-typedef complex<realtype> eigen_complex_type;
-#endif
-
-
-
-#include<Eigen/Dense>
-using namespace Eigen;
-
-
 
 
 
 
 template<class T,int Nrows,int Ncols>
-  void Setqzerotozero(VecMat<T,Nrows,Ncols>& A)
+void Setqzerotozero(VecMat<T,Nrows,Ncols>& A)
 {
   for(int s1=0; s1<Nrows; s1++)
     for(int s2=0; s2<Ncols; s2++)
@@ -62,61 +25,27 @@ template<class T,int Nrows,int Ncols>
 
 // A routine to sum over the ln of sublattice determinants for all q.
 template<class T,int Nrows,int Ncols>
-  realtype SumLogDet(VecMat<T,Nrows,Ncols>& A)
+realtype SumLogDet(VecMat<T,Nrows,Ncols>& A)
 {
   if(TRACE) cout << "Starting SumLogDet" << endl;
 
   realtype sum=0.;
   const int n    = A.Nvecs; // the number of q values
-  const int N    = A.size(); // the total array size
 
+  vector<complextype> a(Nrows*Ncols);
   
-  if(Nrows==1 && Ncols==1) // det is the entry itself
+  for(int k=0; k<n; k++)
     {
-      for(int i=0; i<N; i++)
-	{ 
-	  realtype value=real(A(i,0));
-	  if(value != 0.)
-	    {
-	      //	      if(TRACE) cout << "in SumLogDet value " << i << "= " << value << endl;
-	      sum+=log(value);
-	    }
-	}
+      for(int i=0; i<Nrows; i++)
+	for(int j=0; j<Ncols; j++)
+	  a[i+j*Nrows]=A(k,i,j);
+      	    
+      realtype value=SmallHermitianMatrixDeterminant(Nrows,a); // col-major order
+      if(TRACELEVEL>3) cout << spaces(ir) << "k=" << k << " logdet:" << setprecision(DEBUGPRECISION) << value << " " << mylog(value) << endl;
+      if(value != 0.){ sum += mylog(value);} 
     }
-  else 
-    {
-//#ifdef EIGENBOOST
-      Matrix<eigen_complex_type,Dynamic,Dynamic> M(Nrows,Ncols);
-      
-      for(int k=0; k<n; k++)
-	{
-	  
-	  for(int i=0; i<Nrows; i++)
-	    for(int j=0; j<Ncols; j++)
-	      M(i,j)=static_cast<eigen_complex_type>(A(k,i,j)); // row-major order
-	       
-	  
-	  eigen_complex_type boost_det=M.determinant();
-	  //if(TRACE) cout << "boost_det=" << boost_det << endl;
-#ifdef EIGENBOOST
-	  complex<realtype> det=boost_det.convert_to<complex<realtype> >();
-#else
-	  complex<realtype> det=boost_det;
-#endif
-
-	  if(TRACE) cout << setprecision(35) << det << endl;
-
-	  realtype realdet=real(det);
-	  if(realdet > 0.){ sum+=log(realdet);}
-	  else
-	    {
-	      cout << "Warning: determinant of q=" << k
-		   << " component is not positive" << endl;
-	    }	  
-	} 
-//#endif
-    }    
-    return sum;
+  if(TRACELEVEL>0) cout << spaces(--ir) << "Finished SumLogDet()" << endl;
+  return sum;
 }
 
 
@@ -132,7 +61,7 @@ template<class T,int Nrows,int Ncols>
 
   vector<realtype> min(Nrows);
   
-  for(int s=0; s<NSUBL; s++)
+  for(int s=0; s<Nrows; s++)
     {
       //      complex<realtype>* Kstart=K(s,s); // diagonal elements
       
@@ -199,55 +128,37 @@ template<class T,int Nrows,int Ncols>
 template<class T,int Nrows,int Ncols>
   realtype FindMinimumEigenvalue(VecMat<T,Nrows,Ncols>& A)
 {
-  if(TRACE) cout << "Starting FindMinimumEigenvalue " << endl;
+  if(TRACELEVEL>0) cout << spaces(ir++) << "Starting FindMinimumEigenvalue()" << endl;
 
   const int n=A.Nvecs;   // the number of q values
-  
-  realtype lambda_min; // the min eigenvalue of a sublattice-matrix
-  realtype global_min=numeric_limits<realtype>::max();
-  
-  
-  if(Nrows==1 && Ncols==1) 
-    {
-      for(int i=0; i<n; i++){if(real(A(i,0,0)) < global_min){global_min=real(A(i,0,0));}}
-    }
-  else
-    {
-      //#ifdef EIGENBOOST
-      Matrix<eigen_complex_type,Dynamic,Dynamic> M(Nrows,Ncols); // use the dynamic type h
-      
-      for(int k=0; k<n; k++)
-	{
-	  for(int i=0; i<Nrows; i++)
-	    for(int j=0; j<Ncols; j++)
-	      M(i,j)=static_cast<eigen_complex_type>(A(k,i,j)); // row-major order
-	  
-	  SelfAdjointEigenSolver<Matrix<eigen_complex_type,Dynamic,Dynamic> > es(M,EigenvaluesOnly);
-	  
-	  eigen_real_type val= es.eigenvalues()[0]; //eigen sorts eigenvalues,least first 
-	  
-#ifdef EIGENBOOST	  
-	  lambda_min = val.convert_to<realtype>();
-#else
-	  lambda_min = val;
-#endif
-	  if( lambda_min < global_min){global_min=lambda_min;} 
-	}
-      //#endif
-    }
 
-  if(TRACE) cout << "Ending FindMinimumEigenvalue: " << global_min << endl;
+  realtype global_min=numeric_limits<realtype>::max();
+
+  vector<complextype> a(Nrows*Ncols);
+  
+  for(int k=0; k<n; k++)
+    {
+      for(int i=0; i<Nrows; i++)
+	for(int j=0; j<Ncols; j++)
+	  a[i+j*Nrows]=A(k,i,j);
+
+      
+      realtype eval=SmallHermitianMatrixMinEigenvalue(Nrows,a); // col-major order
+      if(eval < global_min){global_min=eval;}
+    }
+  if(TRACELEVEL>2) cout << spaces(ir) << "Minimum eval=" << global_min << endl;
+  if(TRACELEVEL>0) cout << spaces(--ir) << "Finished FindMinimumEigenvalue()" << endl;
   return global_min;
 }
 
 template<class T,int Nrows,int Ncols>
-  realtype SubtractMinimumEigenvalue(VecMat<T,Nrows,Ncols>& A)
+realtype SubtractMinimumEigenvalue(VecMat<T,Nrows,Ncols>& A)
 {
   realtype emin=FindMinimumEigenvalue(A);
   if(TRACE) cout << "having found MinimumEigenvalue: " << emin << endl;
-
+  
   SubtractFromDiagonal(A,complex<realtype>(emin,0.));
-
+  
   return emin;
 }
 
@@ -257,59 +168,30 @@ template<class T,int Nrows,int Ncols>
 template<class T,int Nrows,int Ncols>
   void MatrixInverse(VecMat<T,Nrows,Ncols>& A)
 {
-  if(TRACE) cout << "Starting MatrixInverse" << endl;
+  if(TRACELEVEL>0) cout << "Starting MatrixInverse" << endl;
   const int n=A.Nvecs;   // the number of q values
 
-  if(TRACE) cout << "Nrows= " << Nrows << " Ncols="<< Ncols << " n=" << n << endl;
-
-  if(Nrows==1 && Ncols==1) // just take the inverse of each element
+  assert(Nrows == Ncols);
+  
+  vector<complextype> a(Nrows*Ncols);
+  
+  for(int k=0; k<n; k++)
     {
-      for(int k=0; k<n; k++){ A(k,0,0)=complex<realtype>(1./A(k,0,0).real(),0.);}
+      for(int i=0; i<Nrows; i++)
+	for(int j=0; j<Ncols; j++)
+	  a[i+j*Nrows]=A(k,i,j);
+      	    
+      SmallMatrixInverse(Nrows,a); // col-major order
+
+      for(int i=0; i<Nrows; i++)
+	for(int j=0; j<Ncols; j++)
+	  A(k,i,j) = a[i+j*Nrows];
     }
-  else 
-    {
-      // TEST to avoid matrix diag.
-      /*
-      for(int k=0; k<n; k++)
-	for(int s=0; s<NSPIN; s++)
-	  {
-	    A(k,s,s)=complex<realtype>(1./A(k,s,s).real(),0.);
-	  }
-      */
 
-      Matrix<eigen_complex_type,Dynamic,Dynamic> M(Nrows,Ncols);
-      Matrix<eigen_complex_type,Dynamic,Dynamic> Minv(Nrows,Ncols);
-
-      if(TRACE) cout << "Initialized M and Minv " << endl;
-
-
-      for(int k=0; k<n; k++)
-	{
-	  for(int i=0; i<Nrows; i++)
-	    for(int j=0; j<Ncols; j++)
-	      {
-		M(i,j)=static_cast<eigen_complex_type>(A(k,i,j)); // row-major order
-	      }
-
-	  Minv=M.inverse();
-
-	  
-	  for(int i=0; i<Nrows; i++)
-	    for(int j=0; j<Ncols; j++)
-	      {
-#ifdef EIGENBOOST
-		A(k,i,j) = Minv(i,j).convert_to<complex<realtype> >(); 	  
-#else
-		A(k,i,j) = Minv(i,j); 	  
-#endif
-	      }
-	}
-
-    }
-  if(TRACE) cout << "Finished  MatrixInverse" << endl;
+  if(TRACELEVEL>0) cout << "Finished  MatrixInverse" << endl;
 }
 
-
+/*
 template<class T,int Nrows,int Ncols>
   void MatrixPseudoInverse(VecMat<T,Nrows,Ncols>& A)
 {
@@ -374,7 +256,7 @@ template<class T,int Nrows,int Ncols>
       //#endif     
     }
 }
-
+*/
 
 // A routine to sum over the trace of sublattice matrices for all q
 // it computes sum_q Tr(Aq Bq)

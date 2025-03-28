@@ -1,31 +1,55 @@
-#DATADIR = /scratch/sylju
 HOMEDIR = $(HOME)
 SOURCEDIR= $(HOME)/Sources/SpinS/Source
-#Compiling using MKL libraries:
-INCDIR = -I$(EBROOTEIGEN)/include -I$(EBROOTBOOST) -I$(HOMEDIR)/include -I$(SOURCEDIR)/include  -I$(MKLROOT)/include -I$(MKLROOT)/include/fftw -I$(LD_LIBRARY_PATH)
-LIBDIR = -L$(HOMEDIR)/lib -L$(SOURCEDIR)/lib -L$(MKLROOT)/lib/intel64 -L$(LD_LIBRARY_PATH) 
-LIBS   = -lfftw3xc_intel -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lm -lstdc++
-
-#for compiling using FFTW libraries, i.e. no MKL fftw. This must be used when using LONGDOUBLE option
-#INCDIR = -I$(EBROOTEIGEN)/include -I$(EBROOTBOOST) -I$(HOMEDIR)/include -I$(SOURCEDIR)/include  -I$(MKLROOT)/include -I$(EBROOTFFTW)/include/ -I$(LD_LIBRARY_PATH)
-#LIBDIR = -L$(HOMEDIR)/lib -L$(SOURCEDIR)/lib -L$(EBROOTFFTW)/lib -L$(MKLROOT)/lib/intel64 -L$(LD_LIBRARY_PATH) 
-#LIBS   = -lfftw3 -lfftw3l -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lm -lstdc++
 
 BINDIR = $(HOMEDIR)/bin
 EXTENSION = _saga.x
 
-
 # C++ compiler
 #CCC= $(CXX)
-CCC= icpc
-#CCOPTS= $(CFLAGS) -qmkl -O3 -DNDEBUG 
-#CCOPTS= $(CFLAGS) -qmkl -O3 -std=c++17 -DLONGDOUBLE
-CCOPTS= $(CFLAGS) -qmkl -O3 -std=c++17 -DNDEBUG
+
+
+# eigen:
+#CCC= icpc
+#INCDIR = -I$(EBROOTEIGEN)/include -I$(MKLROOT)/include/fftw -I$(LD_LIBRARY_PATH)
+#LIBDIR = -L$(HOMEDIR)/lib -L$(SOURCEDIR)/lib -L$(MKLROOT)/lib/intel64 -L$(LD_LIBRARY_PATH) 
+#LIBS   = -lfftw3xc_intel -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lm -lstdc++
+#STDOPTS= -std=c++17 -O3 -DUSEEIGEN 
+
+
+# eigen long double:
+CCC= g++
+##for compiling using FFTW libraries, i.e. no MKL fftw. This must be used when using LONGDOUBLE option
+INCDIR = -I$(EBROOTEIGEN)/include -I$(EBROOTFFTW)/include -I$(LD_LIBRARY_PATH)
+LIBDIR =  -L$(EBROOTFFTW)/lib
+LIBS   = -lfftw3l -lm -lstdc++
+STDOPTS= -std=c++17 -O3 -DUSEEIGEN -DLONGDOUBLE
+
+# lapack:
+#CCC= icpc
+#INCDIR = -I$(MKLROOT)/include -I$(MKLROOT)/include/fftw -I$(LD_LIBRARY_PATH)
+#LIBDIR = -L$(MKLROOT)/lib/intel64 -L$(LD_LIBRARY_PATH)
+#LIBS   = -lfftw3xc_intel -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lm -lstdc++
+#STDOPTS= -std=c++17 -O3 -mkl -DMKL_LAPACKE
+
+#Compiling using MKL libraries:
+#INCDIR = -I$(EBROOTEIGEN)/include -I$(EBROOTBOOST) -I$(HOMEDIR)/include -I$(SOURCEDIR)/include  -I$(MKLROOT)/include -I$(MKLROOT)/include/fftw -I$(LD_LIBRARY_PATH)
+#LIBDIR = -L$(HOMEDIR)/lib -L$(SOURCEDIR)/lib -L$(MKLROOT)/lib/intel64 -L$(LD_LIBRARY_PATH) 
+#LIBS   = -lfftw3xc_intel -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lm -lstdc++
+
+
+
+# mplapack: NOT YET WORKING ON FOX, NEED mplapack
+#INCDIR = -I$(DATADIR)/fftw-3.3.8/include -I$(DATADIR)/mplapack-2.0.1/include -I$(DATADIR)/mplapack-2.0.1/include/mplapack
+#LIBDIR = -L$(DATADIR)/fftw-3.3.8/lib -L$(DATADIR)/mplapack-2.0.1/lib -L$(DATADIR)/qd-2.3.14/lib -L/usr/lib 
+#LIBS   = -lmplapack_dd -lmpblas_dd -lqd  -lfftw3 -lm -lstdc++
+#STDOPTS= -std=c++17 -O2 -DMPLAPACK -Wregister
+
+
+# options:
+CCOPTS=  $(STDOPTS) -DNDEBUG
+#CCOPTS=  $(STDOPTS)
+
+# link option:
 LINKOPTS =  -O3 
+
 CCFLAGS = $(CCOPTS) $(INCDIR) 
-
-
-
-
-
-

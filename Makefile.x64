@@ -1,31 +1,44 @@
 DATADIR = /scratch/sylju
 HOMEDIR = $(HOME)
-#INCDIR = -I$(DATADIR)/include -I$(HOMEDIR)/include -I/usr/include -I$(DATADIR)/eigen-3.3.7 -I$(DATADIR)/lapack-3.5.0/lapacke/include
-#INCDIR = -I$(DATADIR)/eigen-3.3.7 -I$(DATADIR)/boost_1_73_0 -I$(DATADIR)/fftw-3.3.8/include -I$(DATADIR)/include -I$(HOMEDIR)/include -I/usr/include 
-INCDIR = -I$(DATADIR)/eigen-3.3.7 -I$(DATADIR)/boost_1_73_0 -I$(DATADIR)/fftw-3.3.8/include
-#LIBDIR = -L$(DATADIR)/fftw-3.3.8/lib -L$(DATADIR)/lib   -L$(HOMEDIR)/lib     -L/usr/lib
-LIBDIR = -L$(DATADIR)/fftw-3.3.8/lib -L$(LD_LIBRARY_PATH) -L/usr/lib 
-#LIBS   = -llapacke -lopenblas -lpthread -lqd  -lfftw3 -lm -lstdc++  
-LIBS   = -lfftw3 -lm -lstdc++  
+
 BINDIR = $(DATADIR)/bin
 EXTENSION = _x64.x
 
 # C++ compiler
-CCC= g++ 
+CCC= g++
+#CCC= icpc
+
+
+# eigen:
+INCDIR = -I$(DATADIR)/eigen-3.3.7 -I$(DATADIR)/fftw-3.3.8/include
+LIBDIR = -L$(DATADIR)/fftw-3.3.8/lib -L/usr/lib
+LIBS   = -lfftw3 -lm -lstdc++
+#STDOPTS= -std=c++17 -O3 -DUSEEIGEN -Wregister -Wmaybe-uninitialized
+STDOPTS= -std=c++17 -O3 -DUSEEIGEN
+#LIBS   = -lfftw3l -lm -lstdc++  
+##STDOPTS= -std=c++17 -O3 -DUSEEIGEN -Wregister -Wall -DLONGDOUBLE
+#STDOPTS= -std=c++17 -O3 -DUSEEIGEN -DLONGDOUBLE
+
+# lapack:
+#INCDIR = -I$(DATADIR)/fftw-3.3.8/include -I$(DATADIR)/lapack-3.11/LAPACKE/include
+#LIBDIR = -L$(DATADIR)/fftw-3.3.8/lib -L$(DATADIR)/lapack-3.11 -L$(DATADIR)/OpenBLAS-0.3.21 -L/usr/lib
+#LIBS   = -llapacke -lopenblas -lfftw3 -lm -lstdc++  
+#STDOPTS= -std=c++17 -O3 -DLAPACKE -DOPENBLAS -Wregister 
+
+# mplapack:
+#INCDIR = -I$(DATADIR)/fftw-3.3.8/include -I$(DATADIR)/mplapack-2.0.1/include -I$(DATADIR)/mplapack-2.0.1/include/mplapack
+#LIBDIR = -L$(DATADIR)/fftw-3.3.8/lib -L$(DATADIR)/mplapack-2.0.1/lib -L$(DATADIR)/qd-2.3.14/lib -L/usr/lib 
+#LIBS   = -lmplapack_dd -lmpblas_dd -lqd  -lfftw3 -lm -lstdc++
+#STDOPTS= -std=c++17 -O2 -DMPLAPACK -Wregister
+
+
 
 # options:
-STDOPTS= -std=c++11 -O3 -Wall 
-# use fftw3l with this:
-#CCOPTS=  $(STDOPTS) -DNDEBUG -DLONGDOUBLE 
-
-#CCOPTS=  $(STDOPTS) -DNDEBUG -pg
-CCOPTS=  $(STDOPTS) -DNDEBUG 
-#CCOPTS=  $(STDOPTS) 
-
-
+CCOPTS=  $(STDOPTS) -DNDEBUG
+#CCOPTS=  $(STDOPTS)
 
 # link option:
-LINKOPTS =  -O3 -Wall 
+LINKOPTS =  -O3 
 
 
 CCFLAGS = $(CCOPTS) $(INCDIR) 

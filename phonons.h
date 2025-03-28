@@ -696,7 +696,7 @@ void Phonons::Initializef()
 	      complex<realtype> tempf = 0;
 
 	      for(int k=0; k<3; k++){tempf += crr[k]*w[k];}
-	      tempf *= complextype(0,-0.5)*(expi(la.qr(qi,clist[ci]))-1.);
+	      tempf *= complextype(0,-0.5)*(expi(la.qr(qi,clist[ci]))-complextype(1.,0.));
 	      tempf *= invsqrtmasses[0]*(1./omega);
 
 	      flist(qi,ci,n)=(qi==0 ? 0: tempf);

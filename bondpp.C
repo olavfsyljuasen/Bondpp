@@ -14,6 +14,19 @@ using namespace std;
 #define _USE_MATH_DEFINES
 #include<cmath>
 
+#define KMAJORORDER   // first traverse k's, then next matrix element
+//#undef  KMAJORORDER // first traverse matrix, then next k.
+
+#ifdef KMAJORORDER   // first traverse k's, then next matrix element
+constexpr int KSTRIDE=1;
+#else                // first traverse matrix, then next k.
+constexpr int KSTRIDE= NSUBL*NSUBL;
+#endif
+
+int ir(0); // inntrykk variabel, for setting innrykk i TRACELEVEL printouts
+string spaces(const int n){ return string(n,' ');}
+
+
 #include "overload.h"
 
 #define watch(x) cout << (#x) << " is " << (x) << endl
@@ -23,9 +36,11 @@ using namespace std;
 #if defined NDEBUG 
 const bool TRACE= false; 
 const bool TRACE2=false; // more debug info
+const int TRACELEVEL=-1;
 #else
 const bool TRACE= true; // debugging option
 const bool TRACE2=true; // more debug info
+const int TRACELEVEL=4;
 //const bool TRACE= false; // debugging option
 #endif
 

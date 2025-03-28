@@ -4,9 +4,9 @@
 class Couplings
 {
  public:
-  Couplings(double* in_par,const int);
+  Couplings(realtype* in_par,const int);
  private:
-  double* par;
+  realtype* par;
   const int nc;
   void InitializeJ();
 #ifdef LATTICEDISTORTIONS
@@ -19,7 +19,7 @@ class Couplings
 #endif
 };
 
-Couplings::Couplings(double* in_par,const int in_nc):par(in_par),nc(in_nc),J(in_nc)
+Couplings::Couplings(realtype* in_par,const int in_nc):par(in_par),nc(in_nc),J(in_nc)
 #ifdef LATTICEDISTORTIONS
 ,g(in_nc)
 #endif
