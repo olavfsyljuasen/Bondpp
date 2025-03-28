@@ -15,9 +15,9 @@ LIBDIR = -L$(DATADIR)/fftw-3.3.8/lib -L/usr/lib
 LIBS   = -lfftw3 -lm -lstdc++
 #STDOPTS= -std=c++17 -O3 -DUSEEIGEN -Wregister -Wmaybe-uninitialized
 STDOPTS= -std=c++17 -O3 -DUSEEIGEN
-#LIBS   = -lfftw3l -lm -lstdc++  
+LIBS   = -lfftw3l -lm -lstdc++  
 ##STDOPTS= -std=c++17 -O3 -DUSEEIGEN -Wregister -Wall -DLONGDOUBLE
-#STDOPTS= -std=c++17 -O3 -DUSEEIGEN -DLONGDOUBLE
+STDOPTS= -std=c++17 -O3 -DUSEEIGEN -DLONGDOUBLE
 
 # lapack:
 #INCDIR = -I$(DATADIR)/fftw-3.3.8/include -I$(DATADIR)/lapack-3.11/LAPACKE/include

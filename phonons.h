@@ -366,7 +366,9 @@ Phonons::Phonons(): Nq(la.NqSites()),omega(Nq),normalmode(NSUBL),sumlogomegaover
 
       //      if(TRACE) cout << "eigenvalue[" << n << "]=" << eigenvalue << endl;
 
-      VectorXd evec=elsolve.eigenvectors().col(n);
+      Matrix<eigen_complex_type,Dynamic,1> evec=elsolve.eigenvectors().col(n);
+      //      vector<eigen_complex_type>& evec=elsolve.eigenvectors().col(n);
+      //      eigen_real_type* evec=elsolve.eigenvectors().col(n);
 
       /*
       if(TRACE)
@@ -380,7 +382,7 @@ Phonons::Phonons(): Nq(la.NqSites()),omega(Nq),normalmode(NSUBL),sumlogomegaover
       ofile << evec << endl;
       
       voigtstring thisv;
-      for(int i=0; i<NELASTIC; i++) thisv[i]=evec(i);
+      for(int i=0; i<NELASTIC; i++) thisv[i]=real(evec(i));
       elasticmode.push_back(thisv);
       elasticeigenvalue.push_back(eigenvalue);       
     } 
