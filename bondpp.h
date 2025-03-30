@@ -1779,13 +1779,19 @@ void Driver::BiasSigma()
 
   MakeHermitian(Kinvq); // force the inverse to be Hermitian
 
-  cout << "Kinvq=" << endl;
-  cout << Kinvq << endl;
+  if(TRACELEVEL >2 )
+    {
+      cout << "Kinvq=" << endl;
+      cout << Kinvq << endl;
+    }
   
   ComputeSelfEnergy(); // this is then the new self-energy to use
 
-  cout << "Sigmaq:" << endl;
-  cout << Sigmaq << endl;
+  if(TRACELEVEL >2 )
+    {
+      cout << "Sigmaq:" << endl;
+      cout << Sigmaq << endl;
+    }
   
   if(TRACE) cout << "Finished BiasSigma()" << endl;
 }
@@ -2867,9 +2873,11 @@ Simulation::Simulation(): couplings(par,NC),rule(couplings),mysolver(rule),Delta
   ifstream parameterfile2(DELTASTOSHOWFILENAME.c_str());
   if(!parameterfile)
     {
-      if(TRACE) 
-	cout << "No file " << DELTASTOSHOWFILENAME << " found." 
-	     << " Using Delta=" << par[DELTASTART] << endl;
+      if(TRACE)
+	{
+	  cout << "No file " << DELTASTOSHOWFILENAME << " found." 
+	       << " Using Delta=" << par[DELTASTART] << endl;
+	}
       logfile << "No file " << DELTASTOSHOWFILENAME << " found." 
 	      << " Using Delta=" << par[DELTASTART] << endl;
       
