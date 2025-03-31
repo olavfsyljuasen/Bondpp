@@ -30,7 +30,7 @@ realtype SumLogDet(VecMat<T,Nrows,Ncols>& A)
   if(TRACE) cout << "Starting SumLogDet" << endl;
 
   realtype sum=0.;
-  const int n    = A.Nvecs; // the number of q values
+  const int n    = A.Nvecs(); // the number of q values
 
   vector<complextype> a(Nrows*Ncols);
   
@@ -116,7 +116,7 @@ template<class T,int Nrows,int Ncols>
 template<class T,int Nrows,int Ncols>
   void AddDelta(VecMat<T,Nrows,Ncols>& K,NumberList& delta)
 {
-  for(int q=0; q<K.Nvecs; q++)
+  for(int q=0; q<K.Nvecs(); q++)
     {
       for(int m=0; m<Nrows; m++)
 	K(q,m,m) += delta[subl(m)];
@@ -130,7 +130,7 @@ template<class T,int Nrows,int Ncols>
 {
   if(TRACELEVEL>0) cout << spaces(ir++) << "Starting FindMinimumEigenvalue()" << endl;
 
-  const int n=A.Nvecs;   // the number of q values
+  const int n=A.Nvecs();   // the number of q values
 
   realtype global_min=numeric_limits<realtype>::max();
 
@@ -169,7 +169,7 @@ template<class T,int Nrows,int Ncols>
   void MatrixInverse(VecMat<T,Nrows,Ncols>& A)
 {
   if(TRACELEVEL>0) cout << "Starting MatrixInverse" << endl;
-  const int n=A.Nvecs;   // the number of q values
+  const int n=A.Nvecs();   // the number of q values
 
   assert(Nrows == Ncols);
   
@@ -195,7 +195,7 @@ template<class T,int Nrows,int Ncols>
 template<class T,int Nrows,int Ncols>
   void MatrixPseudoInverse(VecMat<T,Nrows,Ncols>& A)
 {
-  const int n=A.Nvecs;   // the number of q values
+  const int n=A.Nvecs();   // the number of q values
   
   if(Nrows==1 && Ncols==1) // just take the inverse of each element
     {
@@ -266,7 +266,7 @@ template<class T,int Nrows,int Ncols>
   if(TRACE) cout << "Starting SumTr" << endl;
   realtype sum=0.;
 
-  for(int k=0; k<A.Nvecs; k++)
+  for(int k=0; k<A.Nvecs(); k++)
     {
       SMatrix<complex<realtype>,Nrows,Ncols> temp(A[k]);
       temp *= B[k];

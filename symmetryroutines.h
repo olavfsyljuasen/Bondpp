@@ -5,7 +5,7 @@
 template<class T,int Nrows,int Ncols>
   void MakeHermitian(VecMat<T,Nrows,Ncols>& M,bool warning=true)
 {  
-  for(int q=0; q<M.Nvecs; q++)
+  for(int q=0; q<M.Nvecs(); q++)
     {
       for(int s=0; s<Nrows; s++)
 	{
@@ -38,7 +38,7 @@ template<class T,int Nrows,int Ncols>
 template<class T,int Nrows,int Ncols>
   void MakeEqualSpinDiagonalEntries(VecMat<T,Nrows,Ncols>& M,bool warning=true)
 {
-  for(int q=0; q<M.Nvecs; q++)
+  for(int q=0; q<M.Nvecs(); q++)
     {
       for(int l1=0; l1<NSUBL; l1++)
 	for(int l2=0; l2<NSUBL; l2++)
@@ -71,7 +71,7 @@ template<class T,int Nrows,int Ncols>
   void EraseSpinOffdiagonals(VecMat<T,Nrows,Ncols>& M,bool warning=true)
 {
   if(NSPIN ==1 ) return; // not interesting if only one spin component
-  for(int q=0; q<M.Nvecs; q++)
+  for(int q=0; q<M.Nvecs(); q++)
     {
       for(int l1=0; l1<NSUBL; l1++)
 	for(int l2=0; l2<NSUBL; l2++)
@@ -125,7 +125,7 @@ template<class T,int Nrows,int Ncols>
   bool IsSpinSymmetric(VecMat<T,Nrows,Ncols>& M)
 {
   if(NSPIN == 1) return true;
-  for(int q=0; q<M.Nvecs; q++)
+  for(int q=0; q<M.Nvecs(); q++)
     {
       for(int l=0; l<NSUBL; l++)
 	for(int s1=0; s1<NSPIN; s1++)
@@ -169,7 +169,7 @@ template<class T,int Nrows,int Ncols>
 {
   // N1rows and N1cols are the dimensions of the upper block matrix
 
-  for(int q=0; q<M.Nvecs; q++)
+  for(int q=0; q<M.Nvecs(); q++)
     {
       for(int s=0; s<Nrows; s++)
 	{
@@ -208,7 +208,7 @@ template<class T,int Nrows,int Ncols>
 template<class T,int Nrows,int Ncols>
   void MakeInversionTransposedSymmetric(VecMat<T,Nrows,Ncols>& M)
 {
-  for(int q=0; q<M.Nvecs; q++)
+  for(int q=0; q<M.Nvecs(); q++)
     {
       const int invq=la.GetInversionIndx(q); // the negative q
       
@@ -228,7 +228,7 @@ template<class T,int Nrows,int Ncols>
 {
   //  if(TRACE) cout << "Checking if Hermitian: ";
   //  bool retval=true;
-  for(int q=0; q<M.Nvecs; q++)
+  for(int q=0; q<M.Nvecs(); q++)
     {
       
       for(int s=0; s<Nrows; s++)
@@ -263,7 +263,7 @@ bool IsMixedHermitian(VecMat<T,Nrows,Ncols>& M,const int N1rows,const int N1cols
   //  if(TRACE) cout << "Checking if Hermitian: ";
   //  bool retval=true;
 
-  for(int q=0; q<M.Nvecs; q++)
+  for(int q=0; q<M.Nvecs(); q++)
     {
       
       for(int s=0; s<Nrows; s++)
@@ -300,7 +300,7 @@ bool IsInversionTransposedSymmetric(VecMat<T,Nrows,Ncols>& M)
   //  if(TRACE) cout << "Checking if InversionTransposedSymmetric: ";
 
   
-  for(int q=0; q<M.Nvecs; q++)
+  for(int q=0; q<M.Nvecs(); q++)
     {
       const int invq=la.GetInversionIndx(q); // the negative q
       

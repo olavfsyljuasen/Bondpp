@@ -85,6 +85,8 @@ const bool USEPREVIOUSEPSILONS = true; // use previous epsilon values whenever l
 const bool USEPREVIOUSEPSILONS = false;
 #endif
 
+const string STATEFILENAME ="conf"; 
+
 const string RCORRSFILENAME="rcorrs.dat";
 const string QCORRSFILENAME="qcorrs";
 const string SIGMAEFILENAME="sigmaEq.dat";

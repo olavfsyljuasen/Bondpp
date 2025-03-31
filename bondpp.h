@@ -80,9 +80,17 @@ class Driver
       FFTWDESTROYPLAN(F2pluss);
       FFTWDESTROYPLAN(F2minus);
     }
+
+  void SaveState(string filename);
+  bool LoadState(string filename);
+
   vector<IndxVal> FindMatrixMaxVals(VecMat<complextype,NMAT,NMAT>& A,const int nmax); // output the maxvalue and q indx of the nmax max values
 
 
+
+
+  
+  
   realtype CalculateT(int);
   void CalculateTs(vector<realtype>&);
   
@@ -114,11 +122,11 @@ class Driver
 
   void MakeSymmetric(VecMat<complextype,NMAT,NMAT>&);
   
-  bool SolveSelfConsistentEquation(NumberList Delta); 
+  bool SolveSelfConsistentEquation(NumberList Delta,bool); 
   bool SolveSaddlePointEquations(realtype&,NumberList&);
 
   
-  bool Solve(NumberList delta,NumberList thisepsilon,const bool pinfo)
+  bool Solve(NumberList delta,NumberList thisepsilon,const bool pinfo,bool loadstate)
   {
     Delta = delta;
     RenormalizedDelta = delta; //  just as starting value
@@ -144,7 +152,7 @@ class Driver
     
     Printinfo=pinfo;
 
-    bool go_on=SolveSelfConsistentEquation(Delta);
+    bool go_on=SolveSelfConsistentEquation(Delta,loadstate);
     if(TRACE) cout << "Done Solve" << endl;
     return go_on;
   }
@@ -161,6 +169,8 @@ class Driver
   const realtype invSqrtNq;
 
   bool converged; //  
+  bool pconverged;
+  bool done;
   
   NumberList Delta; 
   NumberList RenormalizedDelta;
@@ -185,7 +195,8 @@ class Driver
   int MaxIterMultiplier; // multiplier for MaxIter, usually only used in the first step
 
   realtype mineigenvalue; // for storing the minimum SigmaE value
-  realtype currT; // for storing the current value of the temperature 
+  //  realtype currT; // for storing the current value of the temperature
+  realtype newT; // for storing the current value of the temperature 
 
   VecMat<complextype,NMAT,NMAT>& Jq;
   // The actual storage areas
@@ -250,7 +261,7 @@ class Driver
 };
 
 
-Driver::Driver(Rule& r):rule(r),dim(la.D()),dims(la.SiteqDims()),Nq(la.NqSites()),invNq(static_cast<realtype>(1.)/Nq),invSqrtNq(1./sqrt(Nq)),converged(false),Delta(NSUBL),RenormalizedDelta(NSUBL),Ts(NSUBL),Printinfo(false),lineid(0),SigmaInitialized(false),EpsilonInitialized(false),InitializeKinvqFromFile(true),failed(false),MaxIterMultiplier(1),Jq(r.Jq),  
+Driver::Driver(Rule& r):rule(r),dim(la.D()),dims(la.SiteqDims()),Nq(la.NqSites()),invNq(static_cast<realtype>(1.)/Nq),invSqrtNq(1./sqrt(Nq)),converged(false),pconverged(false),done(false),Delta(NSUBL),RenormalizedDelta(NSUBL),Ts(NSUBL),Printinfo(false),lineid(0),SigmaInitialized(false),EpsilonInitialized(false),InitializeKinvqFromFile(true),failed(false),MaxIterMultiplier(1),newT(-1.),Jq(r.Jq),  
   A1(Nq),A2(Nq),B(Nq),F1(Nq),F2(Nq),
 #ifdef FFTS_INPLACE
   A1r(A1),A2r(A2),Br(B),
@@ -346,6 +357,117 @@ Driver::Driver(Rule& r):rule(r),dim(la.D()),dims(la.SiteqDims()),Nq(la.NqSites()
 };
 
 
+void Driver::SaveState(string filename)
+{
+  logfile << "SaveState to file " << filename << endl;
+  
+  if(TRACELEVEL>0) cout << spaces(ir++) << "Starting SaveState(" << filename << ")" << endl;
+
+  ofstream outfile(filename.c_str());
+  outfile.write((char*) &dim,sizeof(dim));
+  outfile.write((char*) &dims[0],dims.size()*sizeof(dims[0]));
+  outfile.write((char*) &Nq,sizeof(Nq));
+  outfile.write((char*) &invNq,sizeof(invNq));
+  outfile.write((char*) &invSqrtNq,sizeof(invSqrtNq));
+  outfile.write((char*) &converged,sizeof(converged));
+  outfile.write((char*) &pconverged,sizeof(pconverged));
+  outfile.write((char*) &done,sizeof(done));
+  outfile.write((char*) &Delta[0],Delta.size()*sizeof(Delta[0]));
+  outfile.write((char*) &RenormalizedDelta[0],RenormalizedDelta.size()*sizeof(RenormalizedDelta[0]));
+  outfile.write((char*) &Ts[0],Ts.size()*sizeof(Ts[0]));
+#ifdef PRESERVESYMMETRY
+  outfile.write((char*) &TransformationPeriod,sizeof(TransformationPeriod));
+  outfile.write((char*) &TransformationTable[0],TransformationTable.size()*sizeof(TransformationTable[0]));
+#endif
+  outfile.write((char*) &Printinfo,sizeof(Printinfo));
+  outfile.write((char*) &lineid,sizeof(lineid));
+  outfile.write((char*) &SigmaInitialized,sizeof(SigmaInitialized));
+  outfile.write((char*) &EpsilonInitialized,sizeof(EpsilonInitialized));
+  outfile.write((char*) &InitializeKinvqFromFile,sizeof(InitializeKinvqFromFile));
+  outfile.write((char*) &failed,sizeof(failed));
+  outfile.write((char*) &MaxIterMultiplier,sizeof(MaxIterMultiplier));
+  outfile.write((char*) &mineigenvalue,sizeof(mineigenvalue));
+  //  outfile.write((char*) &currT,sizeof(currT));
+  outfile.write((char*) &newT,sizeof(newT));
+    
+  outfile.write((char*) A1.start(),A1.size()*sizeof(A1.start()));
+  outfile.write((char*) A2.start(),A2.size()*sizeof(A2.start()));
+  outfile.write((char*) B.start(),B.size()*sizeof(B.start()));
+
+  outfile.write((char*) &F1[0],F1.size()*sizeof(F1[0]));
+  outfile.write((char*) &F2[0],F2.size()*sizeof(F2[0]));
+
+#ifndef FFTS_INPLACE
+  outfile.write((char*) A1r.start(),A1r.size()*sizeof(A1r.start()));
+  outfile.write((char*) A2r.start(),A2r.size()*sizeof(A2r.start()));
+  outfile.write((char*) Br.start(),Br.size()*sizeof(Br.start()));
+#endif
+  outfile.write((char*) &epsilon[0],epsilon.size()*sizeof(epsilon[0]));
+  
+  outfile.close();
+  if(TRACELEVEL>0) cout << spaces(--ir) << "Done SaveState(" << filename << ")" << endl;
+}
+
+
+
+bool Driver::LoadState(string filename)
+{  
+  if(TRACELEVEL > 0) cout << spaces(ir++) << "Start LoadState(" << filename << ")" << endl;
+  ifstream infile(filename.c_str());
+  if(!infile)
+    {
+      if(TRACELEVEL > 0) cout << spaces(--ir) << "Done LoadState(" << filename << "), no file found" << endl;
+      return false;
+    }
+  logfile << "LoadState from " << filename << endl;
+
+  infile.read((char*) &dim,sizeof(dim));
+  infile.read((char*) &dims[0],dims.size()*sizeof(dims[0]));
+  infile.read((char*) &Nq,sizeof(Nq));
+  infile.read((char*) &invNq,sizeof(invNq));
+  infile.read((char*) &invSqrtNq,sizeof(invSqrtNq));
+  infile.read((char*) &converged,sizeof(converged));
+  infile.read((char*) &pconverged,sizeof(pconverged));
+  infile.read((char*) &done,sizeof(done));
+  infile.read((char*) &Delta[0],Delta.size()*sizeof(Delta[0]));
+  infile.read((char*) &RenormalizedDelta[0],RenormalizedDelta.size()*sizeof(RenormalizedDelta[0]));
+  infile.read((char*) &Ts[0],Ts.size()*sizeof(Ts[0]));
+#ifdef PRESERVESYMMETRY
+  infile.read((char*) &TransformationPeriod,sizeof(TransformationPeriod));
+  infile.read((char*) &TransformationTable[0],TransformationTable.size()*sizeof(TransformationTable[0]));
+#endif
+  infile.read((char*) &Printinfo,sizeof(Printinfo));
+  infile.read((char*) &lineid,sizeof(lineid));
+  infile.read((char*) &SigmaInitialized,sizeof(SigmaInitialized));
+  infile.read((char*) &EpsilonInitialized,sizeof(EpsilonInitialized));
+  infile.read((char*) &InitializeKinvqFromFile,sizeof(InitializeKinvqFromFile));
+  infile.read((char*) &failed,sizeof(failed));
+  infile.read((char*) &MaxIterMultiplier,sizeof(MaxIterMultiplier));
+  infile.read((char*) &mineigenvalue,sizeof(mineigenvalue));
+  //  infile.read((char*) &currT,sizeof(currT));
+  infile.read((char*) &newT,sizeof(newT));
+
+  infile.read((char*) A1.start(),A1.size()*sizeof(A1.start()));
+  infile.read((char*) A2.start(),A2.size()*sizeof(A2.start()));
+  infile.read((char*) B.start(),B.size()*sizeof(B.start()));
+
+  infile.read((char*) &F1[0],F1.size()*sizeof(F1[0]));
+  infile.read((char*) &F2[0],F2.size()*sizeof(F2[0]));
+
+#ifndef FFTS_INPLACE
+  infile.read((char*) A1r.start(),A1r.size()*sizeof(A1r.start()));
+  infile.read((char*) A2r.start(),A2r.size()*sizeof(A2r.start()));
+  infile.read((char*) Br.start(),Br.size()*sizeof(Br.start()));
+#endif
+  infile.read((char*) &epsilon[0],epsilon.size()*sizeof(epsilon[0]));
+
+  
+  infile.close();
+  if(TRACELEVEL>0) cout << spaces(--ir) << "Done LoadState(" << filename << ")" << endl;
+  return true;
+}
+
+  
 // find the nmax largest values of the matrix mymatrix and output its q-indx
 vector<IndxVal> Driver::FindMatrixMaxVals(VecMat<complextype,NMAT,NMAT>& mymatrix,const int nmax)
 {
@@ -1189,7 +1311,8 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 
   // add the bare phonon part
   
-  realtype barepart=1./currT; // the one-half is included in the def. of propagator 
+  //  realtype barepart=1./currT; // the one-half is included in the def. of propagator
+  realtype barepart=1./newT; // the one-half is included in the def. of propagator 
   for(int qi=0; qi<Nq; qi++)
     {
       for(int n=0; n<NMODE; n++)
@@ -1622,7 +1745,8 @@ void Driver::ConstructKinvq(bool firsttime=false)
       
       CalculateTs(Ts);
 
-      currT=Ts[0];
+      //      currT=Ts[0];
+      newT=Ts[0];
       
       logfile << "initial Deltas and Ts:";
       logfile << scientific << setprecision(LOGPRECISION);
@@ -1889,14 +2013,15 @@ bool Driver::SolveSaddlePointEquations(realtype& thisT,NumberList& thisepsilon)
 
 
 // assumes initialized Sigma and mu
-bool Driver::SolveSelfConsistentEquation(NumberList Delta)
+bool Driver::SolveSelfConsistentEquation(NumberList Delta,bool load_state)
 {
   if(TRACE) cout << "Starting SolveSelfConsistentEquation " << endl;
 
   //  if(TRACE) cout << "Starting Solve with Delta= " << Delta << " epsilon=" << epsilon << endl;
   //  logfile << "Starting Solver with Delta= " << Delta << " epsilon=" << epsilon << endl;
 
-
+  
+  bool loadstate(load_state);
   bool go_on=true; // set the return variable to true by default, it becomes false when converged if EXITWHENCONVERGED is set
   failed=false;
 
@@ -1911,7 +2036,8 @@ bool Driver::SolveSelfConsistentEquation(NumberList Delta)
   if(TRACE) SanityCheck(Jq,"Jq, after subtracting minimum");
   
   realtype T=-1;
-  realtype newT=-1.;
+  //  realtype newT=-1.;
+  //newT=T;
   realtype m2=0.; // magnetic order parameter squared.
   vector<obstype> nobs(NOBSERVABLES); // nematic order parameters
   vector<obstype> nspinobs(NSPINOBSERVABLES); // different types of spin order parameters
@@ -1939,13 +2065,15 @@ bool Driver::SolveSelfConsistentEquation(NumberList Delta)
   MakeSymmetric(Sigmaq);
 #endif
 
+
   // construct Kinvq:
   
   ConstructKinvq(true);
 
   realtype oldT=Ts[0]; 
 
-  currT=oldT; // set the current operating temperature
+  //  currT=oldT; // set the current operating temperature
+  newT=oldT; // set the current operating temperature
 
   realtype absTdev(0.);
   realtype oldabsTdev(0.);
@@ -1969,14 +2097,22 @@ bool Driver::SolveSelfConsistentEquation(NumberList Delta)
 
  
   int iter=0;
-  converged=false;
-  bool pconverged=false; // convergence in the previous iteration,
-  bool done=false;
-
   bool reachedMAXITER=false;
   bool saddlepts_ok=true; // an indicator to flag whether iterations of saddlept eqs are succesful or not.
 
+  converged=false;
+  pconverged=false; // convergence in the previous iteration,
+  done=false;
 
+
+  // Load State variables from file STATEFILENAME
+  bool stateloaded=false;  
+  if( loadstate && LoadState(STATEFILENAME) )
+    {
+      loadstate=false;
+      stateloaded=true;
+    }
+      
   while(!done && !reachedMAXITER && saddlepts_ok && !failed)  
     {
       if(TRACE) cout << "New iteration: " << iter << endl;
@@ -2059,9 +2195,10 @@ bool Driver::SolveSelfConsistentEquation(NumberList Delta)
 
 #endif       
 
-      currT= (1.-inertia)*newT+inertia*oldT; 
-
-      oldT=currT;
+      //currT= (1.-inertia)*newT+inertia*oldT; 
+      //oldT=currT;
+      newT= (1.-inertia)*newT+inertia*oldT; 
+      oldT=newT;
 
       
       if(TRACE) cout << "converged= " << converged << " TOLERANCE:" << par[TOLERANCE] << endl;
@@ -2127,6 +2264,11 @@ bool Driver::SolveSelfConsistentEquation(NumberList Delta)
     }
   else
     {      
+      if(!stateloaded)
+	{
+	  SaveState(STATEFILENAME); // Save State variables from file STATEFILENAME
+	}
+      
       lineid++; 
 
       T = Ts[0];
@@ -3010,7 +3152,8 @@ void Simulation::Run()
   if(TRACE) cout << "Starting Run" << endl;
   for(unsigned int i=0; i<Deltalist.size(); i++)
     {
-      bool go_on = mysolver.Solve(Deltalist[i],epsilonlist[i],Printinfolist[i]);
+      bool loadstate=(i==0 ? true: false);
+      bool go_on = mysolver.Solve(Deltalist[i],epsilonlist[i],Printinfolist[i],loadstate);
       if(!go_on){logfile << "Stopping run because go_on=false" << endl; break;}
     }
   if(TRACE) cout << "Done Run" << endl;

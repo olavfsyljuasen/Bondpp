@@ -812,7 +812,7 @@ class VecMat
   */
   friend ostream& operator<<(ostream& os,VecMat& m)
   { 
-    for(int q=0; q<m.Nvecs; q++)
+    for(int q=0; q< m.size()/(Nrows*Ncols); q++)
       {
 	os << q << ":" << endl;
 	for(int i=0; i<Nrows; i++)
@@ -827,14 +827,16 @@ class VecMat
   }
 
  public:
- VecMat(const int nvecs):Nvecs(nvecs),A(Nvecs*Nrows*Ncols){}
- VecMat(VecMat& c):Nvecs(c.Nvecs),A(Nvecs*Nrows*Ncols)
-    {
-      T* ptr=c.start();
-      for(unsigned int i=0; i<A.size(); i++){ A[i]=*(ptr+i);}
-    }
+  VecMat(const int nvecs):A(nvecs*Nrows*Ncols){}
+  VecMat(VecMat& c):A(c.size())
+  {
+    T* ptr=c.start();
+    for(unsigned int i=0; i<A.size(); i++){ A[i]=*(ptr+i);}
+  }
   
   unsigned int size() const {return A.size();}
+
+  int Nvecs(){ return A.size()/(Nrows*Ncols);}
   
   T* start(){return &A[0];} // needed to access start of data-array
   
@@ -843,13 +845,12 @@ class VecMat
   void SetToZero(){for(unsigned int i=0; i<A.size(); i++){A[i]=0;}}
   
   T* operator[](const int i){ return &A[indx(i,0,0)];}  
-
+  
   SMatrix<T,Nrows,Ncols> qcomp(const int q){return SMatrix<T,Nrows,Ncols>(&A[indx(q,0,0)]);} // only used for printing
 
   
-  const int Nvecs; // size of vector
   vector<T> A; // the actual storage area
-
+  
   bool ContainsNaN(string message="")
   {
     for(unsigned int i=0; i<A.size(); i++)
@@ -862,36 +863,37 @@ class VecMat
       }
     return false;
   }
-
-
+  
+  
   VecMat& operator=(VecMat& rhs)
-    {
-      T* ptr=rhs.start();
-      if(this == &rhs) return *this; // self-assignment
-      for(unsigned int i=0; i<A.size(); i++){A[i]= *(ptr+i);}
-      return *this;
-    }
-
+  {
+    T* ptr=rhs.start();
+    if(this == &rhs) return *this; // self-assignment
+    for(unsigned int i=0; i<A.size(); i++){A[i]= *(ptr+i);}
+    return *this;
+  }
+  
   VecMat& operator+=(VecMat& rhs) 
-    {
-      T* ptr=rhs.start();
-      for(unsigned int i=0; i<A.size(); i++){A[i]+= *(ptr+i);}
-      return *this;
-    }
-
+  {
+    T* ptr=rhs.start();
+    for(unsigned int i=0; i<A.size(); i++){A[i]+= *(ptr+i);}
+    return *this;
+  }
+  
   VecMat& operator-=(VecMat& rhs) 
-    {
-      T* ptr=rhs.start();
-      for(unsigned int i=0; i<A.size(); i++){A[i]-= *(ptr+i);}
-      return *this;
-    }
-
+  {
+    T* ptr=rhs.start();
+    for(unsigned int i=0; i<A.size(); i++){A[i]-= *(ptr+i);}
+    return *this;
+  }
+  
   // sublattice matrix product for each q
   VecMat& operator*=(VecMat& rhs) 
-    {
-      vector<T> temprow(Ncols); // vector for storing temporary result
-      for(int q=0; q<Nvecs; q++)
-	{
+  {
+    int Nvecs=size()/(Nrows*Ncols);
+    vector<T> temprow(Ncols); // vector for storing temporary result
+    for(int q=0; q<Nvecs; q++)
+      {
 	  for(unsigned int i=0; i<Nrows; i++)
 	    {
 	      for(unsigned int j=0; j<Ncols; j++)
@@ -923,7 +925,7 @@ class VecMat
   SMatrix<T,Nrows,Ncols> Sumq()
     {
       SMatrix<T,Nrows,Ncols> res;
-      for(int q=0; q<Nvecs; q++)
+      for(int q=0; q< size()/(Nrows*Ncols); q++)
 	{
 	  T* ptr=A[q];
 	  for(unsigned int j=0; j<Nrows*Ncols; j++){ res[j] += *(ptr+j);}
@@ -934,7 +936,7 @@ class VecMat
   T Sumq(const int m1,const int m2)
     {
       T res(0);
-      for(int q=0; q<Nvecs; q++){ res += A[indx(q,m1,m2)];} 
+      for(int q=0; q< size()/(Ncols*Nrows); q++){ res += A[indx(q,m1,m2)];} 
       return res;
     }
 
@@ -1084,7 +1086,7 @@ void ComplexConjugate(VecMat<T,Nrows,Ncols>& K)
 template<class T,int Nrows,int Ncols>
 void MakeRealSymmetric(VecMat<T,Nrows,Ncols>& M)
 {
-  for(unsigned int q=0; q<M.Nvecs; q++)
+  for(unsigned int q=0; q<M.size()/(Nrows*Ncols); q++)
     {
       for(unsigned int s=0; s<Nrows; s++)
 	{
@@ -1105,7 +1107,7 @@ void MakeRealSymmetric(VecMat<T,Nrows,Ncols>& M)
 template<class T,int Nrows,int Ncols>
 void MakeRealOnDiagonal(VecMat<T,Nrows,Ncols>& M)
 { 
-  for(int q=0; q<M.Nvecs; q++)
+  for(int q=0; q<M.size()/(Nrows*Ncols); q++)
     for(int s=0; s<Nrows; s++)
       M(q,s,s).imag(0.); // real diagonal
 }      
@@ -1114,7 +1116,7 @@ void MakeRealOnDiagonal(VecMat<T,Nrows,Ncols>& M)
 template<class T,int Nrows,int Ncols>
 void MakeAntiSymmetric(VecMat<T,Nrows,Ncols>& M)
 {
-  for(int q=0; q<M.Nvecs; q++)
+  for(int q=0; q<M.size()/(Nrows*Ncols); q++)
     {
       for(int s=0; s<Nrows; s++)
 	{
@@ -1135,7 +1137,7 @@ void MakeAntiSymmetric(VecMat<T,Nrows,Ncols>& M)
 template<class T,int Nrows,int Ncols>
 void AddToDiagonal(VecMat<T,Nrows,Ncols>& M,T& value)
 {
-  for(int q=0; q<M.Nvecs; q++)
+  for(int q=0; q<M.size()/(Nrows*Ncols); q++)
     for(int s=0; s<Nrows; s++)
       M(q,s,s)+=value;
 }
@@ -1152,7 +1154,7 @@ void SubtractFromDiagonal(VecMat<T,Nrows,Ncols>& A,T value)
 template<class T,int Nrows,int Ncols>
 void AddToDiagonal(VecMat<T,Nrows,Ncols>& M,vector<T>& value)
 {
-  for(int q=0; q<M.Nvecs; q++)
+  for(int q=0; q<M.size()/(Nrows*Ncols); q++)
     for(int s=0; s<Nrows; s++)
       M(q,s,s)+=value[s];
 }
