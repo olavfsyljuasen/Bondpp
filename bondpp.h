@@ -2029,6 +2029,8 @@ bool Driver::SolveSelfConsistentEquation(NumberList Delta,bool load_state)
 
   if(TRACE) SanityCheck(Jq,"Jq, input to SolveSelfConsistentEquation");
 
+  //  if(TRACELEVEL>3) cout << "Jq=" << Jq << endl;
+  
   SubtractMinimumEigenvalue(Jq);
 
   Chomp(Jq); // set very small entries to 0

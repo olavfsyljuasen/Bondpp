@@ -130,7 +130,7 @@ void Rule::InitializeJq()
 	for(int i1=0; i1<NMAT; i1++)
 	  for(int i2=0; i2<NMAT; i2++)
 	    {
-	      Jq(qj,i1,i2) += 0.5*(Jr(ci,i1,i2)*expi(la.qr(qj,clist[ci]))+Jr(ci,i2,i1)*conj(expi(la.qr(qj,clist[ci]))));
+	      Jq(qj,i1,i2) += complextype(0.5,0.)*(Jr(ci,i1,i2)*expi(la.qr(qj,clist[ci]))+Jr(ci,i2,i1)*conj(expi(la.qr(qj,clist[ci]))));
 	    }
 }
 
@@ -143,7 +143,7 @@ void Rule::InitializeJq()
 	for(int i1=0; i1<NMAT; i1++)
 	  for(int i2=0; i2<NMAT; i2++)
 	    {
-	      Jq(qj,i1,i2) += 0.5*Jr(ci,i1,i2)*expi(la.qr(qj,clist[ci]));
+	      Jq(qj,i1,i2) += complextype(0.5,0.)*Jr(ci,i1,i2)*expi(la.qr(qj,clist[ci]));
 	    }
 }
 
@@ -152,7 +152,7 @@ void Rule::InitializeJq()
 
 complextype Rule::GetCorrFactor(const int s0,const int s1,const Coord& q)
 {
-  return 1; // not implemented, only true for bravaislattices
+  return complextype(1.,0.); // not implemented, only true for bravaislattices
   /*  realtype qdelta=scalarproduct(sublatticevector[s0]-sublatticevector[s1],q);
       return expi(-qdelta);*/
 }
@@ -192,7 +192,7 @@ void Rule::InitializeElasticMode(int i,VecMat<complextype,NMAT,NMAT>& gel)
 			  int m1=mindx(s1,i1);
 			  int m2=mindx(s2,i2);		
 			  
-			  gel(qj,m1,m2) += 0.5*u[vi]*crr2*g(ci,m1,m2)*expi(la.qr(qj,clist[ci]));
+			  gel(qj,m1,m2) += complextype(0.5,0.0)*u[vi]*crr2*g(ci,m1,m2)*expi(la.qr(qj,clist[ci]));
 			}
 		  }
 
@@ -208,7 +208,7 @@ void Rule::InitializeElasticMode(int i,VecMat<complextype,NMAT,NMAT>& gel)
 			  int m1=mindx(s1,i1);
 			  int m2=mindx(s2,i2);		
 			  
-			  gel(qj,m1,m2) += 0.5*u[vi]*crr2*g(ci,m2,m1)*conj(expi(la.qr(qj,clist[ci])));
+			  gel(qj,m1,m2) += complextype(0.5,0.)*u[vi]*crr2*g(ci,m2,m1)*conj(expi(la.qr(qj,clist[ci])));
 			}
 		  }
 	    }
@@ -247,7 +247,7 @@ void Rule::InitializeElasticMode(int i,VecMat<complextype>& gel)
 			  int m1=mindx(s1,i1);
 			  int m2=mindx(s2,i2);		
 			  
-			  gel(qj,m1,m2) += 0.5*u[vi]*crr2*g(ci,m1,m2)*expi(la.qr(qj,clist[ci]));
+			  gel(qj,m1,m2) += complextype(0.5,0.)*u[vi]*crr2*g(ci,m1,m2)*expi(la.qr(qj,clist[ci]));
 			}
 		  }
 	    }
