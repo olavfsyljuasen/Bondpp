@@ -730,7 +730,7 @@ realtype Driver::CalculateFreeEnergy(realtype T)
   if(TRACE) cout << "--- T  = " << T << endl;
   // constants:
   //realtype betaf_constants= -( 0.5*NSUBL*log(2.*Nq) + 0.5*NSUBL*(NS-1)*log(PI));
-  realtype betaf_constants = -0.5*NSUBL*log(Nq) -0.5*NSUBL*(Ns-2)*log(PI) - 0.5*NSUBL*log(TWOPI);
+  realtype betaf_constants = realtype(-0.5*NSUBL)*(mylog(Nq)+(Ns-2)*mylog(PI)+mylog(TWOPI));
 
   if(TRACEFREEENERGY) cout << scientific << setprecision(6) << "T=" << T << " bf_const=" << betaf_constants;
     
@@ -739,7 +739,7 @@ realtype Driver::CalculateFreeEnergy(realtype T)
   f += T*betaf_constants;
 
   //temperature factors
-  realtype betaf_Tdep = 0.5*NSUBL*(Ns-2)*log(1./T); 
+  realtype betaf_Tdep = realtype(0.5*NSUBL*(Ns-2))*mylog(1./T); 
   if(TRACE) cout << "betaf_Tdep  = " << betaf_Tdep << endl;
   
   f += T*betaf_Tdep;
@@ -752,7 +752,7 @@ realtype Driver::CalculateFreeEnergy(realtype T)
   //#if !(defined OMITELASTICCONT || defined NOELASTIC)
   //elastic modes  
   realtype f_elastic = 0;
-  for(int i=0; i<NELASTIC; i++){ f_elastic += 0.5*epsilon[i]*epsilon[i]*rule.elasticeigenvalues[i];}
+  for(int i=0; i<NELASTIC; i++){ f_elastic += realtype(0.5)*epsilon[i]*epsilon[i]*rule.elasticeigenvalues[i];}
 
   if(TRACE) cout << "f_elastic  = " << f_elastic << endl;
   if(TRACEFREEENERGY) cout << " f_elastic=" << f_elastic;
@@ -767,7 +767,7 @@ realtype Driver::CalculateFreeEnergy(realtype T)
   // the Dinv in this code contains a term beta on the phonon diagonal part, also
   // when the coupling to phonons g=0. Thus in order to count this as a contribution to
   // the phonons part of the free energy, we subtract it from D and add it here.    
-  realtype betaf_phononTdep = -0.5*NMODE*log(T); 
+  realtype betaf_phononTdep = realtype(-0.5)*NMODE*mylog(T); 
   if(TRACE) cout << "betaf_phononTdep  = " << betaf_phononTdep << endl;
 
   if(TRACEFREEENERGY) cout << " bf_phononTdep=" << betaf_phononTdep;
@@ -775,14 +775,14 @@ realtype Driver::CalculateFreeEnergy(realtype T)
   f += T*betaf_phononTdep;
 
   // constants:
-  realtype betaf_phononconst = -0.5*2.*NMODE*log(TWOPI);
+  realtype betaf_phononconst = realtype(-0.5)*2*NMODE*mylog(TWOPI);
   if(TRACE) cout << "betaf_phononconst  = " << betaf_phononconst << endl;
   if(TRACEFREEENERGY) cout << " bf_phononconst=" << betaf_phononconst;
   
   f += T*betaf_phononconst;
 
   //the phonon spectrum
-  realtype betaf_phonons = 2.*rule.GetSumLogOmegaoverV(); // 2 both X^2 and P^2
+  realtype betaf_phonons = 2*rule.GetSumLogOmegaoverV(); // 2 both X^2 and P^2
 
   if(TRACE) cout << "betaf_phonons  = " << betaf_phonons << endl;
   if(TRACEFREEENERGY) cout << " bf_phonons=" << betaf_phonons;
@@ -803,7 +803,7 @@ realtype Driver::CalculateFreeEnergy(realtype T)
 
   f += f_delta;
   
-  realtype betaf_logKinvq   = -0.5*invNq*NFAKESPINTRACE*SumLogDet(Kinvq);
+  realtype betaf_logKinvq   = realtype(-0.5*invNq)*NFAKESPINTRACE*SumLogDet(Kinvq);
 
   if(TRACE) cout << "betaf_logKinvq   =  " << betaf_logKinvq << endl;
   if(TRACEFREEENERGY) cout << " betaf_logKinvq=" << betaf_logKinvq;
@@ -811,11 +811,11 @@ realtype Driver::CalculateFreeEnergy(realtype T)
   
   ComputeDq(false,true); // excludeqzero=false, preserveinput=true not to jeopardize Keff
   
-  realtype betaf_logD       = -0.5*invNq*SumLogDet(Dq);
+  realtype betaf_logD       = realtype(-0.5*invNq)*SumLogDet(Dq);
   if(TRACEFREEENERGY) cout << " betaf_logD1=" << betaf_logD;
   //#if defined LATTICEDISTORTIONS && !defined ELASTICONLY
 #if defined LATTICEDISTORTIONS && defined PHONONS 
-  betaf_logD += 0.5*NMODE*log(T); //  -0.5*NMODE*log(1/T) 
+  betaf_logD += realtype(0.5)*NMODE*mylog(T); //  -0.5*NMODE*log(1/T) 
 #endif
   if(TRACE) cout << "betaf_logD       =  " << betaf_logD << endl;
   if(TRACEFREEENERGY) cout << " betaf_logD2=" << betaf_logD;
@@ -824,7 +824,7 @@ realtype Driver::CalculateFreeEnergy(realtype T)
 
   ComputeSelfEnergy(true); // ensure that Kinvq is the same.
 
-  realtype betaf_KinvqSigma = -0.5*invNq*NFAKESPINTRACE*SumTr(Kinvq,Sigmaq);
+  realtype betaf_KinvqSigma = -realtype(0.5*invNq)*NFAKESPINTRACE*SumTr(Kinvq,Sigmaq);
   if(TRACE) cout << "betaf_KinvqSigma = " << betaf_KinvqSigma << endl;
   if(TRACEFREEENERGY) cout << " betaf_KinvqSigma=" << betaf_KinvqSigma;
   f += T*betaf_KinvqSigma;
@@ -914,20 +914,22 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
   MakeReal(Kinvr);  // is this needed here?
   MakeInversionTransposedSymmetric(Kinvr); 
 #endif
+
+  if(TRACELEVEL>=4) cout << "Kinvr=" << Kinvr << endl; 
   
   // Initialize Dinvq:
   Dinvq.SetToZero();
 
   // first compute the constraint block (this implementation is valid also for NSUBL >1)
 
-  complextype tmp(0);
+  complextype tmp(0.,0.);
   
   for(int m1=0; m1<NSUBL; m1++)
     for(int m2=m1; m2<NSUBL; m2++)
       {
 	for(int r=0; r<Nq; r++)
 	  {
-	    complextype tt(0.);
+	    complextype tt(0.,0.);
 	    for(int s1=0; s1<NSPIN; s1++)
 	      for(int s2=0; s2<NSPIN; s2++)
 		{
@@ -937,7 +939,7 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 		  tmp=Kinvr(r,alpha,delta);
 		  tt += tmp*tmp;   
 		}
-	    F1[r]=0.5*NFAKESPINTRACE*tt;
+	    F1[r]=complextype(0.5*NFAKESPINTRACE,0.)*tt;
 	  }
 
 	FFTWEXECUTE(F1pluss); // 
@@ -949,18 +951,18 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 	  }
       }
 
-  if(TRACE2)
+  if(TRACELEVEL>=4)
     {
-      cout << "after constraint block: " << endl;
+      cout << "after constraint block, Dinvq: " << endl;
       cout << Dinvq << endl;
     }
 
 #if defined LATTICEDISTORTIONS && defined PHONONS
   // the offdiagonal phonon-constraint part
 #ifdef CPOSITIVE
-  realtype multiplier=2.;
+  realtype multiplier=realtype(2.);
 #else
-  realtype multiplier=1.;
+  realtype multiplier=realtype(1.);
 #endif  
     
   for(int m1=0; m1<NSUBL; m1++) // m1 must be 0 here because phonons NSUBL=1
@@ -975,7 +977,7 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 	    int mrpc = la.rAdd(la.GetInversionIndx(r),clist[c]); // index of -r+c	    
 	    my *= Kinvr[mrpc];
 	    
-	    F1[r] = NFAKESPINTRACE*tr(my);  
+	    F1[r] = complextype(NFAKESPINTRACE,0.)*tr(my);  
 	  }
 	
 	// do fourier-transform of theta
@@ -988,7 +990,7 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 		int n2=m2-NSUBL; 
 		
 		//	cout << "q=" << qi << " f=" << f(qi,c,n2) << endl;
-		Dinvq(qi,m1,m2)+= multiplier*0.5*invSqrtNq*F1[qi]*f(qi,c,n2)*conj(expi(la.qr(qi,clist[c])));
+		Dinvq(qi,m1,m2)+= complextype(multiplier*realtype(0.5)*invSqrtNq,0.)*F1[qi]*f(qi,c,n2)*conj(expi(la.qr(qi,clist[c])));
 	      }		   
 	  }
       }
@@ -1002,17 +1004,12 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 	  Dinvq(qi,m2,m1)=-conj(Dinvq(qi,m1,m2));  // should be the same as the above, but probably faster, changed from v1.67
 	}
 
-  if(TRACE2)
+  if(TRACELEVEL>=4)
     {
-      cout << "after constraint-phonon block: " << endl;
+      cout << "after constraint-phonon block, Dinvq: " << endl;
       cout << Dinvq << endl;
     }
 
-
-  if(TRACE2)
-    {
-      cout << "Dinvq[4]: " << Dinvq.qcomp(4) << endl;
-    }
 
   // finally the phonon-phonon part
 #ifdef CPOSITIVE
@@ -1229,7 +1226,7 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 		
 		for(int qi=0; qi<Nq; qi++)
 		  {
-		    Dinvq(qi,m1,m2)+=-invNq*F1[qi]*conj(f(qi,c2,n1))*f(qi,c4,n2);
+		    Dinvq(qi,m1,m2)+=-complextype(invNq,0.)*F1[qi]*conj(f(qi,c2,n1))*f(qi,c4,n2);
 		  }
 
 		if(TRACE2)
@@ -1273,7 +1270,7 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 	    
 	      my *= Kinvr[newindx];
 	      
-	      F1[i]=0.5*NFAKESPINTRACE*tr(my);
+	      F1[i]=complextype(0.5*NFAKESPINTRACE,0.)*tr(my);
 	  } 
 	FFTWEXECUTE(F1pluss); 
 	
@@ -1287,7 +1284,7 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 	      
 	      for(int qi=0; qi<Nq; qi++)
 		{
-		  Dinvq(qi,m1,m2)+=-invNq*F1[qi]*conj(f(qi,c2,n1))*f(qi,c4,n2)*conj(expi(la.qr(qi,clist[c4])));
+		  Dinvq(qi,m1,m2)+=complextype(-invNq,0.)*F1[qi]*conj(f(qi,c2,n1))*f(qi,c4,n2)*conj(expi(la.qr(qi,clist[c4])));
 		}
 	    }
       }
@@ -1312,7 +1309,7 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
   // add the bare phonon part
   
   //  realtype barepart=1./currT; // the one-half is included in the def. of propagator
-  realtype barepart=1./newT; // the one-half is included in the def. of propagator 
+  complextype barepart(1./newT,0.); // the one-half is included in the def. of propagator 
   for(int qi=0; qi<Nq; qi++)
     {
       for(int n=0; n<NMODE; n++)
@@ -1323,7 +1320,7 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
     }
 #endif
 
-  if(TRACE2) 
+  if(TRACELEVEL>=4) 
     {
       cout << "Dinvq after adding bare phonon part: " << Dinvq << endl;
     }
@@ -1335,15 +1332,15 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 
   Chomp(Dinvq);
   
-  if(TRACE){SanityCheck(Dinvq,"Dinvq, after constructing it",false);}
+  if(TRACELEVEL>0){SanityCheck(Dinvq,"Dinvq, after constructing it",false);}
   
-  if(TRACE2){ cout << "Dinvq before inversion=" << Dinvq << endl;}
+  if(TRACELEVEL>=4){ cout << "Dinvq before inversion=" << Dinvq << endl;}
 
   MatrixInverse(Dinvq); // B = Dq
 
-  if(TRACE){SanityCheck(Dq,"Dq, after inverting Dinvq",false);}
+  if(TRACELEVEL>0){SanityCheck(Dq,"Dq, after inverting Dinvq",false);}
   
-  if(TRACE2){ cout << "Dq, after inverting Dinvq, Dq=" << Dq << endl;}
+  if(TRACELEVEL>=4){ cout << "Dq, after inverting Dinvq, Dq=" << Dq << endl;}
 
   if(excludeqzero) Setqzerotozero(Dq);
 
@@ -1359,11 +1356,11 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
       MakeHermitian(Kinvq);
     }
 
-  if(TRACE){SanityCheck(Dq,"Dq, at end of ComputeDq",false);}
+  if(TRACELEVEL>0){SanityCheck(Dq,"Dq, at end of ComputeDq",false);}
 
-  if(TRACE2){ cout << "At end of ComputDq, Dq=" << Dq << endl;}
+  if(TRACELEVEL>=4){ cout << "At end of ComputDq, Dq=" << Dq << endl;}
   
-  if(TRACE) cout << "Done with ComputeDq " << endl;
+  if(TRACELEVEL>0) cout << "Done with ComputeDq " << endl;
 }
 
 
@@ -1407,7 +1404,7 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 	for(int r=0; r<Nq; r++){F2[r]=Kinvr(la.GetInversionIndx(r),alpha,delta)*F1[r];}
 	FFTWEXECUTE(F2pluss);
 
-	for(int k=0; k<Nq; k++){Sigmaq(k,alpha,delta) += invSqrtNq*F2[k];}
+	for(int k=0; k<Nq; k++){Sigmaq(k,alpha,delta) += complextype(invSqrtNq,0.)*F2[k];}
 
 	//	cout << "Sigmaq after term 1: alpha=" << alpha << " delta=" << delta << endl;
 	//cout << Sigmaq << endl;
@@ -1453,7 +1450,7 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 	    
 	    FFTWEXECUTE(F2pluss);
 	    
-	    for(int k=0; k<Nq; k++){ Sigmaq(k,alpha,delta) += invNq*F2[k];}
+	    for(int k=0; k<Nq; k++){ Sigmaq(k,alpha,delta) += complextype(invNq,0.)*F2[k];}
 
 	  }
 
@@ -1481,7 +1478,7 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 	    
 	    FFTWEXECUTE(F2pluss);
 	    
-	    for(int k=0; k<Nq; k++){ Sigmaq(k,alpha,delta) += invNq*conj(expi(la.qr(k,clist[c]))*F2[k]);}
+	    for(int k=0; k<Nq; k++){ Sigmaq(k,alpha,delta) += complextype(invNq,0.)*conj(expi(la.qr(k,clist[c]))*F2[k]);}
 
 	    for(int r=0; r<Nq; r++)
 	      {
@@ -1493,7 +1490,7 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 	    
 	    FFTWEXECUTE(F2pluss);
 	    
-	    for(int k=0; k<Nq; k++){ Sigmaq(k,alpha,delta) += invNq*conj(F2[k]);}
+	    for(int k=0; k<Nq; k++){ Sigmaq(k,alpha,delta) += complextype(invNq,0.)*conj(F2[k]);}
 	  }
 
 	// Term4:
@@ -1526,7 +1523,7 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 		}
 	      
 	      FFTWEXECUTE(F2pluss);
-	      for(int k=0; k<Nq; k++){Sigmaq(k,alpha,delta)+= -invNq*invSqrtNq*F2[k]*expi(la.qr(k,clist[c1]))*expi(la.qr(k,clist[c2]));}
+	      for(int k=0; k<Nq; k++){Sigmaq(k,alpha,delta)+= complextype(-invNq,0.)*invSqrtNq*F2[k]*expi(la.qr(k,clist[c1]))*expi(la.qr(k,clist[c2]));}
 
 	      
 	      for(int r=0; r<Nq; r++)
@@ -1542,7 +1539,7 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 		}
 	      
 	      FFTWEXECUTE(F2pluss);
-	      for(int k=0; k<Nq; k++){Sigmaq(k,alpha,delta)+= -invNq*invSqrtNq*F2[k]*expi(la.qr(k,clist[c1]));}
+	      for(int k=0; k<Nq; k++){Sigmaq(k,alpha,delta)+= complextype(-invNq,0.)*invSqrtNq*F2[k]*expi(la.qr(k,clist[c1]));}
 
 
 	      for(int r=0; r<Nq; r++)
@@ -1558,7 +1555,7 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 		}
 	      
 	      FFTWEXECUTE(F2pluss);
-	      for(int k=0; k<Nq; k++){Sigmaq(k,alpha,delta)+= -invNq*invSqrtNq*F2[k]*expi(la.qr(k,clist[c2]));}
+	      for(int k=0; k<Nq; k++){Sigmaq(k,alpha,delta)+= complextype(-invNq,0.)*invSqrtNq*F2[k]*expi(la.qr(k,clist[c2]));}
 
 	      for(int r=0; r<Nq; r++)
 		{
@@ -1573,7 +1570,7 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 		}
 	      
 	      FFTWEXECUTE(F2pluss);
-	      for(int k=0; k<Nq; k++){Sigmaq(k,alpha,delta)+= -invNq*invSqrtNq*F2[k];}
+	      for(int k=0; k<Nq; k++){Sigmaq(k,alpha,delta)+= complextype(-invNq,0.)*invSqrtNq*F2[k];}
 	    }
 #else	
 	// Term 2
@@ -1600,7 +1597,7 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 	    
 	    FFTWEXECUTE(F2pluss);
 	    
-	    for(int k=0; k<Nq; k++){ Sigmaq(k,alpha,delta) += invNq*expi(la.qr(k,clist[c]))*F2[k];}
+	    for(int k=0; k<Nq; k++){ Sigmaq(k,alpha,delta) += complextype(invNq,0.)*expi(la.qr(k,clist[c]))*F2[k];}
 	  }
 
 	// Term 3 (as term 2, but switch alpha and delta and take complex conj)
@@ -1623,7 +1620,7 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 	      }
 	    FFTWEXECUTE(F2pluss);
 	    
-	    for(int k=0; k<Nq; k++){ Sigmaq(k,alpha,delta) += invNq*conj(expi(la.qr(k,clist[c]))*F2[k]);}
+	    for(int k=0; k<Nq; k++){ Sigmaq(k,alpha,delta) += complextype(invNq,0.)*conj(expi(la.qr(k,clist[c]))*F2[k]);}
 	  }
 	
 	// Term 4:	
@@ -1655,7 +1652,7 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 		}
 	      
 	      FFTWEXECUTE(F2pluss);
-	      for(int k=0; k<Nq; k++){Sigmaq(k,alpha,delta)+= -invNq*invSqrtNq*F2[k]*expi(la.qr(k,clist[c1]))*expi(la.qr(k,clist[c2]));}
+	      for(int k=0; k<Nq; k++){Sigmaq(k,alpha,delta)+= complextype(-invNq*invSqrtNq,0.)*F2[k]*expi(la.qr(k,clist[c1]))*expi(la.qr(k,clist[c2]));}
 	    }
 #endif
 #endif
@@ -1673,7 +1670,7 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
   if(preserveinput)
     {
       FFTWEXECUTE(A1r_to_A1q); // Kinvr->Kinvq, so after transform: A1q=Kinvq*sqrt(Nq)
-      Kinvq *= invSqrtNq;
+      Kinvq *= complextype(invSqrtNq,0.);
 
 #ifdef PRESERVESYMMETRY
       MakeSymmetric(Kinvq);

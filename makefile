@@ -5,7 +5,8 @@ SYSTEM=GNUmakefile makefile Makefile.x64 Makefile.saga Makefile.fox
 
 GLOBALFLAGS =
 
-COMMONOBJECTS= lowlevelmatrixroutines.o lowlevelmatrixroutinesDP.o
+#COMMONOBJECTS= lowlevelmatrixroutines.o lowlevelmatrixroutinesDP.o
+COMMONOBJECTS= lowlevelmatrixroutines.o
 
  SOURCES =  bondpp.C bondpp.h matrixroutines.h overload.h bravaislattices.h vecmat.h modeldef.h couplings.h modelcouplings.h rules.h phonons.h inputparameters.h symmetryroutines.h observables.h globalheader.h RunParameter.h rnddef.h mynumbertypes.h $(SYSTEM)
 

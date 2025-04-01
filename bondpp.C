@@ -50,10 +50,10 @@ const bool TRACEFREEENERGY = false; // print out individual terms to the free en
 #if defined SETLOGPRECISION
 const int LOGPRECISION  = SETLOGPRECISION; // number of digits in logfile info
 #else
-const int LOGPRECISION  = 12; // number of digits in logfile info
+const int LOGPRECISION  = 2; // number of digits in logfile info
 #endif
 
-const int DEBUGPRECISION=12; // number of digits to use in debug-info
+const int DEBUGPRECISION =6; // number of digits to use in debug-info
 const int OUTPUTPRECISION=12; // number of digits to use in outfiles
 
 
