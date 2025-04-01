@@ -2072,6 +2072,11 @@ bool Driver::SolveSelfConsistentEquation(NumberList Delta,bool load_state)
   
   ConstructKinvq(true);
 
+  if(TRACE) SanityCheck(Kinvq,"Kinvq, first time construction");
+  
+  if(TRACELEVEL>=4) cout << "Kinvq=" << Kinvq << endl;
+
+  
   realtype oldT=Ts[0]; 
 
   //  currT=oldT; // set the current operating temperature
@@ -2124,6 +2129,7 @@ bool Driver::SolveSelfConsistentEquation(NumberList Delta,bool load_state)
       
       if(TRACE) SanityCheck(Kinvq,"Kinvq, at start of new iteration");
 
+      if(TRACELEVEL>=4) cout << "Kinvq=" << Kinvq << endl;
       
       ComputeSelfEnergy(); // careful with this, it overwrites K
 
@@ -2132,11 +2138,16 @@ bool Driver::SolveSelfConsistentEquation(NumberList Delta,bool load_state)
 #endif
 
       if(TRACE) SanityCheck(Sigmaq,"Sigmaq, after ComputeSelfEnergy");
+
+      if(TRACELEVEL>=4) cout << "Sigmaq=" << Sigmaq << endl;
+
       
       ConstructKinvq();
 
-      if(TRACE) SanityCheck(Kinvq,"Kinvq, in iteration loop after making sigmaq");
+      if(TRACE) SanityCheck(Kinvq,"Kinvq, in iteration loop after making Sigmaq");
 
+      if(TRACELEVEL>=4) cout << "Kinvq=" << Kinvq << endl;
+      
       // This is where to solve the saddlepointequations
       //-------------------------------------------------------------
 
@@ -2183,7 +2194,7 @@ bool Driver::SolveSelfConsistentEquation(NumberList Delta,bool load_state)
       if( absTdev < par[TOLERANCE]) converged=true;
 
       //      const realtype inertia=0.5; // how much to resist changes: [0,1] 
-      const realtype inertia=0.2; // how much to resist changes: [0,1] 
+      const realtype inertia=realtype(0.2); // how much to resist changes: [0,1] 
 
 #if defined LATTICEDISTORTIONS && defined ELASTIC     
       for(int i=0; i<NELASTIC; i++)
@@ -2192,14 +2203,14 @@ bool Driver::SolveSelfConsistentEquation(NumberList Delta,bool load_state)
 	  epsilon[i]= (1.-inertia)*neweps[i]+inertia*epsilon[i]; // maybe change to this
 	}
 #if defined ONEEPSILONCOMPONENTCLAMPED
-      epsilon[EPSILONCOMPONENTCLAMPED] = 0.;
+      epsilon[EPSILONCOMPONENTCLAMPED] = realtype(0.);
 #endif
 
 #endif       
 
       //currT= (1.-inertia)*newT+inertia*oldT; 
       //oldT=currT;
-      newT= (1.-inertia)*newT+inertia*oldT; 
+      newT= (realtype(1.)-inertia)*newT+inertia*oldT; 
       oldT=newT;
 
       
@@ -2217,7 +2228,7 @@ bool Driver::SolveSelfConsistentEquation(NumberList Delta,bool load_state)
 
   //  nalphas=CalculateAlphas(newT); // calculate alphas
 
-  m2=NFAKESPINTRACE*NSPIN*newT/(2.*Delta[0]*Nq); // calculate magnetic moment
+  m2=NFAKESPINTRACE*NSPIN*newT/(realtype(2.)*Delta[0]*Nq); // calculate magnetic moment
 
   CalculateTs(Ts); // calculate the final temperatures
   

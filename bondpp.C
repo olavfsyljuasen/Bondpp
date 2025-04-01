@@ -40,7 +40,7 @@ const int TRACELEVEL=-1;
 #else
 const bool TRACE= true; // debugging option
 const bool TRACE2=true; // more debug info
-const int TRACELEVEL=4;
+const int  TRACELEVEL= 4;     // 0: No info, 1: Location 2: Main results 3: Details, 4: Details that also takes a lot of space. 5: Unimportant details 
 //const bool TRACE= false; // debugging option
 #endif
 
