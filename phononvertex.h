@@ -8,9 +8,9 @@ class ftensor
   ftensor();
   void Initialize(Phonons& ph);
 
-  VecMat<complex<realtype>> list; 
+  VecMat<complextype> list; 
 
-  complex<realtype> operator()(int j, int c,int n){return (list[j](c,n);}
+  complextype operator()(int j, int c,int n){return (list[j](c,n);}
   
   private:
     int Vq;
@@ -29,7 +29,7 @@ void ftensor::Initialize(Phonons& ph)
 
       for(int n=0; n<NMODE; n++)
 	{
-	  double omega=ph.GetOmega(j,n);
+	  realtype omega=ph.GetOmega(j,n);
 	  cmplcoord w=ph.GetNormalMode(qi,n,0);
 
 
@@ -41,10 +41,10 @@ void ftensor::Initialize(Phonons& ph)
 	      realtype qc=scalarproduct(q,c);
 
 
-	      complex<realtype> tempf = scalarproduct(crr,w);
+	      complextype tempf = scalarproduct(crr,w);
 
-	      tempf *= complex<realtype>(0,-0.5)*(Expi(qc)-1.);
-	      tempf *= invsqrtmasses[0]*(1./omega);
+	      tempf *= complextype(0.,-0.5)*(Expi(qc)-complextype(1.,0.));
+	      tempf *= complextype(invsqrtmasses[0]*(1./omega),0.);
 
 	      list[qi](ci,n)= tempf;
 	    }

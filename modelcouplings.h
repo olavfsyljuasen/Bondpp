@@ -74,7 +74,7 @@ vector<Triplet> clist{{ 1,  0,  0 }, {-1,  0,  0 }, { 0,  1,  0 }, { 0, -1,  0 }
 
 
 vector<Coord> roffset={Coord(0,0,0)};
-vector<double> invsqrtmasses={1.};
+vector<realtype> invsqrtmasses={realtype(1.)};
 
 // global routines to extract sublattice and spin indices.
 
@@ -213,7 +213,7 @@ vector<Triplet> clist{
 
 #endif // NBRRANGE
 vector<Coord> roffset={Coord(0,0,0)};
-vector<double> invsqrtmasses={1.};
+vector<realtype> invsqrtmasses={realtype(1.)};
 
 // global routines to extract sublattice and spin indices.
 
@@ -330,7 +330,7 @@ vector<Triplet> clist{{ 1, 0, 0}, { 0, 1, 0}, { 0, 0, 1}, { 0, 1, 1}, { 0, 1,-1}
 
 
 vector<Coord> roffset={Coord(0,0,0)};
-vector<double> invsqrtmasses={1.};
+vector<realtype> invsqrtmasses={realtype(1.)};
 
 // global routines to extract sublattice and spin indices.
 
@@ -417,7 +417,7 @@ vector<Triplet> clist{{ 1, 0, 0}, { 0, 1, 0}, { 0, 0, 1}, { 0, 1, 1}, { 0, 1,-1}
 
 
 vector<Coord> roffset={Coord(0,0,0)};
-vector<double> invsqrtmasses={1.};
+vector<realtype> invsqrtmasses={realtype(1.)};
 
 // global routines to extract sublattice and spin indices.
 
@@ -505,7 +505,7 @@ vector<Triplet> clist{{ 1, 0, 0}, { 0, 1, 0}, { 0, 0, 1}, { 1, 1, 1},{-1, 0, 0},
 #endif // CPOSITIVE
 
 vector<Coord> roffset={Coord(0,0,0)};
-vector<double> invsqrtmasses={1.};
+vector<realtype> invsqrtmasses={realtype(1.)};
 
 // global routines to extract sublattice and spin indices.
 
@@ -588,7 +588,7 @@ vector<Triplet> clist{{0, 0, 0},{ 1,  0,  0 }, {0,  1,  0 }, {-1,  1,  0 }, {-1,
 
 
 vector<Coord> roffset={Coord(0,0,0),Coord(0,1./SQRTTHREEOVERTWO,0)};
-vector<double> invsqrtmasses={1.,1.};
+vector<realtype> invsqrtmasses={1.,1.};
 
 // global routines to extract sublattice and spin indices.
 
@@ -600,7 +600,7 @@ int subl(const int m){return m%NSUBL;}
 #ifdef SPINISOTROPIC
 void Couplings::InitializeJ()
 {
-  double j1x= (par[USEPHI] >0 ? par[A]*cos(par[PHIOVERPI]*PI): par[J1X]);
+  realtype j1x= (par[USEPHI] >0 ? par[A]*cos(par[PHIOVERPI]*PI): par[J1X]);
 
 
   // 00 sublattices
@@ -633,31 +633,31 @@ void Couplings::InitializeJ()
 #else
 void Couplings::InitializeJ()
 {
-  double j1x= (par[USEPHI] >0 ? par[A]*cos(par[PHIOVERPI]*PI): par[J1X]);
-  double j1y= (par[USEPHI] >0 ? par[A]*cos(par[PHIOVERPI]*PI): par[J1Y]);
-  double j1z= (par[USEPHI] >0 ? par[A]*cos(par[PHIOVERPI]*PI): par[J1Z]);
+  realtype j1x= (par[USEPHI] >0 ? par[A]*cos(par[PHIOVERPI]*PI): par[J1X]);
+  realtype j1y= (par[USEPHI] >0 ? par[A]*cos(par[PHIOVERPI]*PI): par[J1Y]);
+  realtype j1z= (par[USEPHI] >0 ? par[A]*cos(par[PHIOVERPI]*PI): par[J1Z]);
 
-  double k1x= (par[USEPHI] >0 ? 2*par[A]*sin(par[PHIOVERPI]*PI): par[K1X]);
-  double k1y= (par[USEPHI] >0 ? 2*par[A]*sin(par[PHIOVERPI]*PI): par[K1Y]);
-  double k1z= (par[USEPHI] >0 ? 2*par[A]*sin(par[PHIOVERPI]*PI): par[K1Z]);
+  realtype k1x= (par[USEPHI] >0 ? 2*par[A]*sin(par[PHIOVERPI]*PI): par[K1X]);
+  realtype k1y= (par[USEPHI] >0 ? 2*par[A]*sin(par[PHIOVERPI]*PI): par[K1Y]);
+  realtype k1z= (par[USEPHI] >0 ? 2*par[A]*sin(par[PHIOVERPI]*PI): par[K1Z]);
 
   //DM interaction
 
   // specify DM vector on vertical bonds from 0 to 1
-  double d1x_O  = (USEDMRPZ > 0 ? par[DM1BP] : par[DM1X]);
-  double d1y_O  = (USEDMRPZ > 0 ? par[DM1BR] : par[DM1Y]);
-  double d1z_O  = (USEDMRPZ > 0 ? par[DM1BZ] : par[DM1Z]);
+  realtype d1x_O  = (USEDMRPZ > 0 ? par[DM1BP] : par[DM1X]);
+  realtype d1y_O  = (USEDMRPZ > 0 ? par[DM1BR] : par[DM1Y]);
+  realtype d1z_O  = (USEDMRPZ > 0 ? par[DM1BZ] : par[DM1Z]);
 
   // rotate DM-vector with bond orientation if RPZ system, else uniform DM-vector
-  double angle=( USEDMRPZ>0 ? TWOPI/3.: 0.);
+  realtype angle=( USEDMRPZ>0 ? TWOPI/3.: 0.);
 
-  double d1x_ma2=  cos(angle)*d1x_O-sin(angle)*d1y_O;
-  double d1y_ma2=  sin(angle)*d1x_O+cos(angle)*d1y_O;
-  double d1z_ma2=  d1z_O;
+  realtype d1x_ma2=  cos(angle)*d1x_O-sin(angle)*d1y_O;
+  realtype d1y_ma2=  sin(angle)*d1x_O+cos(angle)*d1y_O;
+  realtype d1z_ma2=  d1z_O;
 
-  double d1x_ma3=  cos(2*angle)*d1x_O-sin(2*angle)*d1y_O;
-  double d1y_ma3=  sin(2*angle)*d1x_O+cos(2*angle)*d1y_O;
-  double d1z_ma3=  d1z_O;
+  realtype d1x_ma3=  cos(2*angle)*d1x_O-sin(2*angle)*d1y_O;
+  realtype d1y_ma3=  sin(2*angle)*d1x_O+cos(2*angle)*d1y_O;
+  realtype d1z_ma3=  d1z_O;
 
 
   // 00 sublattices
@@ -807,7 +807,7 @@ vector<Triplet> clist{{ 0, 0, 0}, { 1,  0,  0 }, {0,  1,  0 }, {-1, 0,  0 }, { 0
 
 
 vector<Coord> roffset={Coord(0,0,0)};
-vector<double> invsqrtmasses={1.};
+vector<realtype> invsqrtmasses={realtype(1.)};
 
 // global routines to extract sublattice and spin indices.
 
@@ -879,7 +879,7 @@ vector<Triplet> clist{{ 0, 0, 0}, { 1,  0,  0 }, {0,  1,  0 }, {-1, 0,  0 }, { 0
 
 
 vector<Coord> roffset={Coord(0,0,0)};
-vector<double> invsqrtmasses={1.};
+vector<realtype> invsqrtmasses={realtype(1.)};
 
 // global routines to extract sublattice and spin indices.
 

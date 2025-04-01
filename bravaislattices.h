@@ -104,9 +104,9 @@ class BravaisLattice
   const int N2;
   const int N3;
 
-  const double invN1;
-  const double invN2;
-  const double invN3;
+  const realtype invN1;
+  const realtype invN2;
+  const realtype invN3;
 
   
  private:

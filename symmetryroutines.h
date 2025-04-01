@@ -184,7 +184,7 @@ template<class T,int Nrows,int Ncols>
       for(int s1=0; s1<Nrows; s1++)
 	for(int s2=s1+1; s2<Ncols; s2++)
 	  {
-	    double sign=( ((s1>=N1rows && s2<N1cols) || (s1<N1rows && s2>=N1cols)) ? -1. : 1.);
+	    realtype sign=( ((s1>=N1rows && s2<N1cols) || (s1<N1rows && s2>=N1cols)) ? realtype(-1.) : realtype(1.));
 	    if(TRACE)
 	      {
 		complex<realtype> difference= M(q,s2,s1) - sign*conj(M(q,s1,s2));
@@ -276,7 +276,7 @@ bool IsMixedHermitian(VecMat<T,Nrows,Ncols>& M,const int N1rows,const int N1cols
       for(int s1=0; s1<Nrows; s1++)
 	for(int s2=s1+1; s2<Ncols; s2++)
 	  {
-	    double sign=( (s1>=N1rows && s2<N1cols) || (s1<N1rows && s2>=N1cols) ? -1. : 1.);
+	    realtype sign=( (s1>=N1rows && s2<N1cols) || (s1<N1rows && s2>=N1cols) ? realtype(-1.) : realtype(1.));
 
 	    complex<realtype> diff= M(q,s2,s1)-sign*conj(M(q,s1,s2));
 	    if( abs(real(diff))>sensitivity || abs(imag(diff))>sensitivity )
