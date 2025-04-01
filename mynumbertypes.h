@@ -29,12 +29,14 @@ typedef array<complextype,3> cmplxcoord;
 #define mysin(x) sinl((x))
 #define mysqrt(x) sqrtl((x))
 #define mylog(x) logl((x))
+#define myexp(x) expl((x))
 #define expi(x) complextype(cosl((x)),sinl((x)))
 #else
 #define mycos(x) cos((x))
 #define mysin(x) sin((x))
 #define mysqrt(x) sqrt((x))
 #define mylog(x) log((x))
+#define myexp(x) exp((x))
 #define expi(x) complextype(cos((x)),sin((x)))
 #endif
 

@@ -2966,8 +2966,8 @@ Simulation::Simulation(): couplings(par,NC),rule(couplings),mysolver(rule),Delta
 
       int NDeltas=par[NDELTAS];
       
-      realtype D2=(logscale ? log(par[DELTASLUTT]) : par[DELTASLUTT]);
-      realtype D1=(logscale ? log(par[DELTASTART]) : par[DELTASTART]);
+      realtype D2=(logscale ? mylog(par[DELTASLUTT]) : par[DELTASLUTT]);
+      realtype D1=(logscale ? mylog(par[DELTASTART]) : par[DELTASTART]);
 
       realtype dDelta=(NDeltas>1 ? (D2-D1)/(NDeltas-1):0);
       
@@ -2979,7 +2979,7 @@ Simulation::Simulation(): couplings(par,NC),rule(couplings),mysolver(rule),Delta
 
       for(int i=0; i<NDeltas; i++)
         {
-          realtype this_Delta=(logscale ? exp(D1+dDelta*i): D1+dDelta*i);
+          realtype this_Delta=(logscale ? myexp(D1+dDelta*i): D1+dDelta*i);
           NumberList myval(NSUBL,this_Delta); // set them all equal
           Deltalist.push_back(myval); 
           Printinfolist.push_back(true);
