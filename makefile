@@ -5,7 +5,7 @@ SYSTEM=GNUmakefile makefile Makefile.x64 Makefile.saga Makefile.fox
 
 GLOBALFLAGS =
 
-COMMONOBJECTS= lowlevelmatrixroutines.o
+COMMONOBJECTS= lowlevelmatrixroutines.o lowlevelmatrixroutinesDP.o
 
  SOURCES =  bondpp.C bondpp.h matrixroutines.h overload.h bravaislattices.h vecmat.h modeldef.h couplings.h modelcouplings.h rules.h phonons.h inputparameters.h symmetryroutines.h observables.h globalheader.h RunParameter.h rnddef.h mynumbertypes.h $(SYSTEM)
 
@@ -33,6 +33,8 @@ COMMONOBJECTS= lowlevelmatrixroutines.o
 lowlevelmatrixroutines.o  : lowlevelmatrixroutines.C lowlevelmatrixroutines.h mynumbertypes.h $(SYSTEM)
 	$(CCC) $(CCFLAGS) $(GLOBALFLAGS) -c -o $@ $<
 
+lowlevelmatrixroutinesDP.o  : lowlevelmatrixroutines.C lowlevelmatrixroutines.h mynumbertypes.h $(SYSTEM)
+	$(CCC) $(CCFLAGS) $(GLOBALFLAGS) -DLONGDOUBLE -c -o $@ $<
 
 # #square.o  : $(SOURCES)
 # #	$(CCC) $(CCFLAGS) -DSIMPLECUBICBRAVAISLATTICE -DNSUBLATTICES=1 -DSQUARELATTICE  -D#QSPACEDIRECTLATTICE -DNSPINCOMPONENTS=3 -DMAKEHERMITIAN -DFFTS_INPLACE -c -o $@ $<
@@ -85,6 +87,9 @@ squarelayeredHeisenberg.o  : $(SOURCES)
 
 triangularHeisenberg.o  : $(SOURCES)
 	$(CCC) $(CCFLAGS) -DHEXAGONALBRAVAISLATTICE -DNSUBLATTICES=1 -DTRIANGULARPHONONS -DHEXAGONALLATTICE  -DQSPACEDIRECTLATTICE -DLATTICEDISTORTIONS -DELASTIC -DPHONONS -DXYDISPLACEMENTS -DUSELASTSIGMA -DFORCEINVERSIONSYMMETRY -DFAKEHEISENBERG -DCPOSITIVE -DNBRRANGE=3 -DFFTS_INPLACE -c -o $@ $<
+
+triangularHeisenbergDP.o  : $(SOURCES)
+	$(CCC) $(CCFLAGS) -DHEXAGONALBRAVAISLATTICE -DNSUBLATTICES=1 -DTRIANGULARPHONONS -DHEXAGONALLATTICE  -DQSPACEDIRECTLATTICE -DLATTICEDISTORTIONS -DELASTIC -DPHONONS -DXYDISPLACEMENTS -DUSELASTSIGMA -DFORCEINVERSIONSYMMETRY -DFAKEHEISENBERG -DCPOSITIVE -DNBRRANGE=3 -DFFTS_INPLACE -DLONGDOUBLE -c -o $@ $<
 
 triangularHeisenberg_print.o  : $(SOURCES)
 	$(CCC) $(CCFLAGS) -DHEXAGONALBRAVAISLATTICE -DNSUBLATTICES=1 -DTRIANGULARPHONONS -DHEXAGONALLATTICE  -DQSPACEDIRECTLATTICE -DLATTICEDISTORTIONS -DELASTIC -DPHONONS -DXYDISPLACEMENTS -DUSELASTSIGMA -DFORCEINVERSIONSYMMETRY -DFAKEHEISENBERG -DCPOSITIVE -DNBRRANGE=3 -DFFTS_INPLACE -DPRINTPHONONS -c -o $@ $<
