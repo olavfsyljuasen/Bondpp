@@ -27,7 +27,7 @@ void Setqzerotozero(VecMat<T,Nrows,Ncols>& A)
 template<class T,int Nrows,int Ncols>
 realtype SumLogDet(VecMat<T,Nrows,Ncols>& A)
 {
-  if(TRACE) cout << "Starting SumLogDet" << endl;
+  if(TRACELEVEL>0) cout << spaces(ir++) << "Starting SumLogDet" << endl;
 
   realtype sum=0.;
   const int n    = A.Nvecs(); // the number of q values
@@ -41,8 +41,8 @@ realtype SumLogDet(VecMat<T,Nrows,Ncols>& A)
 	  a[i+j*Nrows]=A(k,i,j);
       	    
       realtype value=SmallHermitianMatrixDeterminant(Nrows,a); // col-major order
-      if(TRACELEVEL>3) cout << spaces(ir) << "k=" << k << " logdet:" << setprecision(DEBUGPRECISION) << value << " " << mylog(value) << endl;
-      if(value != 0.){ sum += mylog(value);} 
+      if(TRACELEVEL>4 ) cout << spaces(ir) << "k=" << k << " logdet:" << setprecision(DEBUGPRECISION) << value << " " << mylog(value) << endl;
+      if(value > 0.){ sum += mylog(value);} 
     }
   if(TRACELEVEL>0) cout << spaces(--ir) << "Finished SumLogDet()" << endl;
   return sum;
@@ -55,9 +55,9 @@ realtype SumLogDet(VecMat<T,Nrows,Ncols>& A)
 template<class T,int Nrows,int Ncols>
   vector<realtype> SubtractMinimum(VecMat<T,Nrows,Ncols>& K)
 {
-  if(TRACE) cout << "Start SubtractMinimum" << endl;
+  if(TRACELEVEL>0) cout << spaces(ir++) << "Start SubtractMinimum" << endl;
 
-  const int nq=K.Nvecs; // the number of q components.
+  const int nq=K.Nvecs(); // the number of q components.
 
   vector<realtype> min(Nrows);
   
@@ -70,8 +70,10 @@ template<class T,int Nrows,int Ncols>
       for(int i=0; i<nq; i++){if( real(K(i,s,s))<tmin){tmin=real(K(i,s,s));}} // find minimum
       for(int i=0; i<nq; i++){K(i,s,s)-=tmin;}   // subtract it
       min[s]=tmin; // store it.
-      if(TRACE) cout << "Done SubtractMinimum" << endl;
     }
+
+  if(TRACELEVEL>0) cout << spaces(--ir) << "Done SubtractMinimum" << endl;
+
   return min;
 }
 
@@ -84,8 +86,8 @@ template<class T,int Nrows,int Ncols>
 template<class T,int Nrows,int Ncols>
   vector<realtype> SubtractMinimum(VecMat<T,Nrows,Ncols>& K,vector<int>& element)
 {
-  if(TRACE) cout << "Start SubtractMinimum" << endl;
-  const int nq=K.Nvecs; // the number of q components.
+  if(TRACELEVEL>0) cout << spaces(ir++) << "Start SubtractMinimum" << endl;
+  const int nq=K.Nvecs(); // the number of q components.
 
   vector<realtype> min(Nrows);
   
@@ -104,7 +106,7 @@ template<class T,int Nrows,int Ncols>
       element[s]=telement; // store it
     }
   
-  if(TRACE) cout << "Done SubtractMinimum" << endl;
+  if(TRACELEVEL>0) cout <<  spaces(--ir) << "Done SubtractMinimum" << endl;
   return min;
 }
 
@@ -155,7 +157,7 @@ template<class T,int Nrows,int Ncols>
 realtype SubtractMinimumEigenvalue(VecMat<T,Nrows,Ncols>& A)
 {
   realtype emin=FindMinimumEigenvalue(A);
-  if(TRACE) cout << "having found MinimumEigenvalue: " << emin << endl;
+  if(TRACELEVEL>0) cout << spaces(ir) << "having found MinimumEigenvalue: " << emin << endl;
   
   SubtractFromDiagonal(A,complex<realtype>(emin,0.));
   
@@ -168,7 +170,7 @@ realtype SubtractMinimumEigenvalue(VecMat<T,Nrows,Ncols>& A)
 template<class T,int Nrows,int Ncols>
   void MatrixInverse(VecMat<T,Nrows,Ncols>& A)
 {
-  if(TRACELEVEL>0) cout << "Starting MatrixInverse" << endl;
+  if(TRACELEVEL>0) cout << spaces(ir++) << "Starting MatrixInverse" << endl;
   const int n=A.Nvecs();   // the number of q values
 
   assert(Nrows == Ncols);
@@ -188,7 +190,7 @@ template<class T,int Nrows,int Ncols>
 	  A(k,i,j) = a[i+j*Nrows];
     }
 
-  if(TRACELEVEL>0) cout << "Finished  MatrixInverse" << endl;
+  if(TRACELEVEL>0) cout << spaces(--ir) << "Finished  MatrixInverse" << endl;
 }
 
 /*
@@ -263,7 +265,7 @@ template<class T,int Nrows,int Ncols>
 template<class T,int Nrows,int Ncols>
   realtype SumTr(VecMat<T,Nrows,Ncols>& A,VecMat<T,Nrows,Ncols>& B)
 {
-  if(TRACE) cout << "Starting SumTr" << endl;
+  if(TRACELEVEL>0) cout << spaces(ir++) << "Starting SumTr" << endl;
   realtype sum=0.;
 
   for(int k=0; k<A.Nvecs(); k++)
@@ -273,7 +275,7 @@ template<class T,int Nrows,int Ncols>
       sum += real( tr(temp) );
     }
 
-  if(TRACE) cout << "Ending SumTr" << endl;
+  if(TRACELEVEL>0) cout <<  spaces(--ir) << "Ending SumTr" << endl;
   return sum;
 }
 
