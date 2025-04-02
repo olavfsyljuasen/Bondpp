@@ -12,8 +12,8 @@ CCC= g++
 # eigen:
 INCDIR = -I$(DATADIR)/eigen-3.3.7 -I$(DATADIR)/fftw-3.3.8/include
 LIBDIR = -L$(DATADIR)/fftw-3.3.8/lib -L/usr/lib
-LIBS   = -lfftw3 -lm -lstdc++
-STDOPTS= -std=c++17 -O3 -DUSEEIGEN
+#LIBS   = -lfftw3 -lm -lstdc++
+#STDOPTS= -std=c++17 -O3 -DUSEEIGEN
 LIBS   = -lfftw3l -lm -lstdc++  
 STDOPTS= -std=c++17 -O3 -DUSEEIGEN -DLONGDOUBLE
 #LIBS    = -lfftw3 -lfftw3l -lm -lstdc++

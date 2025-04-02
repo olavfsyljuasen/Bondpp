@@ -387,20 +387,19 @@ void Driver::SaveState(string filename)
   outfile.write((char*) &failed,sizeof(failed));
   outfile.write((char*) &MaxIterMultiplier,sizeof(MaxIterMultiplier));
   outfile.write((char*) &mineigenvalue,sizeof(mineigenvalue));
-  //  outfile.write((char*) &currT,sizeof(currT));
   outfile.write((char*) &newT,sizeof(newT));
-    
-  outfile.write((char*) A1.start(),A1.size()*sizeof(A1.start()));
-  outfile.write((char*) A2.start(),A2.size()*sizeof(A2.start()));
-  outfile.write((char*) B.start(),B.size()*sizeof(B.start()));
 
-  outfile.write((char*) &F1[0],F1.size()*sizeof(F1[0]));
-  outfile.write((char*) &F2[0],F2.size()*sizeof(F2[0]));
+  outfile.write((char*) A1.start(),A1.size()*sizeof(complextype));
+  outfile.write((char*) A2.start(),A2.size()*sizeof(complextype));
+  outfile.write((char*) B.start(),B.size()*sizeof(complextype));
+
+  outfile.write((char*) &F1[0],F1.size()*sizeof(complextype));
+  outfile.write((char*) &F2[0],F2.size()*sizeof(complextype));
 
 #ifndef FFTS_INPLACE
-  outfile.write((char*) A1r.start(),A1r.size()*sizeof(A1r.start()));
-  outfile.write((char*) A2r.start(),A2r.size()*sizeof(A2r.start()));
-  outfile.write((char*) Br.start(),Br.size()*sizeof(Br.start()));
+  outfile.write((char*) A1r.start(),A1r.size()*sizeof(complextype));
+  outfile.write((char*) A2r.start(),A2r.size()*sizeof(complextype));
+  outfile.write((char*) Br.start(),Br.size()*sizeof(complextype));
 #endif
   outfile.write((char*) &epsilon[0],epsilon.size()*sizeof(epsilon[0]));
   
@@ -444,20 +443,19 @@ bool Driver::LoadState(string filename)
   infile.read((char*) &failed,sizeof(failed));
   infile.read((char*) &MaxIterMultiplier,sizeof(MaxIterMultiplier));
   infile.read((char*) &mineigenvalue,sizeof(mineigenvalue));
-  //  infile.read((char*) &currT,sizeof(currT));
   infile.read((char*) &newT,sizeof(newT));
 
-  infile.read((char*) A1.start(),A1.size()*sizeof(A1.start()));
-  infile.read((char*) A2.start(),A2.size()*sizeof(A2.start()));
-  infile.read((char*) B.start(),B.size()*sizeof(B.start()));
+  infile.read((char*) A1.start(),A1.size()*sizeof(complextype));
+  infile.read((char*) A2.start(),A2.size()*sizeof(complextype));
+  infile.read((char*) B.start(),B.size()*sizeof(complextype));
 
-  infile.read((char*) &F1[0],F1.size()*sizeof(F1[0]));
-  infile.read((char*) &F2[0],F2.size()*sizeof(F2[0]));
+  infile.read((char*) &F1[0],F1.size()*sizeof(complextype));
+  infile.read((char*) &F2[0],F2.size()*sizeof(complextype));
 
 #ifndef FFTS_INPLACE
-  infile.read((char*) A1r.start(),A1r.size()*sizeof(A1r.start()));
-  infile.read((char*) A2r.start(),A2r.size()*sizeof(A2r.start()));
-  infile.read((char*) Br.start(),Br.size()*sizeof(Br.start()));
+  infile.read((char*) A1r.start(),A1r.size()*sizeof(complextype));
+  infile.read((char*) A2r.start(),A2r.size()*sizeof(complextype));
+  infile.read((char*) Br.start(),Br.size()*sizeof(complextype));
 #endif
   infile.read((char*) &epsilon[0],epsilon.size()*sizeof(epsilon[0]));
 
@@ -2034,9 +2032,8 @@ bool Driver::SolveSelfConsistentEquation(NumberList Delta,bool load_state)
 
   if(TRACE) SanityCheck(Jq,"Jq, after subtracting minimum");
   
-  realtype T=-1;
-  //  realtype newT=-1.;
-  //newT=T;
+  //  realtype T=-1;
+
   realtype m2=0.; // magnetic order parameter squared.
   vector<obstype> nobs(NOBSERVABLES); // nematic order parameters
   vector<obstype> nspinobs(NSPINOBSERVABLES); // different types of spin order parameters
@@ -2149,7 +2146,7 @@ bool Driver::SolveSelfConsistentEquation(NumberList Delta,bool load_state)
       //-------------------------------------------------------------
 
       NumberList neweps(epsilon);
-      saddlepts_ok=SolveSaddlePointEquations(newT,neweps); // return true if converged, false if not
+      saddlepts_ok=SolveSaddlePointEquations(newT,neweps); // return true if converged, false if not, modifies newT
 
       absTdev=fabs((newT-oldT)/oldT);
       if(absTdev > oldabsTdev)
@@ -2217,17 +2214,40 @@ bool Driver::SolveSelfConsistentEquation(NumberList Delta,bool load_state)
 
       if(nincreases > MAXNINCREASES){ done =true; logfile << "Too many nincr=" << nincreases << ", Not converging, exiting" << endl; continue;} // to many increases in Tdiff, so exiting without converging.
 
-
       reachedMAXITER=(iter >= MaxIterMultiplier*par[MAXITER]);
     }
-   
+
+  //Use MAXITER as convergence criterion itself
+  if(par[TOLERANCE]==0.)
+    {
+      logfile << "Exiting after MAXITER steps, using end result" << endl;
+      converged=true;
+    } 
+
+  if(converged && !stateloaded)
+    {
+      SaveState(STATEFILENAME); // Save state if converged and the state was not loaded.
+
+    }
+
+  if(converged)
+    {
+      WriteEpsilon(EPSILONFILENAME);
+      WriteKinvq(KINVQFILENAME);
+    }
+  
+  realtype f(0.);
+  if(converged){ f= CalculateFreeEnergy(newT);}
+  
+
+  
   //  if(TRACE) cout << "Final Kinv_q: " << Kinvq << endl;  
 
   //  nalphas=CalculateAlphas(newT); // calculate alphas
 
   m2=NFAKESPINTRACE*NSPIN*newT/(realtype(2.)*Delta[0]*Nq); // calculate magnetic moment
 
-  CalculateTs(Ts); // calculate the final temperatures
+  //  CalculateTs(Ts); // calculate the final temperatures
   
   // Print final Ts and epsilons
   logfile << "iteration: " << iter << " Ts: ";
@@ -2246,20 +2266,11 @@ bool Driver::SolveSelfConsistentEquation(NumberList Delta,bool load_state)
       sfile << setprecision(17) << nobs[2].real() << endl;
 #endif
       
-
   if(converged)
     {
       logfile << "Convergence reached after " << iter << " steps." << endl;
       if(TRACE) cout << "Convergence reached after " << iter << " steps." << endl;
     }
-  
-  
-  //Use MAXITER as convergence criterion itself
-  if(par[TOLERANCE]==0.)
-    {
-      logfile << "Exiting after MAXITER steps, using end result" << endl;
-      converged=true;
-    } 
 
 
   if(!converged)
@@ -2274,20 +2285,13 @@ bool Driver::SolveSelfConsistentEquation(NumberList Delta,bool load_state)
     }
   else
     {      
-      if(!stateloaded)
-	{
-	  SaveState(STATEFILENAME); // Save State variables from file STATEFILENAME
-	}
-      
       lineid++; 
 
-      T = Ts[0];
+      //      T = newT;
 
-      WriteEpsilon(EPSILONFILENAME);
-      WriteKinvq(KINVQFILENAME);
       
 
-      realtype factor=T*NSPIN*NFAKESPINTRACE*realtype(0.5); // conversion factor from Kinvq to Spin-corr  
+      realtype factor=newT*NSPIN*NFAKESPINTRACE*realtype(0.5); // conversion factor from Kinvq to Spin-corr  
       
       vector<Qandvals> maxqs(NMAXQS); // sorted list of qs and their values, biggest first
       
@@ -2327,7 +2331,7 @@ bool Driver::SolveSelfConsistentEquation(NumberList Delta,bool load_state)
       
       
       ofstream outfile_maxqs(MAXQNAME.c_str(),ios::app);
-      outfile_maxqs << lineid << " T= " << scientific << setprecision(OUTTP) << setw(OUTTP+6) << Ts[0]
+      outfile_maxqs << lineid << " T= " << scientific << setprecision(OUTTP) << setw(OUTTP+6) << newT
 		    << " Delta: " << scientific << setprecision(OUTTP) << setw(OUTTP+6) << Delta[0] << endl;
       int colsperline=2;
       int colcounter= 0;
@@ -2372,7 +2376,7 @@ bool Driver::SolveSelfConsistentEquation(NumberList Delta,bool load_state)
 
 
       ofstream mfile(MAXQSINFIRSTBZNAME.c_str(),ios::app);
-      mfile << lineid << " T= " << scientific << setprecision(OUTTP) << setw(OUTTP+6) << Ts[0]
+      mfile << lineid << " T= " << scientific << setprecision(OUTTP) << setw(OUTTP+6) << newT
 	    << " Delta: " << scientific << setprecision(OUTTP) << setw(OUTTP+6) << Delta[0] << endl;
 
       mfile << "  epsilons:";
@@ -2858,19 +2862,18 @@ bool Driver::SolveSelfConsistentEquation(NumberList Delta,bool load_state)
       logfile << "Magnetic moment: " << m2 << endl;
       
       stringstream ss;
-      ss << "m2" << ".dat";
+      ss << "m2.dat";
       
       ofstream outfilem(ss.str().c_str(),ios::app);
       outfilem << scientific << setprecision(OUTPUTPRECISION)
 	       << setw(OUTPUTPRECISION+8) << newT << " " << setw(OUTPUTPRECISION+8) << m2 << endl;
       outfilem.close();
       
-      
-      realtype f=CalculateFreeEnergy(newT);
+     
       logfile << "Free energy: " << scientific << setprecision(LOGPRECISION) << setw(LOGPRECISION+8) << f << endl;
       
       ss.str("");
-      ss << "tf" << ".dat";
+      ss << "tf.dat";
       
       ofstream outfile(ss.str().c_str(),ios::app);
       outfile << scientific << setprecision(OUTPUTPRECISION)
@@ -2878,32 +2881,29 @@ bool Driver::SolveSelfConsistentEquation(NumberList Delta,bool load_state)
       outfile.close();
       
       ss.str("");
-      ss << "df" << ".dat";
+      ss << "df.dat";
       
       ofstream outfile2(ss.str().c_str(),ios::app);
       outfile2 << scientific << setprecision(OUTPUTPRECISION)
 	       << setw(OUTPUTPRECISION+8) << Delta[0] << " " << setw(OUTPUTPRECISION+8) << f << endl;
       outfile2.close();
 
-
-      for(int s=0; s<NSUBL; s++)
-	{
-	  stringstream ss;
-	  ss << "td" << "_" << s << ".dat";
+      ss.str("");
+      ss << "td.dat";
 	  
-	  ofstream outfile_a(ss.str().c_str(),ios::app);
-	  outfile_a << scientific << setprecision(OUTPUTPRECISION)
-		    << setw(OUTPUTPRECISION+8) << Ts[s] << " " << setw(OUTPUTPRECISION+8) << Delta[s] << endl;
-	  outfile_a.close();
-	  
-	  ss.str("");
-	  ss << "dt" << "_" << s << ".dat";
-	  
-	  ofstream outfile_b(ss.str().c_str(),ios::app);
-	  outfile_b << scientific << setprecision(OUTPUTPRECISION)
-		    << setw(OUTPUTPRECISION+8) << Delta[s] << " " << setw(OUTPUTPRECISION+8) << Ts[s] << endl;
-	  outfile_b.close();
-	}
+      ofstream outfile_a(ss.str().c_str(),ios::app);
+      outfile_a << scientific << setprecision(OUTPUTPRECISION)
+		<< setw(OUTPUTPRECISION+8) << newT << " " << setw(OUTPUTPRECISION+8) << Delta[0] << endl;
+      outfile_a.close();
+      
+      ss.str("");
+      ss << "dt.dat";
+      
+      ofstream outfile_b(ss.str().c_str(),ios::app);
+      outfile_b << scientific << setprecision(OUTPUTPRECISION)
+		<< setw(OUTPUTPRECISION+8) << Delta[0] << " " << setw(OUTPUTPRECISION+8) << newT << endl;
+      outfile_b.close();
+      
 
 #if defined LATTICEDISTORTIONS && defined PHONONS
       if( lineid % PRINTPHONONSPECTRUMTICKLER == 0 && PRINTPHONONSPECTRUM)
@@ -2920,7 +2920,7 @@ bool Driver::SolveSelfConsistentEquation(NumberList Delta,bool load_state)
 	  stringstream ss;
 	  ss << "teps" << "_" << i << ".dat";
 	  ofstream outfile_a(ss.str().c_str(),ios::app);
-	  outfile_a << setprecision(16) << Ts[0] << " " << epsilon[i] << endl;
+	  outfile_a << setprecision(16) << newT << " " << epsilon[i] << endl;
 	  outfile_a.close();	
 	}
 #endif
