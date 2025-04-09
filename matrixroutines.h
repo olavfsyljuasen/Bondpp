@@ -5,7 +5,7 @@
 #include<complex>
 #include<iostream>
 #include<limits>
-
+#include<cassert>
 #include "lowlevelmatrixroutines.h"
 
 const bool Checkevals=true;

@@ -116,6 +116,8 @@ const int  NMAXQS = 32;
 const int  NMAXQSINFIRSTBZ=16;
 const realtype QTOL         = 1.e-7; // if two q-values are closer than this, they are regarded equal.
 
+
+
 #ifdef SHOWCORRELATIONFUNCTIONS
 const bool PRINTRCORRS=true;
 const bool PRINTQCORRS=true;
@@ -123,7 +125,7 @@ const bool PRINTSIGMAE=false;
 const bool PRINTRPTS=false;
 const bool PRINTQPTS=true;
 const bool PRINTLARGESTQCORRS=true;
-const realtype QCORRSTHRESHOLD=realtype(0.0); // print QCORRS that are above maxval*QCORRSTHRESHOLD
+const realtype QCORRSTHRESHOLD=realtype(0.); // print QCORRS that are above maxval*QCORRSTHRESHOLD
 #if defined SETPRINTTICKLER
 const int PRINTTICKLER=SETPRINTTICKLER;
 #else
@@ -136,7 +138,7 @@ const bool PRINTSIGMAE=false;
 const bool PRINTRPTS=false;
 const bool PRINTQPTS=false;
 const bool PRINTLARGESTQCORRS=false;
-const realtype QCORRSTHRESHOLD=1.;
+const realtype QCORRSTHRESHOLD=realtype(0.);
 const int PRINTTICKLER=1; 
 #endif
 

@@ -2434,7 +2434,7 @@ bool Driver::SolveSelfConsistentEquation(NumberList Delta,bool load_state)
       mfile.close();
 
 
-      if(PRINTQCORRS && PRINTLARGESTQCORRS && lineid%PRINTTICKLER==0)
+      if( (PRINTQCORRS && PRINTLARGESTQCORRS && lineid%PRINTTICKLER==0) || (PRINTPHONONSPECTRUM && lineid%PRINTPHONONSPECTRUMTICKLER==0))
 	{
 #ifndef SEPARATEZONEFILES
 	  stringstream ss;
@@ -2449,6 +2449,7 @@ bool Driver::SolveSelfConsistentEquation(NumberList Delta,bool load_state)
 	      ss << LARGESTQCORRSFILENAME << "_Z" << Z << "_" << lineid << ".dat";
 	      ofstream qcorrfile(ss.str().c_str());
 #endif
+	      qcorrfile << "# lineid=" << lineid << " T=" << newT << endl;
 	      Coord bzorigin=la.extendedzonesorigin[Z];
 	      
 	      for(int qi=0; qi<la.NqSites(); qi++) 

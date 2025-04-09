@@ -133,13 +133,13 @@ void Couplings::Initializeg()
     {
      //      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X];  // use g =1/r dJ/dr
       g(c,mindx(SX,0),mindx(SX,0)) = par[g1X]/norm(clist[c]); // use g = dJ/dr
-      if( g(c,mindx(SX,0),mindx(SX,0)) != 0.){ nonzeroclist.push_back(c);} // make a list of non-zero c's to loop around
+      if( g(c,mindx(SX,0),mindx(SX,0)) != complextype(0.,0.)){ nonzeroclist.push_back(c);} // make a list of non-zero c's to loop around
     } 
 
   for(int c=NN; c<NNN; c++)
     {
       g(c,mindx(SX,0),mindx(SX,0)) = par[g2X]/norm(clist[c]);
-      if( g(c,mindx(SX,0),mindx(SX,0)) != 0.){ nonzeroclist.push_back(c);} 
+      if( g(c,mindx(SX,0),mindx(SX,0)) != complextype(0.,0.)){ nonzeroclist.push_back(c);} 
     } 
 #else  
   for(int c=0; c<NN; c++)
@@ -147,7 +147,7 @@ void Couplings::Initializeg()
       g(c,mindx(SX,0),mindx(SX,0)) = par[g1X]/norm(clist[c]);
       g(c,mindx(SY,0),mindx(SY,0)) = par[g1Y]/norm(clist[c]);
       g(c,mindx(SZ,0),mindx(SZ,0)) = par[g1Z]/norm(clist[c]);
-      if( g(c,mindx(SX,0),mindx(SX,0)) != 0. || g(c,mindx(SY,0),mindx(SY,0) != 0. || g(c,mindx(SZ,0),mindx(SZ,0) != 0. ){ nonzeroclist.push_back(c);} 
+      if( g(c,mindx(SX,0),mindx(SX,0)) != complextype(0.,0.) || g(c,mindx(SY,0),mindx(SY,0) != complextype(0.,0.) || g(c,mindx(SZ,0),mindx(SZ,0) != complextype(0.,0.) ){ nonzeroclist.push_back(c);} 
     } 
 
   for(int c=NN; c<NNN; c++)
@@ -155,7 +155,7 @@ void Couplings::Initializeg()
       g(c,mindx(SX,0),mindx(SX,0)) = par[g2X]/norm(clist[c]);
       g(c,mindx(SY,0),mindx(SY,0)) = par[g2Y]/norm(clist[c]);
       g(c,mindx(SZ,0),mindx(SZ,0)) = par[g2Z]/norm(clist[c]);
-      if( g(c,mindx(SX,0),mindx(SX,0)) != 0. || g(c,mindx(SY,0),mindx(SY,0) != 0. || g(c,mindx(SZ,0),mindx(SZ,0) != 0. ){ nonzeroclist.push_back(c);} 
+      if( g(c,mindx(SX,0),mindx(SX,0)) != complextype(0.,0.) || g(c,mindx(SY,0),mindx(SY,0) != complextype(0.,0.) || g(c,mindx(SZ,0),mindx(SZ,0) != complextype(0.,0.) ){ nonzeroclist.push_back(c);} 
     }
 #endif  // FAKEHEISENBERG
 }
@@ -221,7 +221,7 @@ int mindx(const int spin,const int subl=0){ return spin*NSUBL+subl;}
 int spin(const int m){return m/NSUBL;}
 int subl(const int m){return m%NSUBL;}
 
-// specific coupling rules for squarephonons
+// specific coupling rules for triangularphonons
 void Couplings::InitializeJ()
 {
 #ifdef FAKEHEISENBERG
@@ -273,7 +273,7 @@ void Couplings::Initializeg()
       //      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X];
       g(c,mindx(SX,0),mindx(SX,0)) = par[g1X]/norm(clist[c]); // use g = dJ/dr
       if( g(c,mindx(SX,0),mindx(SX,0)) != complextype(0.,0.)){ nonzeroclist.push_back(c);} // make a list of non-zero c's to loop around
-      // if(g(c,mindx(SX,0),mindx(SX,0) != 0.){ nonzeroclist.pushback(c);} // make a list of non-zero c's to loop around
+      // if(g(c,mindx(SX,0),mindx(SX,0) != complextype(0.,0.)){ nonzeroclist.pushback(c);} // make a list of non-zero c's to loop around
     } 
 
   for(int c=NN; c<NNN; c++)
