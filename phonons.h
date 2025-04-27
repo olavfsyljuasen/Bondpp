@@ -333,6 +333,8 @@ Phonons::Phonons(): Nq(la.NqSites()),omega(Nq),normalmode(NSUBL),sumlogomegaover
 #endif      
     }
 
+  /*
+  //    I am not certain that this is correct.
   // New in version 1.88 
   // Adjust elastic matrix to confirm to Voigt notation
   // so that xy entries is essentially multiplied by 2, because of xy+yx
@@ -351,7 +353,7 @@ Phonons::Phonons(): Nq(la.NqSites()),omega(Nq),normalmode(NSUBL),sumlogomegaover
 	realtype factor = (i>voigtmaxsymmetricindex ? 2:1)*(j>voigtmaxsymmetricindex ? 2:1);
 	El(i,j)*=factor;
       }
-  
+  */
   
   if(TRACE)
     {
