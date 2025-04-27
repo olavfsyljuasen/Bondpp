@@ -184,7 +184,8 @@ const auto NNN=6;
 const auto NC=6;
 const auto NN=3;
 const auto NNN=6;
-vector<Triplet> clist{{ 1,  0,  0 }, { 0,  1,  0 }, {-1, 1,  0 }, { 1,  1,  0 }, { -1, 2, 0}, { -2, 1, 0}, { 2, 0, 0}, { 0, 2, 0}, { -2, 2, 0}};
+vector<Triplet> clist{{ 1,  0,  0 }, {  0,  1, 0 }, { -1, 1, 0 },
+		      { 1,  1,  0 }, { -1,  2, 0 }, { -2, 1, 0 }};
 #else
 const auto NC=12;
 const auto NN=6;
@@ -200,7 +201,9 @@ vector<Triplet> clist{
 const auto NC=9;
 const auto NN=3;
 const auto NNN=6;
- vector<Triplet> clist{{ 1,  0,  0 }, { 0,  1,  0 }, {-1, 1,  0 }, { 1,  1,  0 }, { -1, 2, 0}, { -2, 1, 0}, { 2, 0, 0}, { 0, 2, 0}, { -2, 2, 0}};
+ vector<Triplet> clist{{ 1,  0,  0 }, {  0, 1, 0 }, { -1, 1,  0 },
+		       { 1,  1,  0 }, { -1, 2, 0 }, { -2, 1,  0 },
+		       { 2,  0,  0 }, {  0, 2, 0 }, { -2, 2,  0 }};
 #else
 const auto NC=18;
 const auto NN=6;

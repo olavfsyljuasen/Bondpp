@@ -37,17 +37,17 @@ class FixedIndxObs: public KernelFunction
 static const Triplet Tx={1,0,0};
 static const Triplet Ty={0,1,0};
 
-complex<realtype> cosaxes(int qi)
+complextype cosaxes(int qi)
 {
-  return 0.5*(cos( la.qr(qi,Tx))-cos( la.qr(qi,Ty)));
+  return complextype(0.5,0.)*(cos( la.qr(qi,Tx))-cos( la.qr(qi,Ty)));
 }
 
 static const Triplet Td= {1, 1,0};
 static const Triplet Tmd={1,-1,0};
 
-complex<realtype> cosdiag(int qi)
+complextype cosdiag(int qi)
 {
-  return 0.5*(cos( la.qr(qi,Td))-cos( la.qr(qi,Tmd)));
+  return complextype(0.5,0.0)*(cos( la.qr(qi,Td))-cos( la.qr(qi,Tmd)));
 }
 
 /*
@@ -55,14 +55,14 @@ static const Triplet TO={0,0,0};
 static const Triplet Ta1={1, 0,0};
 static const Triplet Ta2={0, 1,0};
 static const Triplet Ta3={-1,1,0};
-static const complex<realtype> w(-0.5,SQRTTHREEOVERTWO);
+static const complextype w(-0.5,SQRTTHREEOVERTWO);
 
-complex<realtype> honey01(int qi)
+complextype honey01(int qi)
 {
   return 0.5*(1.+w*expi(-la.qr(qi,Ta3))+w*w*expi(-la.qr(qi,Ta2)));
 }
 
-complex<realtype> honey00(int qi)
+complextype honey00(int qi)
 {
   return 0.5*(cos(la.qr(qi,Ta1))+w*cos(la.qr(qi,Ta2))+w*w*cos(la.qr(qi,Ta3)));
 }
@@ -73,26 +73,26 @@ static const Triplet TO={0,0,0};
 static const Triplet Ta1={1, 0,0};
 static const Triplet Ta2={0, 1,0};
 static const Triplet Ta3={-1,1,0};
-static const complex<realtype> w(-0.5,SQRTTHREEOVERTWO);
+static const complextype w(-0.5,SQRTTHREEOVERTWO);
 
-complex<realtype> honey01(int qi)
+complextype honey01(int qi)
 {
-  return 0.5*(1.+w*expi(-la.qr(qi,Ta3))+w*w*expi(-la.qr(qi,Ta2)));
+  return complextype(0.5,0.)*(1.+w*expi(-la.qr(qi,Ta3))+w*w*expi(-la.qr(qi,Ta2)));
 }
 
-complex<realtype> honey00(int qi)
+complextype honey00(int qi)
 {
-  return 0.5*(cos(la.qr(qi,Ta1))+w*cos(la.qr(qi,Ta2))+w*w*cos(la.qr(qi,Ta3)));
+  return complextype(0.5,0)*(cos(la.qr(qi,Ta1))+w*cos(la.qr(qi,Ta2))+w*w*cos(la.qr(qi,Ta3)));
 }
 
 
 
-complex<realtype> rotobs(int qi)
+complextype rotobs(int qi)
 {
-  return 0.5*(cos(la.qr(qi,Ta1))+w*cos(la.qr(qi,Ta2))+w*w*cos(la.qr(qi,Ta3)));
+  return complextype(0.5,0.)*(cos(la.qr(qi,Ta1))+w*cos(la.qr(qi,Ta2))+w*w*cos(la.qr(qi,Ta3)));
 }
 
-complex<realtype> IIobs(int qi)
+complextype IIobs(int qi)
 {
   realtype c1=cos(la.qr(qi,Ta1)); realtype c2=cos(la.qr(qi,Ta2));        realtype c3 =cos(la.qr(qi,Ta3));
   realtype x = c1-0.5*(c2+c3);    realtype y = SQRTTHREEOVERTWO*(c2-c3); realtype rot=0.5*(c1+c2+c3);
@@ -103,7 +103,7 @@ complex<realtype> IIobs(int qi)
   return rot*p2;
 }
 
-complex<realtype> IIIobs(int qi)
+complextype IIIobs(int qi)
 {
   realtype c1=cos(la.qr(qi,Ta1)); realtype c2=cos(la.qr(qi,Ta2));        realtype c3 =cos(la.qr(qi,Ta3));
   realtype x = c1-0.5*(c2+c3);    realtype y = SQRTTHREEOVERTWO*(c2-c3); realtype rot=0.5*(c1+c2+c3);
@@ -117,7 +117,7 @@ complex<realtype> IIIobs(int qi)
 
 
 
-typedef complex<realtype> obstype; 
+typedef complextype obstype; 
 
 //OBSERVABLES:
 

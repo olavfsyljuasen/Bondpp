@@ -333,6 +333,26 @@ Phonons::Phonons(): Nq(la.NqSites()),omega(Nq),normalmode(NSUBL),sumlogomegaover
 #endif      
     }
 
+  // New in version 1.88 
+  // Adjust elastic matrix to confirm to Voigt notation
+  // so that xy entries is essentially multiplied by 2, because of xy+yx
+  int voigtmaxsymmetricindex=
+#if defined XYDISPLACEMENTS
+  1;
+#elif defined XYZDISPLACEMENT
+  2;
+#else
+  1;
+#endif
+  
+  for(int i=0; i< NELASTIC; i++)
+    for(int j=0; j< NELASTIC; j++)
+      {
+	realtype factor = (i>voigtmaxsymmetricindex ? 2:1)*(j>voigtmaxsymmetricindex ? 2:1);
+	El(i,j)*=factor;
+      }
+  
+  
   if(TRACE)
     {
       cout << "The elastic matrix" << endl;
