@@ -85,6 +85,8 @@ const bool USEPREVIOUSEPSILONS = true; // use previous epsilon values whenever l
 const bool USEPREVIOUSEPSILONS = false;
 #endif
 
+const bool PRINTGQS = true; // output the couplings to files
+
 const string STATEFILENAME ="conf"; 
 
 const string RCORRSFILENAME="rcorrs.dat";
@@ -117,6 +119,10 @@ const int  NMAXQSINFIRSTBZ=16;
 const realtype QTOL         = 1.e-7; // if two q-values are closer than this, they are regarded equal.
 
 
+#if defined CLAMPEDMODES
+const int clampedmodes[]={CLAMPEDMODES};
+const int Nclampedmodes=sizeof(clampedmodes)/sizeof(clampedmodes[0]);
+#endif
 
 #ifdef SHOWCORRELATIONFUNCTIONS
 const bool PRINTRCORRS=true;

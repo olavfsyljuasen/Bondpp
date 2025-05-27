@@ -535,7 +535,7 @@ void Driver::CalculateTs(vector<realtype>& Ts)
 #if defined LATTICEDISTORTIONS && defined ELASTIC
 NumberList Driver::CalculateEpsilonsOverT()
 {
-  if(TRACE) cout << "Starting CalculateEpsilonsOverT" << endl;
+  if(TRACE) cout << "Starting CalculateEpsilonsOverT()" << endl;
 
   NumberList epsoverT(NELASTIC);
   for(int i=0; i<NELASTIC; i++)
@@ -1947,7 +1947,7 @@ void Driver::SetQsToZero()
 
 bool Driver::SolveSaddlePointEquations(realtype& thisT,NumberList& thisepsilon)
 {
-  if(TRACE) cout << "Starting SolveSaddlePointEquations() " << endl;
+  if(TRACE) cout << "Starting SolveSaddlePointEquations(" << thisT << " " << thisepsilon << ") " << endl;
 
   realtype myoldT(thisT);
   NumberList myoldeps(thisepsilon);
@@ -1959,29 +1959,44 @@ bool Driver::SolveSaddlePointEquations(realtype& thisT,NumberList& thisepsilon)
 #if defined LATTICEDISTORTIONS && defined ELASTIC
   NumberList epsoverT=CalculateEpsilonsOverT();
   myeps=epsoverT*myT;
-#if defined ONEEPSILONCOMPONENTCLAMPED
-      myeps[EPSILONCOMPONENTCLAMPED] = 0.;
-#endif
+#if defined CLAMPEDMODES
+  for(int k=0; k<Nclampedmodes; k++){ myeps[clampedmodes[k]]=realtype(0.);}
+#endif      
 #endif
   int counter = 0;
   bool TooManyIter=false;
   NumberList epsdiff = myeps - myoldeps;
   while( (abs(myT - myoldT) > par[TOLERANCE] || maxabs(epsdiff) > par[TOLERANCE] ) && !TooManyIter)
     {
+      if(TRACE)
+	{
+	  cout << "begin: myT:" << myT << " eps:" << myeps << endl;
+	  //	  cout << "begin: myT:" << myT << " myoldT:" << myoldT << " epsdiff:" << epsdiff << " TooManyIter:" << TooManyIter << endl;
+	}
+      
       myoldT   = myT;
       myoldeps = myeps;
       
+      
       epsilon = myeps; // set Kinvq using the new value of epsilon
       ConstructKinvq(); // also subtract minimal value and renormalize Delta
+
+      // Extra lines here for better accuracy ???
+      //      ComputeSelfEnergy();
+      //      ConstructKinvq(); // also subtract minimal value and renormalize Delta
+      // end extra lines
+
       myT=CalculateT(0);  // only valid for one sublattice here
 #if defined LATTICEDISTORTIONS && defined ELASTIC
       epsoverT=CalculateEpsilonsOverT();
       myeps=epsoverT*myT;
-#if defined ONEEPSILONCOMPONENTCLAMPED
-      myeps[EPSILONCOMPONENTCLAMPED] = 0.;
-#endif
+#if defined CLAMPEDMODES
+      for(int k=0; k<Nclampedmodes; k++){ myeps[clampedmodes[k]]= realtype(0.);}
+#endif      
 #endif
       epsdiff = myeps - myoldeps;
+
+      
       /*
       if(counter > 10) // write log output
 	{
@@ -1989,8 +2004,15 @@ bool Driver::SolveSaddlePointEquations(realtype& thisT,NumberList& thisepsilon)
 	}
       */
       TooManyIter = ( ++counter >= 10000);
-    }
 
+      if(TRACE)
+	{
+	  //	  cout << "end: myT:" << myT << " myoldT:" << myoldT << " eps:" << myeps << " epsdiff:" << epsdiff << " TooManyIter:" << TooManyIter << endl;
+	  cout << "end: myT:" << myT << " eps:" << myeps << endl;
+	}
+    }
+  
+  
   if(counter > 100){ logfile << "used " << counter << " steps in getting saddlepoint eqs. to converge" << endl;}
   
   if(TooManyIter)
@@ -2001,6 +2023,27 @@ bool Driver::SolveSaddlePointEquations(realtype& thisT,NumberList& thisepsilon)
 
   thisT = myT;
   thisepsilon = myeps;
+
+  if(TRACE)
+    {
+      cout << "Doing a final check on the saddlepoints" << endl;
+      // final check, just to check:
+      epsilon = thisepsilon; // set Kinvq using the new value of epsilon
+      ConstructKinvq(); // also subtract minimal value and renormalize Delta
+      
+      myT=CalculateT(0);  // only valid for one sublattice here
+#if defined LATTICEDISTORTIONS && defined ELASTIC
+      epsoverT=CalculateEpsilonsOverT();
+      myeps=epsoverT*myT;
+#if defined CLAMPEDMODES
+      for(int k=0; k<Nclampedmodes; k++){ myeps[clampedmodes[k]]=realtype(0.);}
+#endif      
+#endif
+      epsdiff=thisepsilon-myeps;
+       
+      cout << "final, T: LHS:" << thisT << " eps: LHS:" << thisepsilon << endl;
+      cout << "final, T: RHS:" << myT   << " eps: RHS:" << myeps << " Tdiff:" << thisT-myT << " epsdiff:" << epsdiff << endl;
+    }
   
   if(TRACE) cout << "Finished SolveSaddlePointEquations() " << endl;
   return true;
@@ -2196,10 +2239,9 @@ bool Driver::SolveSelfConsistentEquation(NumberList Delta,bool load_state)
 	  //	  epsilon[i]= (1.-inertia)*currT*epsoverT[i]+inertia*epsilon[i];
 	  epsilon[i]= (1.-inertia)*neweps[i]+inertia*epsilon[i]; // maybe change to this
 	}
-#if defined ONEEPSILONCOMPONENTCLAMPED
-      epsilon[EPSILONCOMPONENTCLAMPED] = realtype(0.);
-#endif
-
+#if defined CLAMPEDMODES
+      for(int k=0; k<Nclampedmodes; k++){ epsilon[clampedmodes[k]]=realtype(0.);}
+#endif      
 #endif       
 
       //currT= (1.-inertia)*newT+inertia*oldT; 
@@ -3097,9 +3139,9 @@ Simulation::Simulation(): couplings(par,NC),rule(couplings),mysolver(rule),Delta
       NumberList newepsilon(NELASTIC);
       for(int i=0; i<NELASTIC; i++) newepsilon[i]=(RAN()-0.5)*par[EPSILONNULL]; // small values
 
-#if defined ONEEPSILONCOMPONENTCLAMPED
-      newepsilon[EPSILONCOMPONENTCLAMPED] = 0.;
-#endif
+#if defined CLAMPEDMODES
+      for(int k=0; k<Nclampedmodes; k++){ newepsilon[clampedmodes[k]]=realtype(0.);}
+#endif            
 
       // put the same starting value for all entries:
       for(unsigned int i=0; i<Deltalist.size(); i++){epsilonlist.push_back(newepsilon);}

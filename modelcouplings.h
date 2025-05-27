@@ -132,29 +132,29 @@ void Couplings::Initializeg()
   for(int c=0; c<NN; c++)
     {
      //      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X];  // use g =1/r dJ/dr
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X]/norm(clist[c]); // use g = dJ/dr
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X]/la.rPos(clist[c]).Norm(); // use g = dJ/dr
       if( g(c,mindx(SX,0),mindx(SX,0)) != complextype(0.,0.)){ nonzeroclist.push_back(c);} // make a list of non-zero c's to loop around
     } 
 
   for(int c=NN; c<NNN; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X]/norm(clist[c]);
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X]/la.rPos(clist[c]).Norm();
       if( g(c,mindx(SX,0),mindx(SX,0)) != complextype(0.,0.)){ nonzeroclist.push_back(c);} 
     } 
 #else  
   for(int c=0; c<NN; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X]/norm(clist[c]);
-      g(c,mindx(SY,0),mindx(SY,0)) = par[g1Y]/norm(clist[c]);
-      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g1Z]/norm(clist[c]);
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X]/la.rPos(clist[c]).Norm();
+      g(c,mindx(SY,0),mindx(SY,0)) = par[g1Y]/la.rPos(clist[c]).Norm();
+      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g1Z]/la.rPos(clist[c]).Norm();
       if( g(c,mindx(SX,0),mindx(SX,0)) != complextype(0.,0.) || g(c,mindx(SY,0),mindx(SY,0) != complextype(0.,0.) || g(c,mindx(SZ,0),mindx(SZ,0) != complextype(0.,0.) ){ nonzeroclist.push_back(c);} 
     } 
 
   for(int c=NN; c<NNN; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X]/norm(clist[c]);
-      g(c,mindx(SY,0),mindx(SY,0)) = par[g2Y]/norm(clist[c]);
-      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g2Z]/norm(clist[c]);
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X]/la.rPos(clist[c]).Norm();
+      g(c,mindx(SY,0),mindx(SY,0)) = par[g2Y]/la.rPos(clist[c]).Norm();
+      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g2Z]/la.rPos(clist[c]).Norm();
       if( g(c,mindx(SX,0),mindx(SX,0)) != complextype(0.,0.) || g(c,mindx(SY,0),mindx(SY,0) != complextype(0.,0.) || g(c,mindx(SZ,0),mindx(SZ,0) != complextype(0.,0.) ){ nonzeroclist.push_back(c);} 
     }
 #endif  // FAKEHEISENBERG
@@ -274,44 +274,43 @@ void Couplings::Initializeg()
   for(int c=0; c<NN; c++)
     {
       //      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X];
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X]/norm(clist[c]); // use g = dJ/dr
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X]/la.rPos(clist[c]).Norm(); // use g = dJ/dr nearest neighbors has norm 1
       if( g(c,mindx(SX,0),mindx(SX,0)) != complextype(0.,0.)){ nonzeroclist.push_back(c);} // make a list of non-zero c's to loop around
-      // if(g(c,mindx(SX,0),mindx(SX,0) != complextype(0.,0.)){ nonzeroclist.pushback(c);} // make a list of non-zero c's to loop around
     } 
 
   for(int c=NN; c<NNN; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X]/norm(clist[c]); // use g = dJ/dr;
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X]/la.rPos(clist[c]).Norm(); // use g = dJ/dr 
       if( g(c,mindx(SX,0),mindx(SX,0)) != complextype(0.,0.)){ nonzeroclist.push_back(c);} // make a list of non-zero c's to loop around
     }
 
   for(int c=NNN; c<NC; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g3X]/norm(clist[c]); // use g = dJ/dr;
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g3X]/la.rPos(clist[c]).Norm(); // use g = dJ/dr 
       if( g(c,mindx(SX,0),mindx(SX,0)) != complextype(0.,0.)){ nonzeroclist.push_back(c);} // make a list of non-zero c's to loop around
     } 
 #else  
   for(int c=0; c<NN; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X]/norm(clist[c]); // use g = dJ/dr;
-      g(c,mindx(SY,0),mindx(SY,0)) = par[g1Y]/norm(clist[c]); // use g = dJ/dr;
-      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g1Z]/norm(clist[c]); // use g = dJ/dr;
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X]/la.rPos(clist[c]).Norm(); // use g = dJ/dr 
+      g(c,mindx(SY,0),mindx(SY,0)) = par[g1Y]/la.rPos(clist[c]).Norm(); // use g = dJ/dr 
+      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g1Z]/la.rPos(clist[c]).Norm(); // use g = dJ/dr 
       if( g(c,mindx(SX,0),mindx(SX,0)) != complextype(0.,0.) || g(c,mindx(SY,0),mindx(SY,0) != complextype(0.,0.) || g(c,mindx(SZ,0),mindx(SZ,0) != complextype(0.,0.) ){ nonzeroclist.push_back(c);} 
     } 
 
   for(int c=NN; c<NNN; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X]/norm(clist[c]); // use g = dJ/dr;
-      g(c,mindx(SY,0),mindx(SY,0)) = par[g2Y]/norm(clist[c]); // use g = dJ/dr;
-      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g2Z]/norm(clist[c]); // use g = dJ/dr;
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X]/la.rPos(clist[c]).Norm(); // use g = dJ/dr 
+      g(c,mindx(SY,0),mindx(SY,0)) = par[g2Y]/la.rPos(clist[c]).Norm(); // use g = dJ/dr 
+      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g2Z]/la.rPos(clist[c]).Norm(); // use g = dJ/dr 
       if( g(c,mindx(SX,0),mindx(SX,0)) != complextype(0.,0.) || g(c,mindx(SY,0),mindx(SY,0) != complextype(0.,0.) || g(c,mindx(SZ,0),mindx(SZ,0) != complextype(0.,0.) ){ nonzeroclist.push_back(c);} 
     }
 
     for(int c=NNN; c<NC; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g3X]/norm(clist[c]); // use g = dJ/dr;
-      g(c,mindx(SY,0),mindx(SY,0)) = par[g3Y]/norm(clist[c]); // use g = dJ/dr;
-      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g3Z]/norm(clist[c]); // use g = dJ/dr;
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g3X]/la.rPos(clist[c]).Norm(); // use g = dJ/dr 
+      g(c,mindx(SY,0),mindx(SY,0)) = par[g3Y]/la.rPos(clist[c]).Norm(); // use g = dJ/dr 
+      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g3Z]/la.rPos(clist[c]).Norm(); // use g = dJ/dr 
       if( g(c,mindx(SX,0),mindx(SX,0)) != complextype(0.,0.) || g(c,mindx(SY,0),mindx(SY,0) != complextype(0.,0.) || g(c,mindx(SZ,0),mindx(SZ,0) != complextype(0.,0.) ){ nonzeroclist.push_back(c);} 
     }
 #endif //FAKEHEISENBERG 
@@ -377,29 +376,29 @@ void Couplings::Initializeg()
 #ifdef FAKEHEISENBERG
   for(int c=0; c<NN; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X]/norm(clist[c]); // use g = dJ/dr;
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X]/la.rPos(clist[c]).Norm(); // use g = dJ/dr;
       if( g(c,mindx(SX,0),mindx(SX,0)) != complextype(0.,0.)){ nonzeroclist.push_back(c);} // make a list of non-zero c's to loop around
     } 
 
   for(int c=NN; c<NC; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X]/norm(clist[c]); // use g = dJ/dr;
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X]/la.rPos(clist[c]).Norm(); // use g = dJ/dr;
       if( g(c,mindx(SX,0),mindx(SX,0)) != complextype(0.,0.)){ nonzeroclist.push_back(c);} // make a list of non-zero c's to loop around
     } 
 #else  
   for(int c=0; c<NN; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X]/norm(clist[c]); // use g = dJ/dr;
-      g(c,mindx(SY,0),mindx(SY,0)) = par[g1Y]/norm(clist[c]); // use g = dJ/dr;
-      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g1Z]/norm(clist[c]); // use g = dJ/dr;
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X]/la.rPos(clist[c]).Norm(); // use g = dJ/dr;
+      g(c,mindx(SY,0),mindx(SY,0)) = par[g1Y]/la.rPos(clist[c]).Norm(); // use g = dJ/dr;
+      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g1Z]/la.rPos(clist[c]).Norm(); // use g = dJ/dr;
       if( g(c,mindx(SX,0),mindx(SX,0)) != complextype(0.,0.) || g(c,mindx(SY,0),mindx(SY,0) != complextype(0.,0.) || g(c,mindx(SZ,0),mindx(SZ,0) != complextype(0.,0.) ){ nonzeroclist.push_back(c);} 
     } 
 
   for(int c=NN; c<NC; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X]/norm(clist[c]); // use g = dJ/dr;
-      g(c,mindx(SY,0),mindx(SY,0)) = par[g2Y]/norm(clist[c]); // use g = dJ/dr;
-      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g2Z]/norm(clist[c]); // use g = dJ/dr;
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X]/la.rPos(clist[c]).Norm(); // use g = dJ/dr;
+      g(c,mindx(SY,0),mindx(SY,0)) = par[g2Y]/la.rPos(clist[c]).Norm(); // use g = dJ/dr;
+      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g2Z]/la.rPos(clist[c]).Norm(); // use g = dJ/dr;
       if( g(c,mindx(SX,0),mindx(SX,0)) != complextype(0.,0.) || g(c,mindx(SY,0),mindx(SY,0) != complextype(0.,0.) || g(c,mindx(SZ,0),mindx(SZ,0) != complextype(0.,0.) ){ nonzeroclist.push_back(c);} 
     }
 #endif //FAKEHEISENBERG
@@ -407,7 +406,7 @@ void Couplings::Initializeg()
 #endif //LATTICEDISTORTIONS
 
 #elif defined FCCPHONONS
-
+      // BE CAREFUL HERE THE NORM OF LENGTH SHOULD BE REPLACED BY NUMBERS
 #ifdef CPOSITIVE
 const auto NC=9;
 const auto NN=3;
@@ -465,29 +464,29 @@ void Couplings::Initializeg()
 #ifdef FAKEHEISENBERG
   for(int c=0; c<NN; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X]/norm(clist[c]); // use g = dJ/dr;
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X]/la.rPos(clist[c]).Norm(); // use g = dJ/dr;
       if( g(c,mindx(SX,0),mindx(SX,0)) != complextype(0.,0.)){ nonzeroclist.push_back(c);} // make a list of non-zero c's to loop around
     } 
 
   for(int c=NN; c<NC; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X]/norm(clist[c]); // use g = dJ/dr;
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X]/la.rPos(clist[c]).Norm(); // use g = dJ/dr;
       if( g(c,mindx(SX,0),mindx(SX,0)) != complextype(0.,0.)){ nonzeroclist.push_back(c);} // make a list of non-zero c's to loop around
     } 
 #else  
   for(int c=0; c<NN; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X]/norm(clist[c]); // use g = dJ/dr;
-      g(c,mindx(SY,0),mindx(SY,0)) = par[g1Y]/norm(clist[c]); // use g = dJ/dr;
-      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g1Z]/norm(clist[c]); // use g = dJ/dr;
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X]/la.rPos(clist[c]).Norm(); // use g = dJ/dr;
+      g(c,mindx(SY,0),mindx(SY,0)) = par[g1Y]/la.rPos(clist[c]).Norm(); // use g = dJ/dr;
+      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g1Z]/la.rPos(clist[c]).Norm(); // use g = dJ/dr;
       if( g(c,mindx(SX,0),mindx(SX,0)) != complextype(0.,0.) || g(c,mindx(SY,0),mindx(SY,0) != complextype(0.,0.) || g(c,mindx(SZ,0),mindx(SZ,0) != complextype(0.,0.) ){ nonzeroclist.push_back(c);} 
     } 
 
   for(int c=NN; c<NC; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X]/norm(clist[c]); // use g = dJ/dr;
-      g(c,mindx(SY,0),mindx(SY,0)) = par[g2Y]/norm(clist[c]); // use g = dJ/dr;
-      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g2Z]/norm(clist[c]); // use g = dJ/dr;
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X]/la.rPos(clist[c]).Norm(); // use g = dJ/dr;
+      g(c,mindx(SY,0),mindx(SY,0)) = par[g2Y]/la.rPos(clist[c]).Norm(); // use g = dJ/dr;
+      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g2Z]/la.rPos(clist[c]).Norm(); // use g = dJ/dr;
       if( g(c,mindx(SX,0),mindx(SX,0)) != complextype(0.,0.) || g(c,mindx(SY,0),mindx(SY,0) != complextype(0.,0.) || g(c,mindx(SZ,0),mindx(SZ,0) != complextype(0.,0.) ){ nonzeroclist.push_back(c);} 
     }
 #endif  //FAKEHEISENBERG
@@ -553,29 +552,29 @@ void Couplings::Initializeg()
 #ifdef FAKEHEISENBERG
   for(int c=0; c<NN; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X]/norm(clist[c]); // use g = dJ/dr;
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X]/la.rPos(clist[c]).Norm(); // use g = dJ/dr;
       if( g(c,mindx(SX,0),mindx(SX,0)) != complextype(0.,0.)){ nonzeroclist.push_back(c);} // make a list of non-zero c's to loop around
     } 
 
   for(int c=NN; c<NC; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X]/norm(clist[c]); // use g = dJ/dr;
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X]/la.rPos(clist[c]).Norm(); // use g = dJ/dr;
       if( g(c,mindx(SX,0),mindx(SX,0)) != complextype(0.,0.)){ nonzeroclist.push_back(c);} // make a list of non-zero c's to loop around
     } 
 #else  
   for(int c=0; c<NN; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X]/norm(clist[c]); // use g = dJ/dr;
-      g(c,mindx(SY,0),mindx(SY,0)) = par[g1Y]/norm(clist[c]); // use g = dJ/dr;
-      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g1Z]/norm(clist[c]); // use g = dJ/dr;
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g1X]/la.rPos(clist[c]).Norm(); // use g = dJ/dr;
+      g(c,mindx(SY,0),mindx(SY,0)) = par[g1Y]/la.rPos(clist[c]).Norm(); // use g = dJ/dr;
+      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g1Z]/la.rPos(clist[c]).Norm(); // use g = dJ/dr;
       if( g(c,mindx(SX,0),mindx(SX,0)) != complextype(0.,0.) || g(c,mindx(SY,0),mindx(SY,0) != complextype(0.,0.) || g(c,mindx(SZ,0),mindx(SZ,0) != complextype(0.,0.) ){ nonzeroclist.push_back(c);} 
     } 
 
   for(int c=NN; c<NC; c++)
     {
-      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X]/norm(clist[c]); // use g = dJ/dr;
-      g(c,mindx(SY,0),mindx(SY,0)) = par[g2Y]/norm(clist[c]); // use g = dJ/dr;
-      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g2Z]/norm(clist[c]); // use g = dJ/dr;
+      g(c,mindx(SX,0),mindx(SX,0)) = par[g2X]/la.rPos(clist[c]).Norm(); // use g = dJ/dr;
+      g(c,mindx(SY,0),mindx(SY,0)) = par[g2Y]/la.rPos(clist[c]).Norm(); // use g = dJ/dr;
+      g(c,mindx(SZ,0),mindx(SZ,0)) = par[g2Z]/la.rPos(clist[c]).Norm(); // use g = dJ/dr;
       if( g(c,mindx(SX,0),mindx(SX,0)) != complextype(0.,0.) || g(c,mindx(SY,0),mindx(SY,0) != complextype(0.,0.) || g(c,mindx(SZ,0),mindx(SZ,0) != complextype(0.,0.) ){ nonzeroclist.push_back(c);} 
     }
 #endif  //FAKEHEISENBERG

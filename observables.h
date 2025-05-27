@@ -74,22 +74,23 @@ static const Triplet Ta1={1, 0,0};
 static const Triplet Ta2={0, 1,0};
 static const Triplet Ta3={-1,1,0};
 static const complextype w(-0.5,SQRTTHREEOVERTWO);
+static const complextype w2(w*w);
 
 complextype honey01(int qi)
 {
-  return complextype(0.5,0.)*(1.+w*expi(-la.qr(qi,Ta3))+w*w*expi(-la.qr(qi,Ta2)));
+  return complextype(0.5,0.)*(1.+w*expi(-la.qr(qi,Ta3))+w2*expi(-la.qr(qi,Ta2)));
 }
 
 complextype honey00(int qi)
 {
-  return complextype(0.5,0)*(cos(la.qr(qi,Ta1))+w*cos(la.qr(qi,Ta2))+w*w*cos(la.qr(qi,Ta3)));
+  return complextype(0.5,0)*(complextype(1.,0.)*cos(la.qr(qi,Ta1))+w*cos(la.qr(qi,Ta2))+w2*cos(la.qr(qi,Ta3)));
 }
 
 
 
 complextype rotobs(int qi)
 {
-  return complextype(0.5,0.)*(cos(la.qr(qi,Ta1))+w*cos(la.qr(qi,Ta2))+w*w*cos(la.qr(qi,Ta3)));
+  return complextype(0.5,0.)*(complextype(1.,0.)*cos(la.qr(qi,Ta1))+w*cos(la.qr(qi,Ta2))+w2*cos(la.qr(qi,Ta3)));
 }
 
 complextype IIobs(int qi)

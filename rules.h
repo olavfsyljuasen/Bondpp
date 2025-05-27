@@ -163,7 +163,7 @@ complextype Rule::GetCorrFactor(const int s0,const int s1,const Coord& q)
 
 // called with eps={1,-1,0,0,0,0} gives xx-yy, etc.
 
-#ifdef CPOSITIVE
+
 void Rule::InitializeElasticMode(int i,VecMat<complextype,NMAT,NMAT>& gel)
 {
   if(TRACE) cout << "Starting InitializeElasticMode " << i << endl;
@@ -174,6 +174,8 @@ void Rule::InitializeElasticMode(int i,VecMat<complextype,NMAT,NMAT>& gel)
   for(int ci=0; ci<NC; ci++)
     {      
       Coord c=la.rPos(clist[ci]);
+
+      if(TRACE) cout << "ci=" << ci << " clist=" << clist[ci] << " pos: " << c << " g=" << g(ci,0,0) << endl; 
       
       for(int qj=0; qj<Nq; qj++)
 	{
@@ -182,8 +184,8 @@ void Rule::InitializeElasticMode(int i,VecMat<complextype,NMAT,NMAT>& gel)
 	      for(int i1=0; i1<NSUBL; i1++)
 		for(int i2=0; i2<NSUBL; i2++)
 		  {
+#ifdef CPOSITIVE
 		    Coord crr=c+roffset[i2]-roffset[i1];
-
 		    realtype crr2=crr[voigt1indx[vi]]*crr[voigt2indx[vi]];
 	      
 		    for(int s1=0; s1<NSPIN; s1++)
@@ -194,14 +196,10 @@ void Rule::InitializeElasticMode(int i,VecMat<complextype,NMAT,NMAT>& gel)
 			  
 			  gel(qj,m1,m2) += complextype(0.5,0.0)*u[vi]*crr2*g(ci,m1,m2)*expi(la.qr(qj,clist[ci]));
 			}
-		  }
-
-	      for(int i1=0; i1<NSUBL; i1++)
-		for(int i2=0; i2<NSUBL; i2++)
-		  {
-		    Coord crr=c+roffset[i1]-roffset[i2];
-
-		    realtype crr2=crr[voigt1indx[vi]]*crr[voigt2indx[vi]];
+		    
+		    crr=c+roffset[i1]-roffset[i2];
+		    crr2=crr[voigt1indx[vi]]*crr[voigt2indx[vi]];
+		    
 		    for(int s1=0; s1<NSPIN; s1++)
 		      for(int s2=0; s2<NSPIN; s2++)
 			{
@@ -210,33 +208,7 @@ void Rule::InitializeElasticMode(int i,VecMat<complextype,NMAT,NMAT>& gel)
 			  
 			  gel(qj,m1,m2) += complextype(0.5,0.)*u[vi]*crr2*g(ci,m2,m1)*conj(expi(la.qr(qj,clist[ci])));
 			}
-		  }
-	    }
-	}
-    }
-  if(TRACE) SanityCheck(gel,"gel, at end of InitializeElasticMode");
-  if(TRACE) cout << "Finished InitializeElasticMode" << endl;
-}
 #else
-void Rule::InitializeElasticMode(int i,VecMat<complextype>& gel)
-{
-  if(TRACE) cout << "Starting InitializeElasticMode " << i << endl;
-  const int Nq=la.NqSites();
-  
-  voigtstring u=phonons.GetElasticMode(i);
-  
-  for(int ci=0; ci<NC; ci++)
-    {      
-      Coord c=la.rPos(clist[ci]);
-      
-      for(int qj=0; qj<Nq; qj++)
-	{
-	  for(int vi=0; vi<NELASTIC; vi++) // run thru all Voigt indices, same as NELASTIC
-	    {
-	      
-	      for(int i1=0; i1<NSUBL; i1++)
-		for(int i2=0; i2<NSUBL; i2++)
-		  {
 		    Coord crr=c+roffset[i2]-roffset[i1];
 		    //		    realtype crr2=crr[voigt1indx[vi]]*crr[voigt2indx[vi]]*(voigt1indx[vi] != voigt2indx[vi] ? 2:1);
 		    realtype crr2=crr[voigt1indx[vi]]*crr[voigt2indx[vi]]; // do not overcount
@@ -249,16 +221,37 @@ void Rule::InitializeElasticMode(int i,VecMat<complextype>& gel)
 			  
 			  gel(qj,m1,m2) += complextype(0.5,0.)*u[vi]*crr2*g(ci,m1,m2)*expi(la.qr(qj,clist[ci]));
 			}
+#endif	      
 		  }
 	    }
 	}
+    } // ci      
+
+  if(PRINTGQS)
+    {
+      for(int i1=0; i1<NSUBL; i1++)
+	for(int i2=0; i2<NSUBL; i2++)
+	  for(int s1=0; s1<NSPIN; s1++)
+	    for(int s2=0; s2<NSPIN; s2++)
+	      {
+		int m1=mindx(s1,i1);
+		int m2=mindx(s2,i2);		
+		
+		ofstream outfile("gq_"+int2string(i)+"_"+int2string(m1)+int2string(m2)+".dat");
+		for(int qj=0; qj<Nq; qj++)
+		  {
+		    Coord q=la.qPos(qj);
+		    complextype gq=gel(qj,m1,m2);
+		    outfile << setprecision(OUTPUTPRECISION) << q << " " << real(gq) << " " << imag(gq) << endl;
+		  }
+		outfile.close();
+	      }
     }
   if(TRACE) SanityCheck(gel,"gel, at end of InitializeElasticMode");
   if(TRACE) cout << "Finished InitializeElasticMode" << endl;
-}  
+}
 #endif
-#endif
-
+  
 
 
 ostream& Rule::Write(ostream& os)
