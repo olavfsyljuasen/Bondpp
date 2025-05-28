@@ -1982,8 +1982,8 @@ bool Driver::SolveSaddlePointEquations(realtype& thisT,NumberList& thisepsilon)
       ConstructKinvq(); // also subtract minimal value and renormalize Delta
 
       // Extra lines here for better accuracy ???
-      //      ComputeSelfEnergy();
-      //      ConstructKinvq(); // also subtract minimal value and renormalize Delta
+      ComputeSelfEnergy();
+      ConstructKinvq(); // also subtract minimal value and renormalize Delta
       // end extra lines
 
       myT=CalculateT(0);  // only valid for one sublattice here
