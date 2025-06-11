@@ -400,15 +400,16 @@ Phonons::Phonons(): Nq(la.NqSites()),omega(Nq),normalmode(NSUBL),sumlogomegaover
 	}
       */
 
-      ofile << eigenvalue << " : " << endl;
-      ofile << evec << endl;
+      //      ofile << eigenvalue << " : " << endl;
+      //ofile << evec << endl;
       
       voigtstring thisv;
-      for(int i=0; i<NELASTIC; i++) thisv[i]=real(evec(i));
+      realtype mysign=(real(evec(0)) < 0 ? -1. : 1.); // change sign on vector if x-component is negative
+      for(int i=0; i<NELASTIC; i++) thisv[i]=mysign*real(evec(i));
       elasticmode.push_back(thisv);
       elasticeigenvalue.push_back(eigenvalue);       
     } 
-  ofile.close();  
+  //  ofile.close();  
   
     
   for(int i=0; i<NSUBL; i++)
