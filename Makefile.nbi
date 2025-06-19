@@ -1,0 +1,37 @@
+DATADIR = $(HOME)/Data
+HOMEDIR = $(HOME)
+SOURCEDIR= $(HOME)/MySources/Bondpp
+BINDIR = $(HOMEDIR)/bin
+EXTENSION = _nbi.x
+
+
+#architechture option
+ARCHOPTS = -DX64
+
+# C++ compiler
+CCC= g++
+
+# eigen double:
+CCC= g++
+INCDIR = -I$(DATADIR)/fftw-3.3.10/include -I$(DATADIR)/eigen-3.4.0 -I$(HOMEDIR)/include -I/usr/include 
+LIBDIR = -L$(DATADIR)/fftw-3.3.10/lib     -L$(HOMEDIR)/lib     -L/usr/lib -L/lib64
+LIBS   = -lfftw3 -lm -lstdc++
+STDOPTS= -std=c++17 -O3 -DUSEEIGEN
+
+
+# eigen long double:
+CCC= g++
+##for compiling using FFTW libraries, i.e. no MKL fftw. This must be used when using LONGDOUBLE option
+#INCDIR = -I$(DATADIR)/fftw-3.3.10/include -I$(DATADIR)/eigen-3.4.0 -I$(HOMEDIR)/include -I/usr/include 
+#LIBDIR = -L$(DATADIR)/fftw-3.3.10/lib        -L$(HOMEDIR)/lib     -L/usr/lib -L/lib64
+#LIBS   = -lfftw3l -lm -lstdc++
+#STDOPTS= -std=c++17 -O3 -DUSEEIGEN -DLONGDOUBLE
+
+#options
+CCOPTS=  $(STDOPTS) -DNDEBUG
+#CCOPTS=  $(STDOPTS)
+
+#link options
+LINKOPTS =  -O3 
+CCFLAGS = $(CCOPTS) $(ARCHOPTS) $(INCDIR) 
+

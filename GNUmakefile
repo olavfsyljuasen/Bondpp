@@ -30,6 +30,11 @@ OSXDIR = $(HOME)
 	@echo `git describe`
 	make -f makefile $*.exec
 
+%.nbi : force
+	cp Makefile.nbi Makefile.local
+	@echo `git describe`
+	make -f makefile $*.exec
+
 # The envirmoment variable MYMAKEFILE contains the name of the appropriate Makefile.local
 %    :  force
 	cp $(MYMAKEFILE) Makefile.local 
