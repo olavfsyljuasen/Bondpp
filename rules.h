@@ -73,7 +73,7 @@ class Rule
   vector<realtype> elasticeigenvalues;
   vector<VecMat<complextype,NMAT,NMAT>* > gelptrs;
 
-  realtype GetSumLogOmegaoverV(){return phonons.GetSumLogOmegaoverV();}
+  realtype GetSumLogOmega(){return phonons.GetSumLogOmega();}
 #endif
 
 

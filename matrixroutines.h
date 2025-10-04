@@ -24,23 +24,30 @@ void Setqzerotozero(VecMat<T,Nrows,Ncols>& A)
 }
 
 // A routine to sum over the ln of sublattice determinants for all q.
+// the optional argument isub (0 by default; the full matrix) can be
+// used to just take the determinant of a submatrix starting at the row/column isub.
 template<class T,int Nrows,int Ncols>
-realtype SumLogDet(VecMat<T,Nrows,Ncols>& A)
+realtype SumLogDet(VecMat<T,Nrows,Ncols>& A,int isub=0,bool excludeqzero=false)
 {
   if(TRACELEVEL>0) cout << spaces(ir++) << "Starting SumLogDet" << endl;
 
   realtype sum=0.;
   const int n    = A.Nvecs(); // the number of q values
 
-  vector<complextype> a(Nrows*Ncols);
+  const int Neffrows=Nrows-isub; // dimensions of the submatrix
+  const int Neffcols=Ncols-isub;
   
-  for(int k=0; k<n; k++)
+  vector<complextype> a(Neffrows*Neffcols);
+
+  int startk=(excludeqzero ? 1:0); // 
+  
+  for(int k=startk; k<n; k++)
     {
-      for(int i=0; i<Nrows; i++)
-	for(int j=0; j<Ncols; j++)
+      for(int i=isub; i<Nrows; i++)
+	for(int j=isub; j<Ncols; j++)
 	  a[i+j*Nrows]=A(k,i,j);
       	    
-      realtype value=SmallHermitianMatrixDeterminant(Nrows,a); // col-major order
+      realtype value=SmallHermitianMatrixDeterminant(Neffrows,a); // col-major order
       if(TRACELEVEL>4 ) cout << spaces(ir) << "k=" << k << " logdet:" << setprecision(DEBUGPRECISION) << value << " " << mylog(value) << endl;
       if(value > 0.){ sum += mylog(value);} 
     }

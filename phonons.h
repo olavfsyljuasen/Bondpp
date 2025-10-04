@@ -92,7 +92,7 @@ class Phonons
 
   VecMat<complextype,NC,NMODE>& Getf(){return flist;}
 
-  realtype GetSumLogOmegaoverV(){return sumlogomegaoverv;}
+  realtype GetSumLogOmega(){return sumlogomega;}
   void PrintPhononModes(string,VecMat<complextype,NSUBL+NMODE,NSUBL+NMODE>&,realtype);
  private:  
   const int Nq;
@@ -104,7 +104,7 @@ class Phonons
   vector<voigtstring> elasticmode;
   vector<realtype> elasticeigenvalue;
 
-  realtype sumlogomegaoverv;
+  realtype sumlogomega;
   
   void Initializef();
   VecMat<complextype,NC,NMODE> flist;
@@ -112,7 +112,7 @@ class Phonons
 
 
 
-Phonons::Phonons(): Nq(la.NqSites()),omega(Nq),normalmode(NSUBL),sumlogomegaoverv(0.),flist(Nq)
+Phonons::Phonons(): Nq(la.NqSites()),omega(Nq),normalmode(NSUBL),sumlogomega(0.),flist(Nq)
 {
   if(TRACE) cout << "Initializing Phonons" << endl;
   // We start with the elastic constants
@@ -585,10 +585,9 @@ Phonons::Phonons(): Nq(la.NqSites()),omega(Nq),normalmode(NSUBL),sumlogomegaover
   for(int q=1; q<Nq; q++)
     for(int n=0; n<NMODE; n++)
       {
-	sumlogomegaoverv += log(omega(q,n));
+	sumlogomega += log(omega(q,n));
       }
-  sumlogomegaoverv /= Nq;
-  if(TRACE) cout << "sumlogomega=" << sumlogomegaoverv << endl;
+  if(TRACE) cout << "sumlogomega=" << sumlogomega << endl;
   Initializef();
 
   

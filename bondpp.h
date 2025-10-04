@@ -103,6 +103,8 @@ class Driver
 #endif
 
   realtype CalculateFreeEnergy(const realtype);
+  realtype CalculatePhononFreeEnergy(const realtype);
+  realtype CalculateElasticFreeEnergy(const realtype);
   vector<obstype> CalculateSpinOrderPars(realtype);
   vector<obstype> CalculateOrderPars(realtype,int,int);
   vector<obstype> CalculateAlphas(realtype);
@@ -772,24 +774,37 @@ realtype Driver::CalculateFreeEnergy(realtype T)
   
   f += T*betaf_phononTdep;
 
+  // new in v1.95: in addition there is a similar term from P^2 as that
+  // is alos multiplied by beta
+
+  realtype betaf_phononTdep_fromP2 = realtype(-0.5)*NMODE*mylog(T); 
+  if(TRACE) cout << "betaf_phononTdep_fromP2  = " << betaf_phononTdep_fromP2 << endl;
+
+  if(TRACEFREEENERGY) cout << " bf_phononTdep_fromP2=" << betaf_phononTdep_fromP2;
+  
+  f += T*betaf_phononTdep_fromP2;
+  
+  
   // constants:
-  realtype betaf_phononconst = realtype(-0.5)*2*NMODE*mylog(TWOPI);
+  realtype betaf_phononconst = realtype(-0.5)*2*NMODE*mylog(TWOPI); // 2 because both X^2 and P^2
   if(TRACE) cout << "betaf_phononconst  = " << betaf_phononconst << endl;
   if(TRACEFREEENERGY) cout << " bf_phononconst=" << betaf_phononconst;
   
   f += T*betaf_phononconst;
 
   //the phonon spectrum
-  realtype betaf_phonons = 2*rule.GetSumLogOmegaoverV(); // 2 both X^2 and P^2
+  //The following line has been replaced from version 1.95 as only X^2 is multiplied by omega^2:
+  //realtype betaf_phonons = 2*rule.GetSumLogOmegaoverV(); // 2 both X^2 and P^2
+  realtype betaf_phonons = invNq*rule.GetSumLogOmega(); // from v1.95: only X^2
 
   if(TRACE) cout << "betaf_phonons  = " << betaf_phonons << endl;
   if(TRACEFREEENERGY) cout << " bf_phonons=" << betaf_phonons;
   
   f += T*betaf_phonons;
 
-#endif
+#endif  // not OMITPHONONCONT
   
-#endif  
+#endif  // lattice distortions
   
   //Must correct the Delta values for the subtraction of the minimum from SigmaE
   //  for(int i=0; i<NSUBL; i++) f += -(Delta[i]-mineigenvalue);
@@ -831,6 +846,82 @@ realtype Driver::CalculateFreeEnergy(realtype T)
   // the correction to the saddle-point are already taken into account
   return f;
 }
+
+
+// Phonon Free energy per unit volume
+// we use the convention \nu=\nup
+realtype Driver::CalculatePhononFreeEnergy(realtype T)
+{
+  if(TRACE) cout << "Starting CalculatePhononFreeEnergy " << endl;
+
+  realtype f=0;
+
+  realtype zeromodeomissionfactor= (Nq-1)*invNq;  // corrects for the missing phonon q=0 modes, which are elastic modes 
+
+
+  //the bare phonon spectrum, from scaled out Xs
+  realtype betaf_phonons = invNq*rule.GetSumLogOmega(); // only X^2 
+  
+  if(TRACE) cout << "betaf_phonons  = " << betaf_phonons << endl;
+  if(TRACEFREEENERGY) cout << " bf_phonons=" << betaf_phonons;
+  
+  f += T*betaf_phonons;
+  
+  realtype betaf_phononTdep = -realtype(0.5)*zeromodeomissionfactor*NMODE*mylog(T); // from P^2, the X^2 contribution beta is in Dinvq 
+  if(TRACE) cout << "betaf_phononTdep  = " << betaf_phononTdep << endl;
+
+  if(TRACEFREEENERGY) cout << " bf_phononTdep=" << betaf_phononTdep;
+  
+  f += T*betaf_phononTdep;
+
+  // constants:
+  realtype betaf_phononconst = -realtype(0.5)*2*zeromodeomissionfactor*NMODE*mylog(TWOPI); // 2 as it comes from both X^2 and P^2 Gaussian integrals
+  if(TRACE) cout << "betaf_phononconst  = " << betaf_phononconst << endl;
+  if(TRACEFREEENERGY) cout << " bf_phononconst=" << betaf_phononconst;
+  
+  f += T*betaf_phononconst;
+  
+  ComputeDq(false,true); // excludeqzero=false, preserveinput=true not to jeopardize Keff
+
+  MatrixInverse(Dq); // B=Dinvq
+  realtype betaf_logD = realtype(0.5*invNq)*SumLogDet(Dinvq,1,true); // 1: only count phonons, excludeqzero=true
+  MatrixInverse(Dinvq); // B=Dq, probably not necessary
+    
+  if(TRACE) cout << "betaf_logD       =  " << betaf_logD << endl;
+  if(TRACEFREEENERGY) cout << " betaf_logD=" << betaf_logD;
+  
+  f += T*betaf_logD;
+
+  if(TRACEFREEENERGY) cout << " f_phonons=" << f << endl;
+
+  return f;
+}
+
+// Phonon Free energy per unit volume
+// we use the convention \nu=\nup
+
+realtype Driver::CalculateElasticFreeEnergy(realtype T)
+{
+  if(TRACE) cout << "Starting CalculateElasticFreeEnergy " << endl;
+
+  realtype f=0;
+
+  realtype f_elastic = 0;
+  for(int i=0; i<NELASTIC; i++){ f_elastic += realtype(0.5)*epsilon[i]*epsilon[i]*rule.elasticeigenvalues[i];}
+
+  if(TRACE) cout << "f_elastic  = " << f_elastic << endl;
+  if(TRACEFREEENERGY) cout << " f_elastic=" << f_elastic;
+  f += f_elastic;
+
+  if(TRACEFREEENERGY) cout << " f=" << f << endl;
+
+  return f;
+}
+
+
+
+
+
 
 
 /* The old free energy routine
@@ -2281,6 +2372,15 @@ bool Driver::SolveSelfConsistentEquation(NumberList Delta,bool load_state)
   realtype f(0.);
   if(converged){ f= CalculateFreeEnergy(newT);}
   
+  realtype f_elastic(0.);
+#if defined ELASTIC
+  if(converged){ f_elastic= CalculateElasticFreeEnergy(newT);}
+#endif
+  
+  realtype f_phonons(0.);
+#if defined LATTICEDISTORTIONS 
+  if(converged){ f_phonons= CalculatePhononFreeEnergy(newT);}
+#endif
 
   
   //  if(TRACE) cout << "Final Kinv_q: " << Kinvq << endl;  
@@ -2946,8 +3046,28 @@ bool Driver::SolveSelfConsistentEquation(NumberList Delta,bool load_state)
       outfile_b << scientific << setprecision(OUTPUTPRECISION)
 		<< setw(OUTPUTPRECISION+8) << Delta[0] << " " << setw(OUTPUTPRECISION+8) << newT << endl;
       outfile_b.close();
-      
 
+      logfile << "Phonon Free energy: " << scientific << setprecision(LOGPRECISION) << setw(LOGPRECISION+8) << f_phonons << endl;
+      
+      ss.str("");
+      ss << "tfphonons.dat";
+      
+      ofstream outfile_phonons(ss.str().c_str(),ios::app);
+      outfile_phonons << scientific << setprecision(OUTPUTPRECISION)
+	      << setw(OUTPUTPRECISION+8) << newT << " " << setw(OUTPUTPRECISION+8) << f_phonons << endl;
+      outfile_phonons.close();
+
+      logfile << "Elastic Free energy: " << scientific << setprecision(LOGPRECISION) << setw(LOGPRECISION+8) << f_elastic << endl;
+      
+      ss.str("");
+      ss << "tfelastic.dat";
+      
+      ofstream outfile_elastic(ss.str().c_str(),ios::app);
+      outfile_elastic << scientific << setprecision(OUTPUTPRECISION)
+	      << setw(OUTPUTPRECISION+8) << newT << " " << setw(OUTPUTPRECISION+8) << f_elastic << endl;
+      outfile_elastic.close();
+
+      
 #if defined LATTICEDISTORTIONS && defined PHONONS
       if( lineid % PRINTPHONONSPECTRUMTICKLER == 0 && PRINTPHONONSPECTRUM)
 	{
