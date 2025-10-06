@@ -45,7 +45,7 @@ realtype SumLogDet(VecMat<T,Nrows,Ncols>& A,int isub=0,bool excludeqzero=false)
     {
       for(int i=isub; i<Nrows; i++)
 	for(int j=isub; j<Ncols; j++)
-	  a[i+j*Nrows]=A(k,i,j);
+	  a[(i-isub)+(j-isub)*Neffrows]=A(k,i,j);
       	    
       realtype value=SmallHermitianMatrixDeterminant(Neffrows,a); // col-major order
       if(TRACELEVEL>4 ) cout << spaces(ir) << "k=" << k << " logdet:" << setprecision(DEBUGPRECISION) << value << " " << mylog(value) << endl;

@@ -115,7 +115,8 @@ class Driver
   //  realtype CalculateSecondDerivative(const realtype T,const int k);
 
   void ConstructKinvq(const bool);
-  void ComputeDq(const bool,const bool);  
+  void ComputeDinvq(const bool);  
+  void ComputeDq(const bool);  
   void ComputeSelfEnergy(const bool);
   
   void SetQsToZero(); // routine to set some q's to zero in self-energy
@@ -821,11 +822,16 @@ realtype Driver::CalculateFreeEnergy(realtype T)
   if(TRACE) cout << "betaf_logKinvq   =  " << betaf_logKinvq << endl;
   if(TRACEFREEENERGY) cout << " betaf_logKinvq=" << betaf_logKinvq;
   f += T*betaf_logKinvq;
+
+  ComputeDinvq(true); // preserveinput=true not to jeopardize Keff
+
   
-  ComputeDq(false,true); // excludeqzero=false, preserveinput=true not to jeopardize Keff
-  
-  realtype betaf_logD       = realtype(-0.5*invNq)*SumLogDet(Dq);
+  //  ComputeDq(false); // excludeqzero=false
+  //realtype betaf_logD       = realtype(-0.5*invNq)*SumLogDet(Dq);
+   realtype betaf_logD    = realtype(0.5*invNq)*SumLogDet(Dinvq);
   if(TRACEFREEENERGY) cout << " betaf_logD1=" << betaf_logD;
+
+  
   //#if defined LATTICEDISTORTIONS && !defined ELASTICONLY
 #if defined LATTICEDISTORTIONS && defined PHONONS 
   betaf_logD += realtype(0.5)*NMODE*mylog(T); //  -0.5*NMODE*log(1/T) 
@@ -880,18 +886,18 @@ realtype Driver::CalculatePhononFreeEnergy(realtype T)
   if(TRACEFREEENERGY) cout << " bf_phononconst=" << betaf_phononconst;
   
   f += T*betaf_phononconst;
-  
-  ComputeDq(false,true); // excludeqzero=false, preserveinput=true not to jeopardize Keff
 
-  MatrixInverse(Dq); // B=Dinvq
+
+  ComputeDinvq(true); // excludeqzero=false, preserveinput=true not to jeopardize Keff
+
   realtype betaf_logD = realtype(0.5*invNq)*SumLogDet(Dinvq,1,true); // 1: only count phonons, excludeqzero=true
-  MatrixInverse(Dinvq); // B=Dq, probably not necessary
     
   if(TRACE) cout << "betaf_logD       =  " << betaf_logD << endl;
   if(TRACEFREEENERGY) cout << " betaf_logD=" << betaf_logD;
   
   f += T*betaf_logD;
 
+  
   if(TRACEFREEENERGY) cout << " f_phonons=" << f << endl;
 
   return f;
@@ -971,28 +977,39 @@ realtype Driver::CalculateFreeEnergy(realtype T)
 }
 */
 
-// ComputeDq() computes the renormalized constraint propagator
+
+
+
+
+
+
+
+
+
+// ComputeDinvq() computes the renormalized constraint propagator
 //
 // Input: Kinvq (stored in A1).
-// Output: Dq (stored in B)
+// Output: Dinvq (stored in B)
 // 
 // The routine uses in-place FFTs so info contained in A and B are modified
 // On output:
 // A1 = Kinvr, unless preserveinput=true, then A1=Kinvq
-// B = Dq
+// B = Dinvq
 //
 // FFTW omits volume prefactors in fourier transforms, we adopt the convention that the Fourier transform
 // is without prefactors in going from q->r, and the prefactor 1/Nq is inserted on going from r->q.
 // This means that using FFTW for transforming q->r->q, one should divide the result by Nq. 
-void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=false)
+void Driver::ComputeDinvq(const bool preserveinput=false)
 {
 #ifdef LATTICEDISTORTIONS
-  if(NSUBL !=1){ cout << "Error:ComputeDq is not implemented for NSUBL !=1, exiting." << endl; exit(1);}
+  if(NSUBL !=1){ cout << "Error:ComputeDinvq is not implemented for NSUBL !=1, exiting." << endl; exit(1);}
 #endif
 
-  if(TRACE) cout << "Starting ComputeDq, excludeqzero=" << excludeqzero << ",preserveinput=" << preserveinput << endl;
+  if(TRACE) cout << "Starting ComputeDinvq, preserveinput=" << preserveinput << endl;
 
-  if(TRACE){SanityCheck(Kinvq,"Kinvq, Initializing ComputeDq");}
+
+  if(TRACELEVEL>=4 && preserveinput){ cout << "Preserving input, at start Kinvq=" << Kinvq << endl;}
+  if(TRACE){SanityCheck(Kinvq,"Kinvq, Initializing ComputeDinvq");}
 
 
   FFTWEXECUTE(A1q_to_A1r); // Kinvq->Kinvr, stored in Ar, after: Ar=Kinvr*Sqrt(Nq)
@@ -1264,26 +1281,9 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 		    Dinvq(qi,m1,m2)+=-F1[qi]*conj(f(qi,c2,n1))*f(qi,c4,n2)*conj(expi(la.qr(qi,clist[c4])));
 		  }
 
-		if(TRACE2)
-		  {
-		    if(m1==1 && m2==1)
-		      {
-			cout << "F1[4]=" << F1[4] 
-			     << " f(4,"<< c2 << "," << n1 << ")^*=" << conj(f(4,c2,n1)) 
-			     << " f(4," << c4 << "," << n2 << ")=" << f(4,c4,n2) 
-			     << " expi(-q,c4)= " << conj(expi(la.qr(4,clist[c4]))) << endl;
-			cout << "Dinvq(4,1,1) = " << Dinvq(4,m1,m2) << endl;
-		      }
-		  }
                        
 
 	      }
-
-	  if(TRACE2)
-	    {
-	      cout << "B: Dinvq[4]: " << Dinvq.qcomp(4) << endl;
-	    }
-
 
 	  
 	  myivec=clist[c2]-clist[c4];
@@ -1318,25 +1318,7 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 		    Dinvq(qi,m1,m2)+=-complextype(invNq,0.)*F1[qi]*conj(f(qi,c2,n1))*f(qi,c4,n2);
 		  }
 
-		if(TRACE2)
-		  {
-		    if(m1==1 && m2==1)
-		      {
-			cout << "F1[4]=" << F1[4] 
-			     << " f(4,"<< c2 << "," << n1 << ")^*=" << conj(f(4,c2,n1)) 
-			     << " f(4," << c4 << "," << n2 << ")=" << f(4,c4,n2) 
-			     << " new cont=" << -invNq*F1[4]*conj(f(4,c2,n1))*f(4,c4,n2) << endl; 
-			cout << "Dinvq(4,1,1) = " << Dinvq(4,m1,m2) << endl;
-		      }
-		  }
-
 	      }
-
-	  if(TRACE2)
-	    {
-	      //	      cout << "Dinvq=" << Dinvq << endl;
-	      cout << "C: Dinvq[4]=" << Dinvq.qcomp(4) << endl;
-	    }
 	}
 #else
   for(unsigned int cc2=0; cc2<nonzeroclist.size(); cc2++)
@@ -1413,6 +1395,25 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
     {
       cout << "Dinvq after adding bare phonon part: " << Dinvq << endl;
     }
+
+  if(preserveinput)
+    {
+      if(TRACELEVEL>=4) 
+	{
+	  cout << "Preserving input: reverting to Aq=Kinvq " << endl;
+	}
+      
+      FFTWEXECUTE(A1r_to_A1q);  // Kinvr->Kinvq, so after transform: Aq=Kinvq*sqrt(Nq) 
+      Kinvq *= invSqrtNq; // Aq=Kinvq;
+      
+#ifdef PRESERVESYMMETRY
+      MakeSymmetric(Kinvq);
+#endif
+      MakeHermitian(Kinvq);
+
+      if(TRACELEVEL>=4){ cout << "Preserving input, Kinvq=" << Kinvq << endl;}
+    }
+
   
   // FORCING
   MakeMixedHermitian(Dinvq,NSUBL,NSUBL);
@@ -1420,9 +1421,36 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
   
 
   Chomp(Dinvq);
-  
   if(TRACELEVEL>0){SanityCheck(Dinvq,"Dinvq, after constructing it",false);}
-  
+  if(TRACELEVEL>0) cout << "Done with ComputeDinvq " << endl;
+}
+
+
+
+/*
+// ComputeDq() computes the renormalized constraint propagator
+//
+// Input: Kinvq (stored in A1).
+// Output: Dq (stored in B)
+// 
+// The routine uses in-place FFTs so info contained in A and B are modified
+// On output:
+// A1 = Kinvr, unless preserveinput=true, then A1=Kinvq
+// B = Dq
+//
+// FFTW omits volume prefactors in fourier transforms, we adopt the convention that the Fourier transform
+// is without prefactors in going from q->r, and the prefactor 1/Nq is inserted on going from r->q.
+// This means that using FFTW for transforming q->r->q, one should divide the result by Nq. 
+void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=false)
+{
+#ifdef LATTICEDISTORTIONS
+  if(NSUBL !=1){ cout << "Error:ComputeDq is not implemented for NSUBL !=1, exiting." << endl; exit(1);}
+#endif
+
+  if(TRACE) cout << "Starting ComputeDq, excludeqzero=" << excludeqzero << ",preserveinput=" << preserveinput << endl;
+
+  ComputeDinvq(excludeqzero,preserveinput); // the computation is really here!
+    
   if(TRACELEVEL>=4){ cout << "Dinvq before inversion=" << Dinvq << endl;}
 
   MatrixInverse(Dinvq); // B = Dq
@@ -1433,17 +1461,36 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
 
   if(excludeqzero) Setqzerotozero(Dq);
 
+  if(TRACELEVEL>0){SanityCheck(Dq,"Dq, at end of ComputeDq",false);}
 
-  if(preserveinput)
-    {
-      FFTWEXECUTE(A1r_to_A1q);  // Kinvr->Kinvq, so after transform: Aq=Kinvq*sqrt(Nq) 
-      Kinvq *= invSqrtNq; // Aq=Kinvq;
-      
-#ifdef PRESERVESYMMETRY
-      MakeSymmetric(Kinvq);
+  if(TRACELEVEL>=4){ cout << "At end of ComputDq, Dq=" << Dq << endl;}
+  
+  if(TRACELEVEL>0) cout << "Done with ComputeDq " << endl;
+}
+*/
+
+// ComputeDq() computes the renormalized constraint propagator
+//
+// Input: Dinvq (stored in B).
+// Output: Dq (stored in B)
+// 
+void Driver::ComputeDq(const bool excludeqzero=true)
+{
+#ifdef LATTICEDISTORTIONS
+  if(NSUBL !=1){ cout << "Error:ComputeDq is not implemented for NSUBL !=1, exiting." << endl; exit(1);}
 #endif
-      MakeHermitian(Kinvq);
-    }
+
+  if(TRACE) cout << "Starting ComputeDq, excludeqzero=" << excludeqzero << endl;
+
+  if(TRACELEVEL>=4){ cout << "Dinvq before inversion=" << Dinvq << endl;}
+
+  MatrixInverse(Dinvq); // B = Dq
+
+  if(TRACELEVEL>0){SanityCheck(Dq,"Dq, after inverting Dinvq",false);}
+  
+  if(TRACELEVEL>=4){ cout << "Dq, after inverting Dinvq, Dq=" << Dq << endl;}
+
+  if(excludeqzero) Setqzerotozero(Dq);
 
   if(TRACELEVEL>0){SanityCheck(Dq,"Dq, at end of ComputeDq",false);}
 
@@ -1451,6 +1498,7 @@ void Driver::ComputeDq(const bool excludeqzero=true, const bool preserveinput=fa
   
   if(TRACELEVEL>0) cout << "Done with ComputeDq " << endl;
 }
+
 
 
 // ComputeSelfEnergy() computes the self-energy from the self-consistent equations
@@ -1471,8 +1519,8 @@ void Driver::ComputeSelfEnergy(const bool preserveinput=false)
 
   if(TRACE){SanityCheck(Kinvq,"Kinvq, at start of ComputeSelfEnergy",true);}
 
-  ComputeDq(true,false); // exclude zero mode, do not preserve input here, Ar must contain Kinvr for ComputeSelfEnergy to work.
-
+  ComputeDinvq(false); // do not preserve input here, Ar must contain Kinvr for ComputeSelfEnergy to work.
+  ComputeDq(true); // exclude zero mode
 
   
   Sigmaq.SetToZero();
@@ -2368,6 +2416,7 @@ bool Driver::SolveSelfConsistentEquation(NumberList Delta,bool load_state)
       WriteEpsilon(EPSILONFILENAME);
       WriteKinvq(KINVQFILENAME);
     }
+
   
   realtype f(0.);
   if(converged){ f= CalculateFreeEnergy(newT);}
@@ -2381,6 +2430,9 @@ bool Driver::SolveSelfConsistentEquation(NumberList Delta,bool load_state)
 #if defined LATTICEDISTORTIONS 
   if(converged){ f_phonons= CalculatePhononFreeEnergy(newT);}
 #endif
+
+  
+
 
   
   //  if(TRACE) cout << "Final Kinv_q: " << Kinvq << endl;  
