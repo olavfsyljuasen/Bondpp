@@ -777,17 +777,16 @@ realtype Driver::CalculateFreeEnergy(realtype T)
 
   // new in v1.95: in addition there is a similar term from P^2 as that
   // is alos multiplied by beta
-
-  realtype betaf_phononTdep_fromP2 = realtype(-0.5)*NMODE*mylog(T); 
-  if(TRACE) cout << "betaf_phononTdep_fromP2  = " << betaf_phononTdep_fromP2 << endl;
-
-  if(TRACEFREEENERGY) cout << " bf_phononTdep_fromP2=" << betaf_phononTdep_fromP2;
-  
-  f += T*betaf_phononTdep_fromP2;
+  // Change from 1.99: No P2 in the action anymore
+  //  realtype betaf_phononTdep_fromP2 = realtype(-0.5)*NMODE*mylog(T); 
+  //if(TRACE) cout << "betaf_phononTdep_fromP2  = " << betaf_phononTdep_fromP2 << endl;
+  //  if(TRACEFREEENERGY) cout << " bf_phononTdep_fromP2=" << betaf_phononTdep_fromP2;
+  //  f += T*betaf_phononTdep_fromP2;
   
   
   // constants:
-  realtype betaf_phononconst = realtype(-0.5)*2*NMODE*mylog(TWOPI); // 2 because both X^2 and P^2
+  //  realtype betaf_phononconst = realtype(-0.5)*2*NMODE*mylog(TWOPI); // 2 because both X^2 and P^2
+  realtype betaf_phononconst = realtype(-0.5)*NMODE*mylog(TWOPI); // only X^2 from v1.99
   if(TRACE) cout << "betaf_phononconst  = " << betaf_phononconst << endl;
   if(TRACEFREEENERGY) cout << " bf_phononconst=" << betaf_phononconst;
   
@@ -854,8 +853,7 @@ realtype Driver::CalculateFreeEnergy(realtype T)
 }
 
 
-// Phonon Free energy per unit volume
-// we use the convention \nu=\nup
+// Phonon-constraint Free energy per unit volume
 realtype Driver::CalculatePhononFreeEnergy(realtype T)
 {
   if(TRACE) cout << "Starting CalculatePhononFreeEnergy " << endl;
@@ -873,15 +871,15 @@ realtype Driver::CalculatePhononFreeEnergy(realtype T)
   
   f += T*betaf_phonons;
   
-  realtype betaf_phononTdep = -realtype(0.5)*zeromodeomissionfactor*NMODE*mylog(T); // from P^2, the X^2 contribution beta is in Dinvq 
-  if(TRACE) cout << "betaf_phononTdep  = " << betaf_phononTdep << endl;
-
-  if(TRACEFREEENERGY) cout << " bf_phononTdep=" << betaf_phononTdep;
+  //  realtype betaf_phononTdep = -realtype(0.5)*zeromodeomissionfactor*NMODE*mylog(T); // from P^2, the X^2 contribution beta is in Dinvq 
+  //  if(TRACE) cout << "betaf_phononTdep  = " << betaf_phononTdep << endl;
+  // if(TRACEFREEENERGY) cout << " bf_phononTdep=" << betaf_phononTdep;
   
-  f += T*betaf_phononTdep;
+  //  f += T*betaf_phononTdep;
 
   // constants:
-  realtype betaf_phononconst = -realtype(0.5)*2*zeromodeomissionfactor*NMODE*mylog(TWOPI); // 2 as it comes from both X^2 and P^2 Gaussian integrals
+  //  realtype betaf_phononconst = -realtype(0.5)*2*zeromodeomissionfactor*NMODE*mylog(TWOPI); // 2 as it comes from both X^2 and P^2 Gaussian integrals
+  realtype betaf_phononconst = -realtype(0.5)*zeromodeomissionfactor*NMODE*mylog(TWOPI); // only X^2 
   if(TRACE) cout << "betaf_phononconst  = " << betaf_phononconst << endl;
   if(TRACEFREEENERGY) cout << " bf_phononconst=" << betaf_phononconst;
   
@@ -890,7 +888,7 @@ realtype Driver::CalculatePhononFreeEnergy(realtype T)
 
   ComputeDinvq(true); // excludeqzero=false, preserveinput=true not to jeopardize Keff
 
-  realtype betaf_logD = realtype(0.5*invNq)*SumLogDet(Dinvq,1,true); // 1: only count phonons, excludeqzero=true
+  realtype betaf_logD = realtype(0.5*invNq)*SumLogDet(Dinvq); 
     
   if(TRACE) cout << "betaf_logD       =  " << betaf_logD << endl;
   if(TRACEFREEENERGY) cout << " betaf_logD=" << betaf_logD;
@@ -923,61 +921,6 @@ realtype Driver::CalculateElasticFreeEnergy(realtype T)
 
   return f;
 }
-
-
-
-
-
-
-
-/* The old free energy routine
-// Free energy per unit volume
-// we use the convention \nu=\nup
-realtype Driver::CalculateFreeEnergy(realtype T)
-{
-  if(TRACE) cout << "Starting CalculateFreeEnergy " << endl;
-
-  realtype f=0;
- 
-  if(TRACE) cout << "--- T  = " << T << endl;
-  // constants:
-  realtype betaf_constants= -( 0.5*NSUBL*log(2.*Nq) + 0.5*NSUBL*(NS-1)*log(PI)); 
-  if(TRACE) cout << "betaf_constants  = " << betaf_constants << endl;
-  
-  f += T*betaf_constants;
-  
-  //Must correct the Delta values for the subtraction of the minimum from SigmaE
-#ifdef SOFTCONSTRAINT
-  for(int i=0; i<NSUBL; i++) f += -(Delta[i]-mineigenvalue)*(Delta[i]-mineigenvalue)/(4.*g*T);
-#endif
-  for(int i=0; i<NSUBL; i++) f += -(Delta[i]-mineigenvalue);
-
-  if(TRACE) cout << "betaf_delta      = " << -(Delta[0]-mineigenvalue)/T << " (Delta= " << Delta[0] << " mineig: " << mineigenvalue << ")" << endl;
-  
-  // NSUBL*log(T) is needed because T is not part of Kinvq in the program
-  realtype betaf_logKinvq   = -0.5*NS*(invNq*SumLogDet(Kinvq) + NSUBL*log(T));
-  //  cout << "invNqq*SumLogDet= " << invNq*SumLogDet(Kinvq) << " log(T)= " << log(T) << endl;
-  if(TRACE) cout << "betaf_logKinvq   =  " << betaf_logKinvq << endl;					  f += T*betaf_logKinvq;
-  
-  ComputeDq(false,true); // excludeqzero=false, preserveinput=true not to jeopardize Keff
-  
-  // NSUBL*2.*log(T) needed because T is not part of Dq in the program
-  realtype betaf_logD       = -0.5*invNq*( SumLogDet(Dq) - Nq*NSUBL*2.*log(T) );
-  if(TRACE) cout << "betaf_logD       =  " << betaf_logD << endl;
-  f += T*betaf_logD;
-
-  ComputeSelfEnergy(true); // ensure that Kinvq is the same.
-
-  realtype betaf_KinvqSigma = -0.5*NS*invNq*SumTr(Kinvq,Sigmaq);
-  if(TRACE) cout << "betaf_KinvqSigma = " << betaf_KinvqSigma << endl;
-  f += T*betaf_KinvqSigma;
-
-  // the correction to the saddle-point are already taken into account
-  return f;
-}
-*/
-
-
 
 
 

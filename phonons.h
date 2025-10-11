@@ -648,9 +648,10 @@ Phonons::Phonons(): Nq(la.NqSites()),omega(Nq),normalmode(NSUBL),sumlogomega(0.)
 }
 
 
-// this routine print out renormalized phonon frequencies and corresponding eigenvectors (in the basis of the normal modes)
+// this routine print out renormalized phonon frequencies and constraints and corresponding eigenvectors (in the basis of the normal modes)
 // to a file. Format:
-// q w_1 w_2 ev_11 ev_12 ev_21 ev_22
+// q lambda_1 lambda_2 lambda_3 ev_11 ev_12 ev_13 ev_21 ev_22 ev_23  ev_31 ev_32 ev_33 
+// in order to get the phonon frequencies, one must multiply by T and take the square root.
 void Phonons::PrintPhononModes(string filename,VecMat<complex<realtype>,NSUBL+NMODE,NSUBL+NMODE>& Dinvq,realtype T)
 {
   if(TRACE) cout << "Starting PrintPhononModes()" << endl;
@@ -659,31 +660,33 @@ void Phonons::PrintPhononModes(string filename,VecMat<complex<realtype>,NSUBL+NM
 
   outfile << "# T= " << T << endl;
 
+  const int NDIM=NMODE+1;
+  
   for(int qi=0; qi<Nq; qi++)
     {
       Coord q=la.qPos(qi);
       outfile << fixed << setprecision(8) << q << " ";
       
-      Matrix<eigen_complex_type,Dynamic,Dynamic> Dyn(NMODE,NMODE); // the dynamical matrix      
-      Dyn.setZero(NMODE,NMODE);
+      Matrix<eigen_complex_type,Dynamic,Dynamic> Dyn(NDIM,NDIM); // the dynamical matrix      
+      Dyn.setZero(NDIM,NDIM);
       
-      for(int m=0; m<NMODE; m++)
-	for(int n=0; n<NMODE; n++)
+      for(int m=0; m<NDIM; m++)
+	for(int n=0; n<NDIM; n++)
 	{
-	  Dyn(m,n)=GetOmega(qi,m)*Dinvq(qi,m+1,n+1)*GetOmega(qi,n)*T;
+	  Dyn(m,n)=(m>0 ? GetOmega(qi,m):1)*Dinvq(qi,m,n)*(n>0 ? GetOmega(qi,n):1);
 	}
 
       SelfAdjointEigenSolver<Matrix<eigen_complex_type,Dynamic,Dynamic> > es(Dyn);
 
-      for(int n=0; n<NMODE; n++)
+      for(int n=0; n<NDIM; n++)
 	{
 	  eigen_real_type val= es.eigenvalues()[n]; //eigen sorts eigenvalues,least first 
-	  outfile << scientific << setprecision(12) << setw(18) << sqrt(abs(val)) << " "; // print eigenvalues
+	  outfile << scientific << setprecision(12) << setw(18) << val << " "; // print eigenvalues
 	}
       outfile << " ";
-      for(int n=0; n<NMODE; n++)
+      for(int n=0; n<NDIM; n++)
 	{
-	  for(int j=0; j<NMODE; j++){ outfile << fixed << setprecision(4) << es.eigenvectors().col(n)[j] << " ";}
+	  for(int j=0; j<NDIM; j++){ outfile << fixed << setprecision(4) << es.eigenvectors().col(n)[j] << " ";}
 	  outfile << " ";
 	}
       
